@@ -79,6 +79,20 @@ String _formatCatalogPercent(double value) {
   return _percentNumberFormatter!.format(value);
 }
 
+TextSpan _metadataTextSpan(String text, TextStyle? style) {
+  final pieces = text.split('★');
+  if (pieces.length == 1) return TextSpan(text: text, style: style);
+
+  final spans = <InlineSpan>[];
+  for (var i = 0; i < pieces.length; i++) {
+    if (pieces[i].isNotEmpty) spans.add(TextSpan(text: pieces[i]));
+    if (i < pieces.length - 1) {
+      spans.add(const TextSpan(text: '★', style: TextStyle(color: Color(0xFFB8860B))));
+    }
+  }
+  return TextSpan(style: style, children: spans);
+}
+
 /// Composes the "PG-13 • 2006 • 2h 10min • 7.7★" line under a card.
 ///
 /// [compact] is for the poster grid, where the line is one ellipsized row a
@@ -949,15 +963,14 @@ class _MediaCardList extends StatelessWidget {
                     const SizedBox(height: 4),
                     if (metadataLine.isNotEmpty) ...[
                       ExcludeSemantics(
-                        child: Text(
-                          metadataLine,
-                          maxLines: 1,
-                          overflow: .ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        child: Text.rich(
+                          _metadataTextSpan(metadataLine, Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: tokens(context).textMuted.withValues(alpha: 0.9),
                             fontSize: _metadataFontSize,
                             fontWeight: .w500,
-                          ),
+                          )),
+                          maxLines: 1,
+                          overflow: .ellipsis,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1215,7 +1228,7 @@ class _MediaCardHelpers {
       _captionMetricsStyle(context)?.copyWith(color: tokens(context).textMuted);
 
   static Widget _caption(BuildContext context, String text) => ExcludeSemantics(
-    child: Text(text, maxLines: 1, overflow: .ellipsis, style: _captionStyle(context)),
+    child: Text.rich(_metadataTextSpan(text, _captionStyle(context)), maxLines: 1, overflow: .ellipsis),
   );
 
   /// A card without a caption still occupies the caption line. Grid cells

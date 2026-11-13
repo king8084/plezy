@@ -572,17 +572,17 @@ class Translations$settings$en {
 	/// en: 'Paper'
 	String get paperTheme => 'Paper';
 
-	/// en: 'Library Density'
-	String get libraryDensity => 'Library Density';
+	/// en: 'Poster Card Size'
+	String get libraryDensity => 'Poster Card Size';
 
 	/// en: 'Display Scale'
 	String get displayScale => 'Display Scale';
 
-	/// en: 'Compact'
-	String get compact => 'Compact';
+	/// en: 'Smaller'
+	String get compact => 'Smaller';
 
-	/// en: 'Comfortable'
-	String get comfortable => 'Comfortable';
+	/// en: 'Larger'
+	String get comfortable => 'Larger';
 
 	/// en: 'Grid Spacing'
 	String get gridSpacing => 'Grid Spacing';
@@ -2017,6 +2017,18 @@ class Translations$mediaMenu$en {
 
 	/// en: 'Shuffle Play'
 	String get shufflePlay => 'Shuffle Play';
+
+	/// en: 'Pin collection to Home'
+	String get pinToHome => 'Pin collection to Home';
+
+	/// en: 'Remove collection from Home'
+	String get removeFromHome => 'Remove collection from Home';
+
+	/// en: 'Collection pinned to Home'
+	String get pinnedToHome => 'Collection pinned to Home';
+
+	/// en: 'Collection removed from Home'
+	String get removedFromHome => 'Collection removed from Home';
 
 	/// en: 'Shuffle not available offline'
 	String get shuffleNotAvailableOffline => 'Shuffle not available offline';
@@ -8305,10 +8317,10 @@ extension on Translations {
 			'settings.forestTheme' => 'Forest',
 			'settings.plumTheme' => 'Plum',
 			'settings.paperTheme' => 'Paper',
-			'settings.libraryDensity' => 'Library Density',
+			'settings.libraryDensity' => 'Poster Card Size',
 			'settings.displayScale' => 'Display Scale',
-			'settings.compact' => 'Compact',
-			'settings.comfortable' => 'Comfortable',
+			'settings.compact' => 'Smaller',
+			'settings.comfortable' => 'Larger',
 			'settings.gridSpacing' => 'Grid Spacing',
 			'settings.gridSpacingTight' => 'Tight',
 			'settings.gridSpacingNormal' => 'Normal',
@@ -8810,6 +8822,10 @@ extension on Translations {
 			'mediaMenu.viewDetails' => 'View details',
 			'mediaMenu.goToSeries' => 'Go to series',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
+			'mediaMenu.pinToHome' => 'Pin collection to Home',
+			'mediaMenu.removeFromHome' => 'Remove collection from Home',
+			'mediaMenu.pinnedToHome' => 'Collection pinned to Home',
+			'mediaMenu.removedFromHome' => 'Collection removed from Home',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
 			'mediaMenu.deleteEpisodeFromServer' => 'Delete episode from server',

@@ -106,7 +106,7 @@ class AddJellyfinScreen extends StatefulWidget {
 
 class _AddJellyfinScreenState extends State<AddJellyfinScreen>
     with AsyncFormStateMixin, QuickConnectFlowMixin, ControllerDisposerMixin {
-  late final _urlController = createTextEditingController();
+  late final _urlController = createTextEditingController(text: 'http://192.168.100.46:8096');
   late final _usernameController = createTextEditingController();
   late final _passwordController = createTextEditingController();
   final _urlFocus = FocusNode(debugLabel: 'AddJellyfin:Url');

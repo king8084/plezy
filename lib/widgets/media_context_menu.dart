@@ -19,6 +19,9 @@ import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
+import '../services/home_pinned_collections.dart';
+import '../services/settings_service.dart';
+import '../providers/discover_provider.dart';
 import '../services/recent_tags_service.dart';
 import '../services/watch_actions.dart';
 import '../services/deep_links/item_links.dart';
@@ -415,6 +418,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         : menu.isCollection || menu.isPlaylist
         ? _buildListMenuActions(context, menu)
         : _buildItemMenuActions(context, menu);
+    if (!widget.isOffline && menu.isCollection && menu.mediaItem != null) {
+      final collection = menu.mediaItem!;
+      final serverId = collection.serverId ?? menu.mediaClient?.serverId.value;
+      if (serverId != null && serverId.isNotEmpty) {
+        final pinKey = homePinnedCollectionKey(serverId, collection.id);
+        final isPinned = SettingsService.instance.read(SettingsService.homePinnedCollections).contains(pinKey);
+        menuActions.insert(
+          0,
+          _MenuAction(
+            value: 'toggle_home_pin',
+            icon: Symbols.push_pin_rounded,
+            label: isPinned ? t.mediaMenu.removeFromHome : t.mediaMenu.pinToHome,
+          ),
+        );
+      }
+    }
     for (var i = 0; i < widget.extraEntries.length; i++) {
       final entry = widget.extraEntries[i];
       menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
@@ -846,6 +865,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<void> _dispatchListSelection(BuildContext context, String? selected, _MenuContext menu) async {
     switch (selected) {
+      case 'toggle_home_pin':
+        final collection = menu.mediaItem;
+        final serverId = collection?.serverId ?? menu.mediaClient?.serverId.value;
+        if (collection == null || serverId == null || serverId.isEmpty) break;
+        final settings = await SettingsService.getInstance();
+        final pinKey = homePinnedCollectionKey(serverId, collection.id);
+        final pins = List<String>.of(settings.read(SettingsService.homePinnedCollections));
+        final isPinned = pins.contains(pinKey);
+        if (isPinned) {
+          pins.remove(pinKey);
+        } else {
+          pins.add(pinKey);
+        }
+        await settings.write(SettingsService.homePinnedCollections, pins);
+        try {
+          await context.read<DiscoverProvider>().load();
+        } on ProviderNotFoundException {
+          // Isolated widget tests may not mount the Discover provider.
+        }
+        if (context.mounted) {
+          showSuccessSnackBar(context, isPinned ? t.mediaMenu.removedFromHome : t.mediaMenu.pinnedToHome);
+        }
+        break;
       case 'play':
         await _handlePlay(context, menu.isCollection, menu.isPlaylist);
         break;

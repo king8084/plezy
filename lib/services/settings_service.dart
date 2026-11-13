@@ -252,7 +252,7 @@ const String _playerScopeGlobalsResetKey = 'player_scope_globals_reset';
 class _LibraryDensityPref extends Pref<int> {
   const _LibraryDensityPref() : super('library_density');
   @override
-  int get resolvedDefault => LibraryDensity.defaultValue;
+  int get resolvedDefault => PlatformDetector.isTV() ? 4 : LibraryDensity.defaultValue;
 
   @override
   int readFrom(BaseSharedPreferencesService svc) {
@@ -271,7 +271,7 @@ class _LibraryDensityPref extends Pref<int> {
     final result = switch (strVal) {
       'compact' => 2,
       'comfortable' => 4,
-      _ => LibraryDensity.defaultValue,
+      _ => resolvedDefault,
     };
     if (strVal != null) svc.prefs.setInt(key, result);
     return result;
@@ -1015,6 +1015,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: PlaybackBufferTier.auto,
   );
   static const libraryDensity = _LibraryDensityPref();
+  static const homePinnedCollections = StringListPref('home_pinned_collections');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1630,6 +1631,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// should travel between installations.
   static final List<Pref<Object?>> _resetOnlyPrefs = [
     customDownloadPathType,
+    homePinnedCollections,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

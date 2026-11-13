@@ -41,6 +41,7 @@ import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
 import '../services/settings_service.dart';
+import '../services/playlist_items_loader.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
@@ -1004,6 +1005,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       icon: hubIconFor(_hubs[i]),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
+                      loadMoreItems: _loadHubItems(_hubs[i]),
                       // Hub index is i + 1 if continue watching exists, otherwise i
                       onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
                       onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
@@ -1096,12 +1098,29 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
       // Every other hub pages from its server in View All, as on phones; handing
       // it the preview items only showed that preview again.
-      loadMoreItems: (hub) => hub.id == 'continue_watching' ? _discover.loadAllContinueWatching : null,
+      loadMoreItems: _loadHubItems,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
       widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
+  }
+
+  Future<List<MediaItem>> Function()? _loadHubItems(MediaHub hub) {
+    if (hub.id == 'continue_watching') return _discover.loadAllContinueWatching;
+    const prefix = 'pinned-collection:';
+    final serverId = hub.serverId;
+    if (hub.identifier != 'pinned_collection' || serverId == null || !hub.id.startsWith(prefix)) return null;
+    final collectionId = hub.id.substring(prefix.length + serverId.length + 1);
+    return () async {
+      final client = context.tryGetMediaClientForServer(ServerId(serverId));
+      if (client == null) return const <MediaItem>[];
+      return fetchAllCollectionItemsPaged(
+        client,
+        collectionId,
+        libraryId: hub.libraryId,
+      );
+    };
   }
 
   // Cached for the same reason: every provider notification (Continue

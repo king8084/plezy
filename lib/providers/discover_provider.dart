@@ -10,6 +10,7 @@ import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
 import '../services/settings_service.dart';
+import '../services/home_pinned_collections.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
@@ -463,6 +464,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
       );
+      final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, _multiServer.onlineServerIds.toSet());
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -536,7 +538,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         return;
       }
 
-      final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
+      final pinnedHubs = await pinnedHubsFuture;
+      if (isDisposed) return;
+      final filteredHubs = _filterDiscoverHubs([...fetchedHubs.hubs, ...pinnedHubs]);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
@@ -652,9 +656,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               includePlaybackHubs: false,
               serverIds: hubIds,
             );
+      final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, hubIds.toSet());
 
       final freshOnDeck = await onDeckFuture;
       final freshHubs = await hubsFuture;
+      final freshPinnedHubs = await pinnedHubsFuture;
       if (isDisposed) return;
       // Staged, not recorded here: the merge below can still throw, and the
       // catch keeps the previous rows. Suppressing patches against rows that
@@ -688,6 +694,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final mergedHubs = [
           ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
           ..._filterDiscoverHubs(freshHubs.hubs),
+          ...freshPinnedHubs,
         ];
         sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
         _replaceHubs(mergedHubs);
@@ -715,6 +722,13 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       appLogger.w('DiscoverProvider: delta load failed for $ids', error: e);
     }
   }
+
+  Future<List<MediaHub>> _fetchPinnedHomeCollectionHubs(SettingsService settings, Set<String> serverIds) =>
+      fetchPinnedHomeCollectionHubs(
+        settings: settings,
+        serverIds: serverIds,
+        clientForServer: _multiServer.getClient,
+      );
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
