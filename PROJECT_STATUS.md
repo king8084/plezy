@@ -51,9 +51,9 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Keep tvsign on Choose an app. Find an ARM64 macOS build host with different
-capacity before retrying: for example, a self-hosted Apple Silicon Mac or an
-eligible organization larger runner. Once an IPA exists, add Plezy through
+Keep tvsign on Choose an app. The owner has no Mac. A Codemagic Apple Silicon
+M2 workflow is prepared in `codemagic.yaml`; connect the GitHub repository to a
+Codemagic personal account and run it to determine whether it builds. Once an IPA exists, add Plezy through
 “Other app…” and install it on the paired Apple TV. Confirm startup, sign-in,
 and playback, and record the app commit plus video/audio details. Capture
 open-to-first-frame timings for representative direct-play files before
@@ -99,3 +99,7 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   runners require a Team or Enterprise organization. References:
   https://docs.github.com/en/actions/reference/runners/github-hosted-runners
   https://docs.github.com/en/actions/how-tos/manage-runners/larger-runners/use-larger-runners.
+- Codemagic documents a personal free tier with 500 monthly M2 build minutes.
+  The prepared workflow follows the existing unsigned IPA steps. Its YAML was
+  parsed locally, but the Codemagic build has not run or been verified.
+  https://docs.codemagic.io/billing/pricing/
