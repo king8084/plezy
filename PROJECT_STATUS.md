@@ -38,11 +38,12 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
-- CI build: standard fork CI queued; device IPA run `43454148475` was cancelled
-  while waiting for its `macos-26` runner. GitHub returned no executed steps,
-  build logs, or IPA artifact. Replacement run `43459871032` was also cancelled
-  before runner assignment; fresh run `43462680240` is queued on the stable
-  `macos-15` ARM runner, with no build steps started yet.
+- CI build: standard fork CI queued; device IPA run `43454148475` was not
+  acquired by a hosted runner while waiting for `macos-26`. Run `43459871032`
+  failed after 15 minutes without runner assignment; its annotations explicitly
+  report that a hosted runner did not acquire the job after multiple attempts
+  and cite macOS ARM64 capacity constraints. Redundant retry `43462680240` was
+  cancelled before runner assignment. No IPA artifact exists.
 - tvsign on Unraid: installed and healthy, using
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
@@ -50,11 +51,13 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Keep tvsign on Choose an app while run `43459871032` waits for a runner. When
-the workflow succeeds, add Plezy through “Other app…”, then install it on the
-paired Apple TV. Confirm startup, sign-in, and playback, and record the app
-commit plus video/audio details. Capture open-to-first-frame timings for
-representative direct-play files before changing the player.
+Keep tvsign on Choose an app. Find an ARM64 macOS build host with different
+capacity before retrying: for example, a self-hosted Apple Silicon Mac or an
+eligible organization larger runner. Once an IPA exists, add Plezy through
+“Other app…” and install it on the paired Apple TV. Confirm startup, sign-in,
+and playback, and record the app commit plus video/audio details. Capture
+open-to-first-frame timings for representative direct-play files before
+changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -82,16 +85,17 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   pending.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
-  for subsequent builds. It ended cancelled before any build steps ran. The
-  sideload workflow now targets `macos-15`; run `43459871032` was dispatched
-  manually from the updated branch and remains queued without build logs.
+  for subsequent builds. It ended without any build steps running. The sideload
+  workflow now targets the valid `macos-15` label.
 - The pinned tvOS engine release contains only the ARM64 host
   `gen_snapshot`; an Intel macOS runner is not compatible with this bundle.
   Keep the sideload job on a GitHub-hosted ARM64 macOS runner while waiting for
   runner capacity.
-- Run `43459871032`, checked 2026-11-13, was cancelled after 15 minutes with
-  no runner assigned, steps, or logs; the run record does not expose why it
-  was cancelled. Fresh run `43462680240` is queued. Both workflow commits use
-  the documented `macos-15` ARM64 hosted-runner label, so this is not the
-  invalid-label case described in the older community thread. Reference:
-  https://docs.github.com/en/actions/reference/runners/github-hosted-runners.
+- Run `43459871032` used a valid `macos-15` label, but GitHub's annotations
+  report it was not acquired after multiple attempts because of macOS ARM64
+  capacity constraints. Run `43462680240`, which used the same runner pool,
+  was cancelled by us without starting. Do not dispatch the same job again
+  until a different ARM64 Mac capacity route is available. GitHub larger
+  runners require a Team or Enterprise organization. References:
+  https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+  https://docs.github.com/en/actions/how-tos/manage-runners/larger-runners/use-larger-runners.
