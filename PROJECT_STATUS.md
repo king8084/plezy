@@ -8,9 +8,10 @@ Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
 macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. The
 official tvsign container is installed on Unraid at
 `192.168.100.46:8765` and reports healthy; the owner reports tvsign setup and
-Apple TV pairing are complete. No device IPA build, Apple TV install, or
-owner-confirmed playback has happened yet. The standard CI workflow is queued
-for the latest main commit.
+Apple TV pairing are complete. Codemagic produced an unsigned device IPA and
+tvsign reports successful signing and installation on Basement. The owner has
+not yet confirmed app launch or playback on the TV. The standard CI workflow
+was previously queued for the latest main commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
 Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
@@ -46,22 +47,22 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   cancelled before runner assignment. Codemagic build `6af73c8290e83b09c4f9dda6`
   failed during archive on a Mac mini M2 at commit `bbf2edb15`: the pinned
   collection lookup called a nonexistent `MultiServerProvider.getClient`.
-  The call was corrected to `getClientForServer` in `10f04e1cb` and Codemagic
-  build `6af7407b90e83b09c4f9df37` is waiting for a machine. No IPA exists yet.
+  The call was corrected to `getClientForServer` in `10f04e1cb`. Codemagic
+  build `6af7407b90e83b09c4f9df37` succeeded in 8m 27s and produced
+  `Plezy-tvOS.ipa` (69.55 MB) for that commit.
 - tvsign on Unraid: installed and healthy, using
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
-- Install on Apple TV: not done; planned through tvsign after the IPA build.
+- Install on Apple TV: tvsign reports it signed and installed Plezy 2.26.0 on
+  Basement and shows the app up to date. Owner confirmation on the TV is pending.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Keep tvsign on Choose an app. The owner has no Mac. A Codemagic Apple Silicon
-M2 workflow is prepared in `codemagic.yaml`; the repository is connected and
-its corrected build is waiting for a machine. Once an IPA exists, add Plezy through
-“Other app…” and install it on the paired Apple TV. Confirm startup, sign-in,
-and playback, and record the app commit plus video/audio details. Capture
+Ask the owner to launch Plezy on Basement and confirm startup, sign-in, and
+playback. Record the app commit plus video/audio details. Capture
 open-to-first-frame timings for representative direct-play files before
-changing the player.
+changing the player. The owner has no Mac; future builds can use the connected
+Codemagic Apple Silicon workflow in `codemagic.yaml`.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -84,9 +85,9 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   [Rivulet](https://github.com/l984-451/Rivulet),
   [AetherEngine formats](https://github.com/superuser404notfound/AetherEngine/blob/main/docs/formats.md),
   and [Apple TV audio settings](https://support.apple.com/guide/tv/change-audio-settings-atvba773c3c9/tvos).
-- No build or tests run for these edits. The current environment does not have
-  the Dart executable available, so Dart formatting/code generation is also
-  pending.
+- No local build or tests were run for these edits. The current environment does
+  not have the Dart executable, so local formatting/code generation is pending.
+  The Codemagic device build succeeded; owner testing is still pending.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
   for subsequent builds. It ended without any build steps running. The sideload
