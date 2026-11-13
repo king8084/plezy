@@ -7,10 +7,10 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
 macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. The
 official tvsign container is installed on Unraid at
-`192.168.100.46:8765` and reports healthy. Its first-run setup is waiting for
-the owner to enter the setup code and choose the tvsign admin password. No
-device IPA build, Apple TV install, or owner-confirmed playback has happened
-yet. The standard CI workflow is queued for the latest main commit.
+`192.168.100.46:8765` and reports healthy; the owner reports tvsign setup is
+complete. No device IPA build, Apple TV install, or owner-confirmed playback
+has happened yet. The standard CI workflow is queued for the latest main
+commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
 Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
@@ -38,20 +38,21 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
-- CI build: standard fork CI queued; device IPA run `43454148475` is waiting for
-  a GitHub-hosted `macos-26` runner (GitHub reports all runners with that label
-  are busy, then indicates an assigned runner is still coming online).
+- CI build: standard fork CI queued; device IPA run `43454148475` was cancelled
+  while waiting for its `macos-26` runner. GitHub returned no executed steps,
+  build logs, or IPA artifact. The sideload workflow is being moved to the
+  stable `macos-15` ARM runner before retrying.
 - tvsign on Unraid: installed and healthy, using
-  `/mnt/cacheapp/appdata/docker/tvsign`; first-run owner password setup pending.
+  `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete.
 - Install on Apple TV: not done; planned through tvsign after the IPA build.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Complete tvsign first-run setup in the owner’s browser session. Then wait for
-run `43454148475` to finish, download its `plezy-tvos-ipa` artifact, and upload
-the IPA to tvsign. Install on Apple TV, confirm startup, sign-in, and playback,
-and record the app commit plus video/audio details. Capture open-to-first-frame
-timings for representative direct-play files before changing the player.
+Retry the IPA workflow on the stable `macos-15` ARM runner. After it succeeds,
+download its `plezy-tvos-ipa` artifact and upload the IPA to tvsign. Install on
+Apple TV, confirm startup, sign-in, and playback, and record the app commit plus
+video/audio details. Capture open-to-first-frame timings for representative
+direct-play files before changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -79,5 +80,6 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   pending.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
-  for subsequent builds. Current wait is runner capacity, not an approval or
-  signing prompt.
+  for subsequent builds. It ended cancelled before any build steps ran. The
+  sideload workflow now targets `macos-15` to avoid the `macos-26` preview
+  runner pool used by the first attempt.
