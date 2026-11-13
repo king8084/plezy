@@ -40,8 +40,9 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 ## Milestones
 - CI build: standard fork CI queued; device IPA run `43454148475` was cancelled
   while waiting for its `macos-26` runner. GitHub returned no executed steps,
-  build logs, or IPA artifact. Replacement run `43459871032` is queued on the
-  stable `macos-15` ARM runner; no build steps have started yet.
+  build logs, or IPA artifact. Replacement run `43459871032` was also cancelled
+  before runner assignment; fresh run `43462680240` is queued on the stable
+  `macos-15` ARM runner, with no build steps started yet.
 - tvsign on Unraid: installed and healthy, using
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
@@ -88,9 +89,9 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   `gen_snapshot`; an Intel macOS runner is not compatible with this bundle.
   Keep the sideload job on a GitHub-hosted ARM64 macOS runner while waiting for
   runner capacity.
-- Run `43459871032` was rechecked on 2026-11-13: GitHub reports its job as
-  `queued`, with no steps or logs. The workflow at its exact commit
-  (`fa73794a8383147c423abd2d10583ad19772b707`) specifies the documented
-  `macos-15` ARM64 hosted-runner label; the job has been parsed and created, so
-  the current evidence points to runner allocation delay rather than a
-  `runs-on` typo. Reference: https://docs.github.com/en/actions/reference/runners/github-hosted-runners.
+- Run `43459871032`, checked 2026-11-13, was cancelled after 15 minutes with
+  no runner assigned, steps, or logs; the run record does not expose why it
+  was cancelled. Fresh run `43462680240` is queued. Both workflow commits use
+  the documented `macos-15` ARM64 hosted-runner label, so this is not the
+  invalid-label case described in the older community thread. Reference:
+  https://docs.github.com/en/actions/reference/runners/github-hosted-runners.
