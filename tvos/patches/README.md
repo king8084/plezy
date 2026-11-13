@@ -24,7 +24,8 @@ Validated locally: `cargo check --locked -p plumesign` and
 The test passed all three response scenarios. The owner deployed the patched
 binary, and tvsign successfully signed and installed the existing Plezy IPA
 in place at 22:45 on November 13, 2026. The original signer is preserved as
-`ipas/1/plumesign-before-group-fix`. Owner testing on the TV is pending.
+`ipas/1/plumesign-before-group-fix`. The owner subsequently confirmed working
+Top Shelf and playback; startup remains slow and is tracked separately.
 
 Apply from a matching tvsign source checkout with:
 

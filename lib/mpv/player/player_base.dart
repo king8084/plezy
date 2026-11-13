@@ -699,6 +699,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         }
         break;
 
+      case 'display-diagnostic':
+        final message = data?['message'];
+        if (message is String) appLogger.i('tvOS display: $message');
+        break;
+
       case 'hdr-output-changed':
         hdrOutputChangedController.add(null);
         break;

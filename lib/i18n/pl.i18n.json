@@ -411,6 +411,8 @@
     "matchDynamicRange": "Dopasuj zakres dynamiki",
     "matchDynamicRangeDescription": "Włącz HDR dla treści HDR, potem wróć do SDR",
     "displaySwitchDelay": "Opóźnienie przełączania ekranu",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunelowane odtwarzanie",
     "tunneledPlaybackDescription": "Użyj tunelowania wideo. Wyłącz, jeśli HDR pokazuje czarny obraz lub ruch się zacina.",
     "audioPassthrough": "Przekazywanie dźwięku",
@@ -1197,6 +1199,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Odkryj",
     "noContentAvailable": "Brak dostępnych treści",
     "addMediaToLibraries": "Dodaj multimedia do swoich bibliotek",
@@ -1406,7 +1415,15 @@
   "logs": {
     "clearLogs": "Wyczyść logi",
     "copyLogs": "Kopiuj logi",
-    "uploadLogs": "Prześlij logi"
+    "uploadLogs": "Prześlij logi",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Nie udało się uruchomić Plezy",

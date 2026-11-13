@@ -411,6 +411,8 @@
     "matchDynamicRange": "Dinamikatartomány illesztése",
     "matchDynamicRangeDescription": "HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re",
     "displaySwitchDelay": "Kijelzőváltási késleltetés",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Alagutas lejátszás",
     "tunneledPlaybackDescription": "Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.",
     "audioPassthrough": "Hangtovábbítás (passthrough)",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Felfedezés",
     "noContentAvailable": "Nincs elérhető tartalom",
     "addMediaToLibraries": "Adj hozzá médiát a könyvtáraidhoz",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Naplók törlése",
     "copyLogs": "Naplók másolása",
-    "uploadLogs": "Naplók feltöltése"
+    "uploadLogs": "Naplók feltöltése",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "A Plezy nem tudott elindulni",

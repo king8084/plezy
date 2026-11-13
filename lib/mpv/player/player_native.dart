@@ -27,6 +27,8 @@ typedef _AudioStateGenerations = ({int passthrough, int normalization, int downm
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
+  bool appleTvQmsFastStart = false;
+
   /// Video player on the default mpv channels/core.
   ///
   /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
@@ -1000,7 +1002,7 @@ class PlayerNative extends PlayerBase {
   Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
+    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs, 'allowSdrFastStart': appleTvQmsFastStart});
   }
 
   /// Start the tvOS display handshake from reliable source metadata while

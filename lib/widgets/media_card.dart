@@ -295,6 +295,7 @@ class MediaCard extends StatefulWidget {
 
   /// Inset between a captioned grid card's cell and its artwork.
   static const EdgeInsets gridCardPadding = EdgeInsets.fromLTRB(3, 3, 3, 1);
+  static const double episodeDescriptionHeight = 52;
 
   static const TextStyle _gridTitleStyle = TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1);
 
@@ -774,6 +775,21 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                   enableDetailLinks: widget.onTap == null,
                   showTitleImplied: _impliesShowTitle(item),
                   catalogItem: _catalogItem,
+                ),
+              if (item is MediaItem && _impliesShowTitle(item))
+                SizedBox(
+                  height: MediaCard.episodeDescriptionHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      context.settingsRead(SettingsService.hideSpoilers) && item.shouldHideSpoiler
+                          ? ''
+                          : item.summary ?? '',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, height: 1.25, color: tokens(context).textMuted),
+                    ),
+                  ),
                 ),
             ],
           ),

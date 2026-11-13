@@ -411,6 +411,8 @@
     "matchDynamicRange": "Match Dynamic Range",
     "matchDynamicRangeDescription": "Switch HDR on for HDR content, then back to SDR",
     "displaySwitchDelay": "Display Switch Delay",
+    "qmsFastStart": "QMS fast start for SDR",
+    "qmsFastStartDescription": "Start SDR video without a display-switch wait. Turn off if your display blanks at startup.",
     "tunneledPlayback": "Tunneled Playback",
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
@@ -1189,6 +1191,14 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "Reorder Home rows",
+    "reorderRows": "Reorder rows",
+    "moveRowUp": "Move up",
+    "moveRowDown": "Move down",
+    "readFullDescription": "Read full description",
+    "readMore": "Read more",
+    "noDescription": "No description available.",
+
     "title": "Discover",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",
@@ -1396,7 +1406,15 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
-    "uploadLogs": "Upload Logs"
+    "uploadLogs": "Upload Logs",
+    "sharePlaybackDiagnostics": "Share playback diagnostics",
+    "playbackDiagnosticsConsent": "Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.",
+    "enableSharing": "Enable sharing",
+    "stopSharing": "Stop sharing",
+    "copyLink": "Copy link",
+    "playbackDiagnosticsLink": "Playback diagnostics link",
+    "playbackDiagnosticsLinkDescription": "Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n$urls",
+    "playbackDiagnosticsShareFailed": "Could not share playback diagnostics. Please try again."
   },
   "startup": {
     "failedTitle": "Plezy could not start",

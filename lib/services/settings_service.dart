@@ -984,6 +984,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// wants per-title subtitle offsets wants per-title audio offsets too.
   static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
+  // Personal fork targets the owner's QMS-capable LG setup. HDR/DV still
+  // negotiate normally; this only releases the manual SDR startup pause.
+  static const appleTvQmsFastStart = BoolPref('apple_tv_qms_fast_start', defaultValue: true);
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
   static const themeMode = EnumPref<ThemeMode>(
@@ -1625,6 +1628,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchRefreshRate,
     matchDynamicRange,
     displaySwitchDelay,
+    appleTvQmsFastStart,
     enableCompanionRemoteServer,
     startInFullscreen,
     exitFullscreenOnPlayerClose,

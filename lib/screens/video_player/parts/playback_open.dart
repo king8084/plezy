@@ -249,6 +249,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // the two Android backends (true = the mpv core).
     final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
     if (!isAndroidMpv && !PlatformDetector.isAppleTV()) return null;
+    if (PlatformDetector.isAppleTV() && currentPlayer is PlayerNative) {
+      currentPlayer.appleTvQmsFastStart = settingsService.read(SettingsService.appleTvQmsFastStart);
+    }
     final plan = _FrameRateStartupPlan(fps: null);
     final matchingEnabled =
         settingsService.read(SettingsService.matchContentFrameRate) ||

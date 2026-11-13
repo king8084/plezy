@@ -411,6 +411,8 @@
     "matchDynamicRange": "Соответствие динамического диапазона",
     "matchDynamicRangeDescription": "Включать HDR для HDR-контента, затем возвращаться к SDR",
     "displaySwitchDelay": "Задержка переключения дисплея",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Туннельное воспроизведение",
     "tunneledPlaybackDescription": "Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.",
     "audioPassthrough": "Сквозной вывод аудио",
@@ -1197,6 +1199,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Обзор",
     "noContentAvailable": "Контент недоступен",
     "addMediaToLibraries": "Добавьте медиафайлы в ваши библиотеки",
@@ -1406,7 +1415,15 @@
   "logs": {
     "clearLogs": "Очистить логи",
     "copyLogs": "Скопировать логи",
-    "uploadLogs": "Загрузить логи"
+    "uploadLogs": "Загрузить логи",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy не удалось запустить",

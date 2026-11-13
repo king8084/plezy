@@ -4,21 +4,23 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
-Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
-macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. The
-official tvsign container is installed on Unraid at
-`192.168.100.46:8765` and reports healthy; the owner reports tvsign setup and
-Apple TV pairing are complete. Codemagic produced an unsigned device IPA and
-tvsign reports successful signing and installation on Basement. The owner has
-reported playback on the TV with approximately four seconds of startup delay.
-The standard CI workflow
-was previously queued for the latest main commit.
-Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
+Installed build `0a77954d6` was updated in place through the existing tvsign
+entry on November 13 at 22:45; no deletion/uninstallation was performed.
+The owner confirms working Top Shelf Continue Watching and playback play/pause.
+Startup still takes about four seconds. New changes below are local only;
+no new Apple TV build has been authorized for them.
 
-Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
-engine, installs CocoaPods, then runs the Runner native reliability tests on a
-tvOS simulator. The upstream release workflow does not build or publish a tvOS
-IPA, so producing a stock device build will need a fork-side macOS workflow.
+Log `j1hgqr` from the installed build shows source resolution in 25–50 ms,
+first-frame signals in 130–244 ms, and display-negotiation completion at
+2773–2815 ms. UI readiness follows immediately. Thus the measured delay is in
+the display-negotiation gate; these logs do not prove the TV is blank for that
+whole interval. The owner confirms the same 1080p SDR source in both apps,
+matching 60 Hz to 24 Hz on their QMS-capable TV: Rivulet starts instantly.
+
+Upstream CI prepares Flutter 3.47.1 and the separately pinned tvOS engine,
+installs CocoaPods and runs Runner reliability tests on a tvOS simulator.
+Its release workflow does not publish a tvOS IPA. This fork uses Codemagic
+for authorized device builds; do not repeatedly retry unavailable GitHub runners.
 
 ## Current requested changes
 - IMDb rating stars on media cards use dark gold (`#B8860B`).
@@ -138,7 +140,8 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   signed in, and Apple TV pairing complete.
 - Install on Apple TV: tvsign reports it signed and installed Plezy 2.26.0 on
   Basement; the owner confirmed running that older build. Commit `0a77954d6`
-  was installed in place at 22:45; owner testing is pending.
+  was installed in place at 22:45. The owner confirms working Top Shelf and
+  playback play/pause; startup remains slow.
 - Owner-confirmed playback: reported by the owner; startup is about four
   seconds versus about 0.5 seconds in Rivulet. Media details are not yet known.
 - Log ID supplied by the owner on the current build showed source resolution
@@ -157,11 +160,62 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Develop and verify a playback improvement with Match Content enabled, then test
-the Top Shelf candidate and non-destructive updates. A further Apple TV build
-requires the owner to explicitly say “build apple tv” again. The owner has no Mac.
+Finish local checks for the QMS SDR fast-start path, focused-Home Play action,
+episode summaries, detail stars, larger Home text and rotating diagnostics.
+A further Apple TV build requires the owner to explicitly say “build apple tv”
+again. Keep the existing tvsign entry/account and preserve the installed app.
+CI success, installation and owner-confirmed playback remain separate milestones.
+The owner has no Mac, so native compilation and on-device timing remain pending.
 
-## Built changes awaiting owner verification
+## Local changes after the installed build (November 13)
+- Remote clarification: playback play/pause already works. The missing action
+  is pressing Play on a focused Home media card. Home now listens for that
+  action and launches/resumes that card directly. It ignores pause-only events,
+  inactive/covered routes, non-media action slots, and duplicate pending launches.
+- QMS: added an SDR-only fast-start path, enabled by default for this personal
+  fork's known LG setup. It keeps preferredDisplayCriteria/frame-rate matching
+  active, but releases the manual first-frame pause without waiting for the
+  display manager's completion flag. HDR/Dolby Vision and an explicit nonzero
+  Display Switch Delay keep the existing wait. The new Playback setting
+  “QMS fast start for SDR” can restore waiting on displays that blank.
+  This is an implemented candidate, not an Apple TV timing result.
+- Native display diagnostics now record requested range/rate/dimensions,
+  start/end notifications, pending/in-progress state and release reason at
+  info level. Observers are armed before the criteria write, so a switch that
+  ends before the first frame cannot cause a fresh full wait; only the remaining
+  settle budget is spent. Added native policy tests, not runnable on Linux.
+- Compared primary source in Rivulet and AetherEngine: their display controller
+  distinguishes SDR cadence changes from HDR waits and observes switches at
+  the criteria write. Plezy remains on mpv; no Aether code was copied. A source
+  comparison is not a same-device performance benchmark.
+  Sources: https://github.com/l984-451/Rivulet and
+  https://github.com/superuser404notfound/AetherEngine .
+- Home spotlight title/metadata/summary fonts are nudged larger. Show/season
+  detail rating badges now opt into gold audience stars. Episode cards in the
+  Apple TV detail rail show a three-line synopsis, respect Hide Spoilers and
+  reserve layout space even with full-card styling selected.
+- Rotating diagnostics are implemented in app-private storage: four files of
+  up to 256 KiB, a bounded asynchronous queue and an allowlist of timing,
+  display and remote events. Titles, media/server URLs, tokens and error
+  payloads are excluded. They survive ordinary process restarts; tvOS may
+  reclaim local file storage. Full application logs remain in memory.
+- Settings → Advanced → View Logs has an explicit LAN-sharing control. It
+  exposes a read-only private-key URL on the Apple TV (port 18765); enablement
+  and key survive relaunch, and Stop Sharing closes the listener. It is
+  reachable while Plezy runs on the LAN. The owner must enable it and share
+  the displayed URL after installation before the assistant can read it.
+  The installed build has none of this yet. No Unraid change was made or
+  authorized for diagnostics.
+- Validation: full Flutter suite passes (8,436 tests, 7 skipped). Final analyzer,
+  Dart formatting, strict translation hygiene, hardcoded-string/error checks,
+  workflow/script guards, icon consistency and unused-code/file checks pass.
+  Native-format runner cannot run here because JDK 17+ is missing; Swift/Xcode
+  native compilation and the new native policy tests are also unavailable on
+  this Linux host. Translation bindings were regenerated; the freshness checker
+  requires generated files to be committed before its final pass. No CI build,
+  installation or owner playback verification exists for these local changes.
+
+## Earlier built changes / historical investigation
 - Home row ordering is stored on this device and accessible via the Home toolbar;
   episode artwork has an E-number badge and the toolbar has a full-description
   dialog. The spotlight uses gold stars and fetches missing Rotten Tomatoes
@@ -202,14 +256,15 @@ requires the owner to explicitly say “build apple tv” again. The owner has n
   direct-play SDR/HDR sources to overlap mode switching with startup, without
   disabling matching. Dolby Vision, transcoding and incomplete metadata skip
   preflight. Incorrect source metadata may still trigger a second switch; the
-  result and speed are unmeasured. Added a timing point after display
-  negotiation. The installed build cannot distinguish that wait from the
-  following first-frame effects pass. This is not yet a verified speed fix.
+  result did not improve the owner-observed speed. The installed build now
+  distinguishes display negotiation from first-frame effects; log `j1hgqr`
+  isolates the measured delay to negotiation. See the QMS candidate above.
 - The owner reports the physical play/pause button still does nothing. The
   player previously discarded Apple TV system media-control playback events;
   these now enter the existing cross-source duplicate guard with play and pause
   intent preserved. Added focused tests and an info-level remote action log.
-  Focused remote tests pass; the candidate has been built but not tested on TV.
+  Focused remote tests pass; the owner now confirms playback play/pause works.
+  Their missing Home Play shortcut is a separate new local change above.
 - Local CI checks exposed poster-row overflows and context-menu initialization
   problems. Corrected the layout and settings initialization, aligned TV size
   test expectations with the new default, formatted Dart, normalized missing
@@ -229,11 +284,11 @@ requires the owner to explicitly say “build apple tv” again. The owner has n
   describes a Replace the IPA action, but the installed version previously did
   not expose it; no Unraid update is authorized. Do not try deletion as a fix.
 - Owner requests bounded rotating diagnostics readable without manual uploads,
-  preferably on their Unraid server. Current app logs are a 5 MiB in-memory
-  ring and disappear on restart. A local authenticated receiver and a narrow,
-  redacted diagnostics stream are candidates; no receiver or persistent
-  logging has been installed or implemented yet. Do not expose full logs,
-  Apple sessions, Jellyfin tokens, or a writeable endpoint on the LAN.
+  without repeated manual uploads. Full app logs are a 5 MiB in-memory ring.
+  App-private rotating playback diagnostics and an opt-in authenticated
+  read-only LAN endpoint are implemented locally above, not installed yet.
+  No Unraid receiver is authorized or required. Do not expose full logs,
+  Apple sessions, Jellyfin tokens, or a writable endpoint on the LAN.
 - Owner explicitly forbids any Unraid changes without permission for the
   specific change, and forbids all Unraid deletion. The earlier IPA backup,
   staging and replacement modified Unraid; no further change is authorized by

@@ -41,6 +41,7 @@ import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
 import '../services/settings_service.dart';
+import '../services/apple_tv_remote_touch_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
@@ -106,6 +107,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _heroFocusPausedAutoScroll = false;
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
+  StreamSubscription<AppleTvRemotePlayPauseAction>? _homePlaybackSubscription;
+  bool _launchingFromRemote = false;
+
+  Future<void> _playFocusedHomeItem(AppleTvRemotePlayPauseAction action) async {
+    if (!mounted || !_isTabVisible || _launchingFromRemote || ModalRoute.of(context)?.isCurrent != true) return;
+    if (action.detail == 'mediaPause' || action.detail == 'remoteControlPause') return;
+    final item = _tvBrowseRailKey.currentState?.focusedMediaItem;
+    if (item == null) return;
+    _launchingFromRemote = true;
+    appLogger.i('Apple TV remote: Home direct playback requested');
+    try {
+      await navigateToMediaItem(context, item, playDirectly: true);
+    } catch (e, st) {
+      appLogger.w('Home remote playback failed', error: e, stackTrace: st);
+    } finally {
+      _launchingFromRemote = false;
+    }
+  }
 
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
@@ -211,7 +230,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, updateDialog) => AlertDialog(
-          title: const Text('Reorder Home rows'),
+          title: Text(t.discover.reorderHomeRows),
           content: SizedBox(
             width: 580,
             child: ListView.builder(
@@ -229,7 +248,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   actions: [
                     FocusableAction(
                       icon: Symbols.arrow_upward_rounded,
-                      tooltip: 'Move up',
+                      tooltip: t.discover.moveRowUp,
                       onPressed: index == 0
                           ? null
                           : () => updateDialog(() {
@@ -239,7 +258,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                     FocusableAction(
                       icon: Symbols.arrow_downward_rounded,
-                      tooltip: 'Move down',
+                      tooltip: t.discover.moveRowDown,
                       onPressed: index == rows.length - 1
                           ? null
                           : () => updateDialog(() {
@@ -252,7 +271,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               ),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Done'))],
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.save))],
         ),
       ),
     );
@@ -288,9 +307,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       builder: (context) => AlertDialog(
         title: Text(item.title ?? item.displayTitle),
         content: SingleChildScrollView(
-          child: Text(summary == null || summary.isEmpty ? 'No description available.' : summary),
+          child: Text(summary == null || summary.isEmpty ? t.discover.noDescription : summary),
         ),
-        actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
       ),
     );
   }
@@ -433,6 +452,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void initState() {
     super.initState();
+    if (PlatformDetector.isAppleTV()) {
+      _homePlaybackSubscription = AppleTvRemoteTouchService.instance.playPauseActions.listen(
+        (action) => unawaited(_playFocusedHomeItem(action)),
+      );
+    }
     WidgetsBinding.instance.addObserver(this);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _heroFocusNode.addListener(_onHeroFocusChanged);
@@ -551,6 +575,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void dispose() {
+    unawaited(_homePlaybackSubscription?.cancel());
     _discover.removeListener(_onDiscoverChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
@@ -924,16 +949,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 actions: [
                   if (PlatformDetector.isTV())
                     FocusableAction(
-                      tooltip: 'Read full description',
+                      tooltip: t.discover.readFullDescription,
                       onPressed: _showFullDescription,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Text('Read more', style: TextStyle(color: foregroundColor)),
+                        child: Text(t.discover.readMore, style: TextStyle(color: foregroundColor)),
                       ),
                     ),
                   if (PlatformDetector.isTV())
                     FocusableAction(
-                      tooltip: 'Reorder Home rows',
+                      tooltip: t.discover.reorderHomeRows,
                       onPressed: () => unawaited(_reorderHomeRows()),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -942,7 +967,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           children: [
                             AppIcon(Symbols.swap_vert_rounded, color: foregroundColor),
                             const SizedBox(width: 4),
-                            Text('Reorder rows', style: TextStyle(color: foregroundColor)),
+                            Text(t.discover.reorderRows, style: TextStyle(color: foregroundColor)),
                           ],
                         ),
                       ),

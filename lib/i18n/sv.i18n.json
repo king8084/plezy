@@ -411,6 +411,8 @@
     "matchDynamicRange": "Matcha dynamiskt omfång",
     "matchDynamicRangeDescription": "Slå på HDR för HDR-innehåll och sedan tillbaka till SDR",
     "displaySwitchDelay": "Fördröjning vid skärmbyte",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunneluppspelning",
     "tunneledPlaybackDescription": "Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.",
     "audioPassthrough": "Ljudgenomströmning",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Upptäck",
     "noContentAvailable": "Inget innehåll tillgängligt",
     "addMediaToLibraries": "Lägg till medieinnehåll i dina bibliotek",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
-    "uploadLogs": "Ladda upp loggar"
+    "uploadLogs": "Ladda upp loggar",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kunde inte starta",

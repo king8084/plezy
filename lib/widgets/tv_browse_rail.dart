@@ -17,6 +17,7 @@ import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../navigation/main_screen_scope.dart';
 import '../screens/hub_detail_screen.dart';
 import '../services/device_performance.dart';
@@ -170,13 +171,16 @@ class TvBrowseRailLayout {
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
     bool hasLeading = false,
+    bool episodeDescriptions = false,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
     // Full-card rails keep their own scale-derived gutter, like full-bleed
     // grids; every other rail follows the user's grid-spacing setting, scaled
     // with the rest of the rail metrics (#2226).
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : gridSpacing.gridGap * scale;
+    final showDescriptions = episodeDescriptions && hub.items.any((item) => item.isEpisode);
+    final useFullCard = fullCardLayout && !showDescriptions;
+    final itemGap = useFullCard ? fullCardItemGapForScale(scale) : gridSpacing.gridGap * scale;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -200,11 +204,13 @@ class TvBrowseRailLayout {
       itemGap: itemGap,
     );
     final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
-    final posterWidth = fullCardLayout ? cardWidth : cardWidth - (6 * scale);
+    final posterWidth = useFullCard ? cardWidth : cardWidth - (6 * scale);
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
+    final labelHeight =
+        (useFullCard ? 0.0 : ((isPersonHub ? 52 : 36) * scale)) +
+        (showDescriptions ? MediaCard.episodeDescriptionHeight : 0);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (22 * scale);
 
@@ -231,6 +237,7 @@ class TvBrowseRailLayout {
     required EpisodePosterMode episodePosterMode,
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
     double Function(MediaHub hub)? widePosterScaleForHub,
+    bool Function(MediaHub hub)? episodeDescriptionsForHub,
     required double scale,
     bool fullCardLayout = false,
     GridSpacing gridSpacing = GridSpacing.tight,
@@ -249,6 +256,7 @@ class TvBrowseRailLayout {
         gridSpacing: gridSpacing,
         tallPosterScale: tallPosterScale,
         widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
+        episodeDescriptions: episodeDescriptionsForHub?.call(hub) ?? false,
       );
       if (metrics.height > maxHeight) maxHeight = metrics.height;
     }
@@ -308,6 +316,7 @@ class TvBrowseRailLayout {
     required EpisodePosterMode episodePosterMode,
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
     double Function(MediaHub hub)? widePosterScaleForHub,
+    bool Function(MediaHub hub)? episodeDescriptionsForHub,
     bool fullCardLayout = false,
     GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
@@ -326,6 +335,7 @@ class TvBrowseRailLayout {
       episodePosterMode: episodePosterMode,
       episodePosterModeForHub: episodePosterModeForHub,
       widePosterScaleForHub: widePosterScaleForHub,
+      episodeDescriptionsForHub: episodeDescriptionsForHub,
       scale: scale,
       fullCardLayout: fullCardLayout,
       gridSpacing: gridSpacing,
@@ -494,6 +504,12 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   MediaItem? _displacedFocusItem;
 
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
+
+  /// Only a focused media slot can be launched by a hardware Play command.
+  MediaItem? get focusedMediaItem {
+    final hub = _activeHub;
+    return _focusNode.hasFocus && hub != null ? _itemAtSlot(hub, _itemIndex) : null;
+  }
 
   void requestFocus() {
     _notifyFocusedItem();
@@ -1272,6 +1288,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                 tallPosterScale: widget.tallPosterScale,
                 widePosterScale: wideScales[i],
                 hasLeading: _hasLeadingFor(widget.hubs[i]),
+                episodeDescriptions: widget.showTitleImpliedForHub?.call(widget.hubs[i]) ?? false,
               ),
           ];
           final sectionHeights = [
@@ -1891,7 +1908,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                 ? null
                 : _forwardRemoveFromContinueWatching,
             viewModeOverride: ViewMode.grid,
-            fullBleedImage: fullCardLayout,
+            fullBleedImage: fullCardLayout && !(item.isEpisode && (widget.showTitleImpliedForHub?.call(hub) ?? false)),
             artworkDim: artworkDim,
             isInContinueWatching: _isContinueWatchingHub(hub),
             usesContinueWatchingAction: _usesContinueWatchingAction(hub),

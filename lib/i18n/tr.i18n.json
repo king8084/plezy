@@ -411,6 +411,8 @@
     "matchDynamicRange": "Dinamik Aralığı Eşitle",
     "matchDynamicRangeDescription": "HDR içerik için HDR'yi aç, ardından SDR'ye geri dön",
     "displaySwitchDelay": "Ekran Değiştirme Gecikmesi",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tünelli Oynatma",
     "tunneledPlaybackDescription": "Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.",
     "audioPassthrough": "Ses Doğrudan Geçişi (Passthrough)",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Keşfet",
     "noContentAvailable": "İçerik bulunmuyor",
     "addMediaToLibraries": "Kitaplıklarınıza biraz medya ekleyin",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Günlükleri Temizle",
     "copyLogs": "Günlükleri Kopyala",
-    "uploadLogs": "Günlükleri Yükle"
+    "uploadLogs": "Günlükleri Yükle",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy başlatılamadı",

@@ -1129,7 +1129,8 @@ void main() {
     // The hero line is the readable copy of the title (#2217).
     expect(heroTitle, findsOneWidget);
     expect(tester.widget<Text>(heroTitle).data, 'The One Where the Title Matters');
-    expect(find.text('The episode summary.'), findsOneWidget);
+    expect(find.text('The episode summary.'), findsNWidgets(2));
+    expect(find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The episode summary.')), findsOneWidget);
     // The title sits above the episode's metadata line, inside the block that
     // opens the details sheet.
     final metadataLine = find.byType(FittedMetadataLine);

@@ -121,6 +121,16 @@ void main() {
       expect(compactForcedLayout.useWideLayout, isTrue);
       expect(compactForcedLayout.cardWidth, lessThan(forcedLayout.cardWidth));
       expect(compactForcedLayout.posterHeight, lessThan(forcedLayout.posterHeight));
+      final withDescriptions = TvBrowseRailLayout.metricsForHub(
+        hub: hub,
+        availableWidth: 1040,
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: 0.85,
+        fullCardLayout: true,
+        episodeDescriptions: true,
+      );
+      expect(withDescriptions.height, forcedLayout.height + MediaCard.episodeDescriptionHeight);
     });
 
     test('estimated rail height is stable across mixed hub heights', () {
@@ -2991,12 +3001,15 @@ void main() {
     // Default focus is the first episode — the options slot adds no step to
     // normal playback.
     expect(focusedItemIds.last, 'episode_1');
+    final rail = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(rail.focusedMediaItem?.id, 'episode_1');
 
     // LEFT moves onto the options slot instead of exiting to the sidebar.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(sidebarRequests, 0);
+    expect(rail.focusedMediaItem, isNull, reason: 'Play must not launch the last episode from the options slot');
 
     // Select opens the season's context menu instead of activating an item.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
@@ -3014,6 +3027,7 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
     expect(focusedItemIds.last, 'episode_1');
+    expect(rail.focusedMediaItem?.id, 'episode_1');
 
     // From the options slot, LEFT exits to the sidebar as before.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);

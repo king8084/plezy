@@ -37,6 +37,24 @@ private final class TvosRecordingMpvPlugin: MpvPluginShared {
 }
 
 final class MpvPlayerContractTests: XCTestCase {
+  func testQmsFastStartReleasesSdrOnlyAndRespectsExplicitDelay() {
+    XCTAssertTrue(MpvPlayerCore.shouldUseSdrFastStart(enabled: true, isSdr: true, extraDelayMs: 0))
+    XCTAssertFalse(MpvPlayerCore.shouldUseSdrFastStart(enabled: true, isSdr: false, extraDelayMs: 0))
+    XCTAssertFalse(MpvPlayerCore.shouldUseSdrFastStart(enabled: false, isSdr: true, extraDelayMs: 0))
+    XCTAssertFalse(MpvPlayerCore.shouldUseSdrFastStart(enabled: true, isSdr: true, extraDelayMs: 1000))
+  }
+
+  func testCompletedDisplaySwitchDoesNotRestartTheSettleBudget() {
+    XCTAssertEqual(MpvPlayerCore.remainingDisplaySettleMs(startedAt: 1, endedAt: 2, now: 3, extraDelayMs: 0), 0)
+    XCTAssertEqual(
+      MpvPlayerCore.remainingDisplaySettleMs(startedAt: 1, endedAt: 2, now: 2.1, extraDelayMs: 1000), 1100)
+  }
+
+  func testAnEndFromBeforeTheLatestStartCannotReleaseDisplayWait() {
+    XCTAssertNil(MpvPlayerCore.remainingDisplaySettleMs(startedAt: 3, endedAt: 2, now: 4, extraDelayMs: 0))
+    XCTAssertNil(MpvPlayerCore.remainingDisplaySettleMs(startedAt: 1, endedAt: nil, now: 4, extraDelayMs: 0))
+  }
+
   func testSharedTransportEmitsSourceQualifiedPayloads() {
     let plugin = TvosRecordingMpvPlugin(core: nil)
     plugin.nameToId["time-pos"] = 27

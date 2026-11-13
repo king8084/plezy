@@ -397,9 +397,9 @@ class TvSpotlightBackground extends StatelessWidget {
   double _logoHeight(double scale) =>
       (compact ? TvLayoutConstants.compactHeroLogoHeight : TvLayoutConstants.heroLogoHeight) * scale;
 
-  double _titleFontSize(double scale) => (compact ? 36 : 54) * scale;
+  double _titleFontSize(double scale) => (compact ? 39 : 54) * scale;
 
-  double _metadataFontSize(double scale) => (compact ? 16 : 18) * scale;
+  double _metadataFontSize(double scale) => 18 * scale;
 
-  double _summaryFontSize(double scale) => (compact ? 18 : 20) * scale;
+  double _summaryFontSize(double scale) => 20 * scale;
 }

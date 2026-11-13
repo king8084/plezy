@@ -411,6 +411,8 @@
     "matchDynamicRange": "Напасване на динамичния диапазон",
     "matchDynamicRangeDescription": "Включи HDR за HDR съдържание, после върни към SDR",
     "displaySwitchDelay": "Забавяне при смяна на дисплея",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Тунелно възпроизвеждане",
     "tunneledPlaybackDescription": "Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.",
     "audioPassthrough": "Директно предаване на аудио",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Открий",
     "noContentAvailable": "Няма налично съдържание",
     "addMediaToLibraries": "Добавете медия към библиотеките си",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Изчисти логовете",
     "copyLogs": "Копирай логовете",
-    "uploadLogs": "Качи логовете"
+    "uploadLogs": "Качи логовете",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy не можа да стартира",

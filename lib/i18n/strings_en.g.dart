@@ -1181,6 +1181,12 @@ class Translations$settings$en {
 	/// en: 'Display Switch Delay'
 	String get displaySwitchDelay => 'Display Switch Delay';
 
+	/// en: 'QMS fast start for SDR'
+	String get qmsFastStart => 'QMS fast start for SDR';
+
+	/// en: 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.'
+	String get qmsFastStartDescription => 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.';
+
 	/// en: 'Tunneled Playback'
 	String get tunneledPlayback => 'Tunneled Playback';
 
@@ -3277,6 +3283,27 @@ class Translations$discover$en {
 
 	// Translations
 
+	/// en: 'Reorder Home rows'
+	String get reorderHomeRows => 'Reorder Home rows';
+
+	/// en: 'Reorder rows'
+	String get reorderRows => 'Reorder rows';
+
+	/// en: 'Move up'
+	String get moveRowUp => 'Move up';
+
+	/// en: 'Move down'
+	String get moveRowDown => 'Move down';
+
+	/// en: 'Read full description'
+	String get readFullDescription => 'Read full description';
+
+	/// en: 'Read more'
+	String get readMore => 'Read more';
+
+	/// en: 'No description available.'
+	String get noDescription => 'No description available.';
+
 	/// en: 'Discover'
 	String get title => 'Discover';
 
@@ -3653,6 +3680,30 @@ class Translations$logs$en {
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
+
+	/// en: 'Share playback diagnostics'
+	String get sharePlaybackDiagnostics => 'Share playback diagnostics';
+
+	/// en: 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.'
+	String get playbackDiagnosticsConsent => 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.';
+
+	/// en: 'Enable sharing'
+	String get enableSharing => 'Enable sharing';
+
+	/// en: 'Stop sharing'
+	String get stopSharing => 'Stop sharing';
+
+	/// en: 'Copy link'
+	String get copyLink => 'Copy link';
+
+	/// en: 'Playback diagnostics link'
+	String get playbackDiagnosticsLink => 'Playback diagnostics link';
+
+	/// en: 'Share this private LAN link with your developer. Keep Plezy open while it is read. $urls'
+	String playbackDiagnosticsLinkDescription({required Object urls}) => 'Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n${urls}';
+
+	/// en: 'Could not share playback diagnostics. Please try again.'
+	String get playbackDiagnosticsShareFailed => 'Could not share playback diagnostics. Please try again.';
 }
 
 // Path: startup
@@ -8520,6 +8571,8 @@ extension on Translations {
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
+			'settings.qmsFastStart' => 'QMS fast start for SDR',
+			'settings.qmsFastStartDescription' => 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
@@ -8641,10 +8694,10 @@ extension on Translations {
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
-			'themeEditor.slots.text' => 'Text',
-			'themeEditor.slots.textMuted' => 'Secondary text',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -9155,10 +9208,10 @@ extension on Translations {
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
-			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
-			'profiles.newProfile' => 'New profile',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
+			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
@@ -9233,6 +9286,13 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
+			'discover.reorderHomeRows' => 'Reorder Home rows',
+			'discover.reorderRows' => 'Reorder rows',
+			'discover.moveRowUp' => 'Move up',
+			'discover.moveRowDown' => 'Move down',
+			'discover.readFullDescription' => 'Read full description',
+			'discover.readMore' => 'Read more',
+			'discover.noDescription' => 'No description available.',
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
@@ -9414,6 +9474,14 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
+			'logs.sharePlaybackDiagnostics' => 'Share playback diagnostics',
+			'logs.playbackDiagnosticsConsent' => 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.',
+			'logs.enableSharing' => 'Enable sharing',
+			'logs.stopSharing' => 'Stop sharing',
+			'logs.copyLink' => 'Copy link',
+			'logs.playbackDiagnosticsLink' => 'Playback diagnostics link',
+			'logs.playbackDiagnosticsLinkDescription' => ({required Object urls}) => 'Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n${urls}',
+			'logs.playbackDiagnosticsShareFailed' => 'Could not share playback diagnostics. Please try again.',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
@@ -9654,6 +9722,8 @@ extension on Translations {
 			'liveTv.cancelRecording' => 'Cancel recording',
 			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.deleteRule' => 'Delete rule',
 			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
 			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
@@ -9671,8 +9741,6 @@ extension on Translations {
 			'liveTv.editRule' => 'Edit rule',
 			'liveTv.editRuleAction' => 'Edit',
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
@@ -10168,6 +10236,8 @@ extension on Translations {
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
 			'performanceOverlay.matrix' => 'Matrix',
@@ -10185,8 +10255,6 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',

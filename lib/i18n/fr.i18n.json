@@ -411,6 +411,8 @@
     "matchDynamicRange": "Adapter la plage dynamique",
     "matchDynamicRangeDescription": "Activer HDR pour le contenu HDR, puis revenir en SDR",
     "displaySwitchDelay": "Délai de changement d'affichage",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Lecture tunnelée",
     "tunneledPlaybackDescription": "Utiliser le tunneling vidéo. Désactivez si la lecture HDR affiche un écran noir ou si l’image saccade.",
     "audioPassthrough": "Transmission audio directe",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Découvrir",
     "noContentAvailable": "Aucun contenu disponible",
     "addMediaToLibraries": "Ajoutez des médias à vos bibliothèques",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Effacer les journaux",
     "copyLogs": "Copier les journaux",
-    "uploadLogs": "Envoyer les journaux"
+    "uploadLogs": "Envoyer les journaux",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy n'a pas pu démarrer",

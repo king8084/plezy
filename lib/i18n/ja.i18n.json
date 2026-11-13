@@ -411,6 +411,8 @@
     "matchDynamicRange": "ダイナミックレンジを合わせる",
     "matchDynamicRangeDescription": "HDRコンテンツではHDRに切り替え、その後SDRに戻します",
     "displaySwitchDelay": "ディスプレイ切り替え遅延",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "トンネル再生",
     "tunneledPlaybackDescription": "動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。",
     "audioPassthrough": "オーディオパススルー",
@@ -1185,6 +1187,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "探す",
     "noContentAvailable": "コンテンツがありません",
     "addMediaToLibraries": "ライブラリにメディアを追加してください",
@@ -1391,7 +1400,15 @@
   "logs": {
     "clearLogs": "ログをクリア",
     "copyLogs": "ログをコピー",
-    "uploadLogs": "ログをアップロード"
+    "uploadLogs": "ログをアップロード",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezyを起動できませんでした",

@@ -88,6 +88,13 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (Platform.isWindows || Platform.isMacOS) _matchRefreshRateTile(),
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
+                if (PlatformDetector.isAppleTV())
+                  SettingSwitchTile(
+                    pref: SettingsService.appleTvQmsFastStart,
+                    icon: Symbols.speed_rounded,
+                    title: t.settings.qmsFastStart,
+                    subtitle: t.settings.qmsFastStartDescription,
+                  ),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.

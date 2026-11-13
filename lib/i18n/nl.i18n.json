@@ -411,6 +411,8 @@
     "matchDynamicRange": "Dynamisch bereik afstemmen",
     "matchDynamicRangeDescription": "Schakel HDR in voor HDR-content en daarna terug naar SDR",
     "displaySwitchDelay": "Vertraging bij schermwisseling",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Getunnelde weergave",
     "tunneledPlaybackDescription": "Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.",
     "audioPassthrough": "Audio-doorvoer",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Ontdekken",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Logbestanden wissen",
     "copyLogs": "Logbestanden kopiëren",
-    "uploadLogs": "Logbestanden uploaden"
+    "uploadLogs": "Logbestanden uploaden",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kon niet starten",

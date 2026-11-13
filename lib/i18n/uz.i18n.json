@@ -411,6 +411,8 @@
     "matchDynamicRange": "Dinamik diapazonni moslashtirish",
     "matchDynamicRangeDescription": "HDR kontent uchun HDR-ni yoqish, soʻng SDR-ga qaytish",
     "displaySwitchDelay": "Ekranni almashtirish kechikishi",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunnelli ijro",
     "tunneledPlaybackDescription": "Video tunnellashdan foydalanish. HDR ijrosida ekran qora boʻlsa yoki harakat uzilib qolsa, oʻchiring.",
     "audioPassthrough": "Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Kashf qilish",
     "noContentAvailable": "Kontent mavjud emas",
     "addMediaToLibraries": "Kutubxonalaringizga media qoʻshing",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Jurnallarni tozalash",
     "copyLogs": "Jurnallarni nusxalash",
-    "uploadLogs": "Jurnallarni yuklash"
+    "uploadLogs": "Jurnallarni yuklash",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy ishga tusha olmadi",

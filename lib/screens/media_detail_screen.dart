@@ -1349,6 +1349,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   textDirection: textDirection,
                   iconSize: iconSize,
                   spacing: iconGap,
+                  goldStars: true,
                 ),
         ],
         build: (kept) => Container(
@@ -1365,6 +1366,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               iconSize: iconSize,
               spacing: iconGap,
               entrySpacing: badgeEntryGap,
+              goldStars: true,
             ),
           ),
         ),
@@ -4317,6 +4319,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
       episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
+      episodeDescriptionsForHub: _isTvDetailEpisodeHub,
       widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
       fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       gridSpacing: svc.read(SettingsService.gridSpacing),

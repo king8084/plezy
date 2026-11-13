@@ -411,6 +411,8 @@
     "matchDynamicRange": "同步動態範圍",
     "matchDynamicRangeDescription": "HDR 內容切換至 HDR，播放結束切回 SDR",
     "displaySwitchDelay": "顯示器切換延遲時間",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "通道化播放（Tunneled Playback）",
     "tunneledPlaybackDescription": "使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。",
     "audioPassthrough": "音訊直通",
@@ -1185,6 +1187,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "發現",
     "noContentAvailable": "沒有可用內容",
     "addMediaToLibraries": "請向您的媒體庫新增一些媒體內容",
@@ -1391,7 +1400,15 @@
   "logs": {
     "clearLogs": "清除日誌",
     "copyLogs": "複製日誌",
-    "uploadLogs": "上傳日誌"
+    "uploadLogs": "上傳日誌",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy 無法啟動",

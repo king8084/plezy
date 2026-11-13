@@ -406,8 +406,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     let args = call.arguments as? [String: Any]
     let extraDelayMs = int64Value(args?["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
+    let allowSdrFastStart = args?["allowSdrFastStart"] as? Bool ?? false
     DispatchQueue.main.async {
-      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs) {
+      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs, allowSdrFastStart: allowSdrFastStart) {
         result(nil)
       }
     }

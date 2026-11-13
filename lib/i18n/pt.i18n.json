@@ -411,6 +411,8 @@
     "matchDynamicRange": "Ajustar à faixa dinâmica",
     "matchDynamicRangeDescription": "Ativar HDR para conteúdo HDR e depois voltar para SDR",
     "displaySwitchDelay": "Atraso na troca do modo de exibição",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Reprodução em túnel",
     "tunneledPlaybackDescription": "Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.",
     "audioPassthrough": "Passagem direta de áudio",
@@ -1189,6 +1191,13 @@
     }
   },
   "discover": {
+    "reorderHomeRows": "",
+    "reorderRows": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Descobrir",
     "noContentAvailable": "Nenhum conteúdo disponível",
     "addMediaToLibraries": "Adicione mídias às suas bibliotecas",
@@ -1396,7 +1405,15 @@
   "logs": {
     "clearLogs": "Limpar Logs",
     "copyLogs": "Copiar Logs",
-    "uploadLogs": "Enviar Logs"
+    "uploadLogs": "Enviar Logs",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "O Plezy não conseguiu iniciar",

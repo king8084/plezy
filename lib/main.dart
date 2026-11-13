@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
+import 'services/tv_playback_diagnostics.dart';
 import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
@@ -980,6 +981,11 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
         VideoDecodeCapabilities.getInstance(),
       ).wait;
     });
+
+    if (PlatformDetector.isAppleTV()) {
+      MemoryLogOutput.playbackDiagnosticSink = TvPlaybackDiagnostics.instance.record;
+      unawaited(TvPlaybackDiagnostics.instance.initialize().catchError((Object _) {}));
+    }
 
     if (userAuthorities != null) {
       await _optionalGatePhase(StartupPhase.certificateTrust, () => userAuthorities);
