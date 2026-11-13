@@ -35,7 +35,9 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
-- CI build: standard fork CI queued; device IPA run `43454148475` is queued.
+- CI build: standard fork CI queued; device IPA run `43454148475` is waiting for
+  a GitHub-hosted `macos-26` runner (GitHub reports all runners with that label
+  are busy, then indicates an assigned runner is still coming online).
 - Install on Apple TV: not done; planned through tvsign on Unraid.
 - Owner-confirmed playback: not done.
 
@@ -72,4 +74,5 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   pending.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
-  for subsequent builds.
+  for subsequent builds. Current wait is runner capacity, not an approval or
+  signing prompt.
