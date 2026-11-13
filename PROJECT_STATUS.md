@@ -35,16 +35,16 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
-- CI build: standard fork CI queued; device IPA build not yet run.
+- CI build: standard fork CI queued; device IPA run `43454148475` is queued.
 - Install on Apple TV: not done; planned through tvsign on Unraid.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Push `codex/first-tvos-test-build` to trigger the IPA workflow, then download
-its `plezy-tvos-ipa` artifact and upload the IPA to tvsign on Unraid. Install
-on Apple TV, confirm startup, sign-in, and playback, and record the app commit
-plus video/audio details. Capture open-to-first-frame timings for representative
-direct-play files before changing the player.
+Wait for run `43454148475` to finish, download its `plezy-tvos-ipa` artifact,
+then upload the IPA to tvsign on Unraid. Install on Apple TV, confirm startup,
+sign-in, and playback, and record the app commit plus video/audio details.
+Capture open-to-first-frame timings for representative direct-play files before
+changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -70,6 +70,6 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
 - No build or tests run for these edits. The current environment does not have
   the Dart executable available, so Dart formatting/code generation is also
   pending.
-- The workflow has a branch-limited push trigger on
-  `codex/first-tvos-test-build` for this first IPA build; normal `main` pushes
-  continue to use the manual dispatch trigger only.
+- Run `43454148475` was started by a branch-limited push trigger on
+  `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
+  for subsequent builds.
