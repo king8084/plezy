@@ -46,8 +46,8 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   cancelled before runner assignment. Codemagic build `6af73c8290e83b09c4f9dda6`
   failed during archive on a Mac mini M2 at commit `bbf2edb15`: the pinned
   collection lookup called a nonexistent `MultiServerProvider.getClient`.
-  The call has been corrected to `getClientForServer`; a new build is needed.
-  No IPA artifact exists yet.
+  The call was corrected to `getClientForServer` in `10f04e1cb` and Codemagic
+  build `6af7407b90e83b09c4f9df37` is waiting for a machine. No IPA exists yet.
 - tvsign on Unraid: installed and healthy, using
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
@@ -57,7 +57,7 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 ## Next milestone
 Keep tvsign on Choose an app. The owner has no Mac. A Codemagic Apple Silicon
 M2 workflow is prepared in `codemagic.yaml`; the repository is connected and
-its first build failed at Dart compilation; rerun after the fix. Once an IPA exists, add Plezy through
+its corrected build is waiting for a machine. Once an IPA exists, add Plezy through
 “Other app…” and install it on the paired Apple TV. Confirm startup, sign-in,
 and playback, and record the app commit plus video/audio details. Capture
 open-to-first-frame timings for representative direct-play files before
