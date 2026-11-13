@@ -5,7 +5,10 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
 Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
-macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. No
+macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. The
+official tvsign container is installed on Unraid at
+`192.168.100.46:8765` and reports healthy. Its first-run setup is waiting for
+the owner to enter the setup code and choose the tvsign admin password. No
 device IPA build, Apple TV install, or owner-confirmed playback has happened
 yet. The standard CI workflow is queued for the latest main commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
@@ -38,15 +41,17 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 - CI build: standard fork CI queued; device IPA run `43454148475` is waiting for
   a GitHub-hosted `macos-26` runner (GitHub reports all runners with that label
   are busy, then indicates an assigned runner is still coming online).
-- Install on Apple TV: not done; planned through tvsign on Unraid.
+- tvsign on Unraid: installed and healthy, using
+  `/mnt/cacheapp/appdata/docker/tvsign`; first-run owner password setup pending.
+- Install on Apple TV: not done; planned through tvsign after the IPA build.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Wait for run `43454148475` to finish, download its `plezy-tvos-ipa` artifact,
-then upload the IPA to tvsign on Unraid. Install on Apple TV, confirm startup,
-sign-in, and playback, and record the app commit plus video/audio details.
-Capture open-to-first-frame timings for representative direct-play files before
-changing the player.
+Complete tvsign first-run setup in the owner’s browser session. Then wait for
+run `43454148475` to finish, download its `plezy-tvos-ipa` artifact, and upload
+the IPA to tvsign. Install on Apple TV, confirm startup, sign-in, and playback,
+and record the app commit plus video/audio details. Capture open-to-first-frame
+timings for representative direct-play files before changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
