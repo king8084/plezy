@@ -7,10 +7,10 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
 macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. The
 official tvsign container is installed on Unraid at
-`192.168.100.46:8765` and reports healthy; the owner reports tvsign setup is
-complete. No device IPA build, Apple TV install, or owner-confirmed playback
-has happened yet. The standard CI workflow is queued for the latest main
-commit.
+`192.168.100.46:8765` and reports healthy; the owner reports tvsign setup and
+Apple TV pairing are complete. No device IPA build, Apple TV install, or
+owner-confirmed playback has happened yet. The standard CI workflow is queued
+for the latest main commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
 Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
@@ -43,17 +43,17 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   build logs, or IPA artifact. Replacement run `43459871032` is queued on the
   stable `macos-15` ARM runner; no build steps have started yet.
 - tvsign on Unraid: installed and healthy, using
-  `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete and Apple ID
-  signed in. Apple TV pairing is in progress.
+  `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
+  signed in, and Apple TV pairing complete.
 - Install on Apple TV: not done; planned through tvsign after the IPA build.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Complete Apple TV pairing in tvsign while run `43459871032` waits for a runner.
-When the workflow succeeds, download its `plezy-tvos-ipa` artifact and upload
-the IPA to tvsign. Install on Apple TV, confirm startup, sign-in, and playback,
-and record the app commit plus video/audio details. Capture open-to-first-frame
-timings for representative direct-play files before changing the player.
+Keep tvsign on Choose an app while run `43459871032` waits for a runner. When
+the workflow succeeds, add Plezy through “Other app…”, then install it on the
+paired Apple TV. Confirm startup, sign-in, and playback, and record the app
+commit plus video/audio details. Capture open-to-first-frame timings for
+representative direct-play files before changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -88,3 +88,9 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   `gen_snapshot`; an Intel macOS runner is not compatible with this bundle.
   Keep the sideload job on a GitHub-hosted ARM64 macOS runner while waiting for
   runner capacity.
+- Run `43459871032` was rechecked on 2026-11-13: GitHub reports its job as
+  `queued`, with no steps or logs. The workflow at its exact commit
+  (`fa73794a8383147c423abd2d10583ad19772b707`) specifies the documented
+  `macos-15` ARM64 hosted-runner label; the job has been parsed and created, so
+  the current evidence points to runner allocation delay rather than a
+  `runs-on` typo. Reference: https://docs.github.com/en/actions/reference/runners/github-hosted-runners.
