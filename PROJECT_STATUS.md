@@ -4,13 +4,17 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
-Installed build `0a77954d6` was updated in place through the existing tvsign
-entry on November 13 at 22:45; no deletion/uninstallation was performed.
-The owner confirms working Top Shelf Continue Watching and playback play/pause.
-Startup still takes about four seconds. The owner has now explicitly authorized
-“build apple tv” and installation of the fix using Unraid. Preparing one
-Codemagic build of the tested source, then an in-place update through the same
-tvsign entry/account. Preserve all existing files and app data; no deletion.
+Build `98c7123d4` (app changes `e4b4390b6`) built successfully in Codemagic
+and tvsign reports successful in-place installation at 23:40 on November 13.
+The existing app entry/account were used; no app deletion or uninstall occurred.
+The owner confirmed Plezy was closed, but installation stalled at 0% while on
+the Home screen. The same attempt completed after the owner opened Apple TV
+Settings. This strongly suggests Home/Top Shelf activity held the update; it
+does not establish the exact process or lock. Future update procedure: close
+Plezy and remain in Apple TV Settings until installation finishes.
+Owner playback/QMS speed and Home Play confirmation on this new build are
+pending. Network diagnostics are installed; enabling sharing and verifying
+the owner-provided private LAN URL are the next step.
 
 Log `j1hgqr` from the installed build shows source resolution in 25–50 ms,
 first-frame signals in 130–244 ms, and display-negotiation completion at
@@ -44,6 +48,29 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- Owner authorized the next build and installation on November 13. Codemagic
+  build `6af771ce90e83b09c4f9f245` started at 23:23 Arabia time for commit
+  `98c7123d4b57e0c5b2657c58a03830a7528d190f` (tested app source `e4b4390b6`),
+  branch `codex/first-tvos-test-build`, Mac mini M2. Build succeeded in 9m 35s;
+  IPA `/home/koolo7000/Downloads/Plezy-tvOS (3).ipa` (73,188,584 bytes),
+  SHA-256 `ab69e608b3ffc94aa280b2f00f9e4fc4766c91814f1f0539341415c64e2601cd`.
+  Archive CRC, tvOS platform, unchanged unsigned bundle ID, local-network
+  description and both embedded app-group entitlements passed verification.
+  Native archive compiled successfully; native policy tests were not run by
+  this device-only workflow. Before staging,
+  preserved the active unsigned and signed IPAs on Unraid as
+  `ipas/1/original-before-98c7123.ipa` and `ipas/1/signed-before-98c7123.ipa`,
+  both with owner-only permissions. Existing older backups remain untouched.
+  New source uploaded as `ipas/1/Plezy-98c7123.ipa`, restricted to 0600, then
+  copied over `ipas/1/original.ipa` (0600) at 23:34. Owner confirms Plezy
+  force-closed and TV awake. Renew requested on the existing app/account.
+  Signing succeeded at 23:35, then installation stayed at 0% and tvsign
+  showed its generic app-open stall label at 23:37. Owner again confirmed
+  Plezy was closed. After the owner opened Apple TV Settings, the same
+  attempt completed at 23:40. No deletion, uninstall, re-signing or second
+  install request was needed to release it. The Top Shelf/Home hypothesis is
+  supported by that observation; exact installer lock is unverified. Owner
+  playback and retained-settings confirmation on the new build are pending.
 - Nov 13 at 22:45: tvsign reports successful signing and installation of build
   `0a77954d6` on Basement through the existing app entry, using the patched
   signer installed by the owner. No app deletion/uninstallation was performed.
@@ -164,12 +191,14 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
 ## Next milestone
 Local app changes are committed as `e4b4390b6`; signer preservation/history is
 committed as `9d30e24cd`. Local Dart/Flutter checks and generated-file freshness
-pass. The owner now authorizes a device build and in-place installation.
-Track the build result, installation and owner confirmation of QMS startup
-and Home Play separately. Do not start additional feature builds without a
+pass. Build and in-place installation of `98c7123d4` succeeded. Next, enable
+and verify the new private LAN diagnostics link and obtain owner confirmation
+of QMS startup, Home Play and retained settings. These remain separate from
+CI and installation success. Do not start additional feature builds without a
 new explicit “build apple tv” instruction. Keep the existing tvsign entry/account and preserve the installed app.
 CI success, installation and owner-confirmed playback remain separate milestones.
-The owner has no Mac, so native compilation and on-device timing remain pending.
+The owner has no Mac. Native device compilation passed in Codemagic; native
+policy tests and on-device playback timing remain unverified.
 
 ## Local changes after the installed build (November 13)
 - Remote clarification: playback play/pause already works. The missing action
@@ -220,8 +249,8 @@ The owner has no Mac, so native compilation and on-device timing remain pending.
   native compilation and the new native policy tests are also unavailable on
   this Linux host. Translation bindings were regenerated and the isolated
   generated-file freshness checker passed after commit `e4b4390b6`.
-  No CI build, installation or owner playback verification exists for these
-  local changes.
+  These changes were subsequently built in `98c7123d4` and installed in
+  place at 23:40. Owner playback verification remains pending.
 
 ## Earlier built changes / historical investigation
 - Home row ordering is stored on this device and accessible via the Home toolbar;

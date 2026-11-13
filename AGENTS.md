@@ -11,3 +11,8 @@ Do not delete or uninstall the owner's Apple TV app as an update workaround.
 Preserve the installed app and its data; investigate a non-destructive update.
 Never change anything on the owner's Unraid server without their explicit
 permission for that change. Never delete anything on Unraid.
+
+Before installing an Apple TV update, keep the TV awake in Apple TV Settings
+with Plezy closed. On November 13, an in-place update stalled on Home despite
+the app being closed, then completed when the owner entered Settings. Home /
+Top Shelf activity is the likely blocker; do not use deletion as a workaround.
