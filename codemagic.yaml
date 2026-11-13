@@ -30,6 +30,7 @@ workflows:
         script: |
           app_path="$CM_BUILD_DIR/build/Plezy.xcarchive/Products/Applications/Runner.app"
           test -d "$app_path"
+          bash tvos/scripts/prepare_sideload_entitlements.sh "$app_path"
           mkdir -p "$CM_BUILD_DIR/build/ipa/Payload"
           ditto "$app_path" "$CM_BUILD_DIR/build/ipa/Payload/Plezy.app"
           ditto -c -k --sequesterRsrc --keepParent \

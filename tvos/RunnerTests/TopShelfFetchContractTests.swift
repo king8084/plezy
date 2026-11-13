@@ -12,6 +12,21 @@ final class TopShelfFetchContractTests: XCTestCase {
   private let baseUrl = "https://media.example.com:32400"
   private let serverId = "srv-1"
 
+  func testSideloadedShelfUsesAccessibleTeamSuffixedGroup() throws {
+    let base = ShelfSourceStore.originalAppGroupIdentifier
+    let signedGroup = base + ".TEAM123"
+    let profile: [String: Any] = [
+      "Entitlements": ["com.apple.security.application-groups": ["group.other", signedGroup]]
+    ]
+    let xml = try PropertyListSerialization.data(fromPropertyList: profile, format: .xml, options: 0)
+    let envelope = Data([0x30, 0x82]) + xml + Data([0, 1])
+    XCTAssertEqual(ShelfSourceStore.resolveAppGroup(profile: envelope) { $0 == signedGroup }, signedGroup)
+    XCTAssertEqual(ShelfSourceStore.resolveAppGroup(profile: envelope) { $0 == base }, base)
+    XCTAssertEqual(ShelfSourceStore.resolveAppGroup(profile: nil) { _ in false }, base)
+    XCTAssertEqual(ShelfSourceStore.resolveAppGroup(profile: envelope) { $0 == "group.other" }, base)
+    XCTAssertEqual(ShelfSourceStore.resolveAppGroup(profile: Data("not a profile".utf8)) { _ in false }, base)
+  }
+
   // MARK: - Plex mapping
 
   private static let plexContinueWatchingFixture = """

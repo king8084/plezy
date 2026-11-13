@@ -1823,34 +1823,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           database: context.read<AppDatabase>(),
         );
         final resolveTiming = Stopwatch()..start();
-        _playbackDataFuture = playbackResolver.resolve(
-          PlaybackInitializationOptions(
-            metadata: _currentMetadata,
-            selectedMediaIndex: _effectiveSelectedMediaIndex,
-            selectedMediaSourceId: _requestedMediaSourceId,
-            preferredVersionSignature: widget.preferredVersionSignature,
-            qualityPreset: _selectedQualityPreset,
-            selectedAudioStreamId: _selectedAudioStreamId,
-            preferredAudioTrack: _preferredAudioTrack,
-            preferredSubtitleTrack: _preferredSubtitleTrack,
-            sessionIdentifier: _playbackSessionIdentifier,
-            transcodeSessionId: _playbackTranscodeSessionId,
-            // The same resume the open will land on (see
-            // _resolveOpenResumePosition): a stacked item opens the file
-            // holding it.
-            startPosition: resolveOpenResumePosition(
-              requested: widget.initialPosition,
-              shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
-              viewOffsetMs: _currentMetadata.viewOffsetMs,
-            ),
-          ),
-          offlineLibraryMode: false,
-          downloadOutranksQuality: _downloadOutranksQuality,
-        ).whenComplete(() {
-          if (PlatformDetector.isAppleTV()) {
-            appLogger.i('tvOS playback startup: source resolution took ${resolveTiming.elapsedMilliseconds} ms');
-          }
-        });
+        _playbackDataFuture = playbackResolver
+            .resolve(
+              PlaybackInitializationOptions(
+                metadata: _currentMetadata,
+                selectedMediaIndex: _effectiveSelectedMediaIndex,
+                selectedMediaSourceId: _requestedMediaSourceId,
+                preferredVersionSignature: widget.preferredVersionSignature,
+                qualityPreset: _selectedQualityPreset,
+                selectedAudioStreamId: _selectedAudioStreamId,
+                preferredAudioTrack: _preferredAudioTrack,
+                preferredSubtitleTrack: _preferredSubtitleTrack,
+                sessionIdentifier: _playbackSessionIdentifier,
+                transcodeSessionId: _playbackTranscodeSessionId,
+                // The same resume the open will land on (see
+                // _resolveOpenResumePosition): a stacked item opens the file
+                // holding it.
+                startPosition: resolveOpenResumePosition(
+                  requested: widget.initialPosition,
+                  shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
+                  viewOffsetMs: _currentMetadata.viewOffsetMs,
+                ),
+              ),
+              offlineLibraryMode: false,
+              downloadOutranksQuality: _downloadOutranksQuality,
+            )
+            .whenComplete(() {
+              if (PlatformDetector.isAppleTV()) {
+                appLogger.i('tvOS playback startup: source resolution took ${resolveTiming.elapsedMilliseconds} ms');
+              }
+            });
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
         // unhandled async error. The later `await` still receives the error.

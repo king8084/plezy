@@ -57,6 +57,7 @@ jobs:
         run: |
           app_path="$RUNNER_TEMP/Plezy.xcarchive/Products/Applications/Runner.app"
           test -d "$app_path"
+          bash tvos/scripts/prepare_sideload_entitlements.sh "$app_path"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           ditto "$app_path" "$RUNNER_TEMP/ipa/Payload/Plezy.app"
           ditto -c -k --sequesterRsrc --keepParent \

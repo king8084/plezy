@@ -345,9 +345,11 @@ class TvSpotlightBackground extends StatelessWidget {
     final ratings = [...mediaRatingsFor(media)];
     if (ratingsFallback != null) {
       final sources = ratings.map((rating) => rating.source).toSet();
-      ratings.addAll(mediaRatingsFor(ratingsFallback!).where(
-        (rating) => rating.source.startsWith('rottenTomatoes') && !sources.contains(rating.source),
-      ));
+      ratings.addAll(
+        mediaRatingsFor(
+          ratingsFallback!,
+        ).where((rating) => rating.source.startsWith('rottenTomatoes') && !sources.contains(rating.source)),
+      );
     }
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: -1));
     if (media.contentRating != null) {

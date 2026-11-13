@@ -83,7 +83,33 @@ enum ShelfSourceStore {
   /// SystemShelfPlugin.schemaVersion (duplicated here so this file compiles
   /// into RunnerTests without TopShelfProvider.swift).
   static let schemaVersion = 3
-  static let appGroupIdentifier = "group.com.edde746.plezy"
+  static let originalAppGroupIdentifier = "group.com.edde746.plezy"
+  /// Sideload signers can register the original group with a team suffix.
+  /// Both the app and extension must use the same authorized container.
+  static let appGroupIdentifier: String = {
+    let profile = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision")
+      .flatMap { try? Data(contentsOf: $0) }
+    return resolveAppGroup(profile: profile) {
+      FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: $0) != nil
+    }
+  }()
+
+  static func resolveAppGroup(profile: Data?, canAccess: (String) -> Bool) -> String {
+    let base = originalAppGroupIdentifier
+    var candidates = [base]
+    if let profile,
+      let begin = profile.range(of: Data("<?xml".utf8)),
+      let end = profile.range(of: Data("</plist>".utf8), in: begin.lowerBound..<profile.endIndex),
+      let plist = try? PropertyListSerialization.propertyList(
+        from: profile.subdata(in: begin.lowerBound..<end.upperBound), options: [], format: nil
+      ) as? [String: Any],
+      let entitlements = plist["Entitlements"] as? [String: Any],
+      let groups = entitlements["com.apple.security.application-groups"] as? [String]
+    {
+      candidates.append(contentsOf: groups.filter { $0.hasPrefix(base + ".") }.sorted())
+    }
+    return candidates.first(where: canAccess) ?? base
+  }
   static let sourcesKey = "PlezySystemShelfSources"
   static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"
   static let defaultMaxItems = 20

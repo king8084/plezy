@@ -87,7 +87,12 @@ TextSpan _metadataTextSpan(String text, TextStyle? style) {
   for (var i = 0; i < pieces.length; i++) {
     if (pieces[i].isNotEmpty) spans.add(TextSpan(text: pieces[i]));
     if (i < pieces.length - 1) {
-      spans.add(const TextSpan(text: '★', style: TextStyle(color: Color(0xFFB8860B))));
+      spans.add(
+        const TextSpan(
+          text: '★',
+          style: TextStyle(color: Color(0xFFB8860B)),
+        ),
+      );
     }
   }
   return TextSpan(style: style, children: spans);
@@ -667,10 +672,16 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
           top: item.isWatched ? 36 : 6,
           right: 6,
           child: DecoratedBox(
-            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.78), borderRadius: BorderRadius.circular(5)),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(5),
+            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              child: Text('E${item.index}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+              child: Text(
+                'E${item.index}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -720,7 +731,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             crossAxisAlignment: .start,
             children: [
               if (posterHeight != null)
-                SizedBox(width: double.infinity, height: posterHeight, child: poster)
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: SizedBox(width: double.infinity, height: posterHeight, child: poster),
+                )
               else
                 Expanded(child: poster),
               // Grid cells (no fixed height) grow the poster→title gap with
@@ -976,11 +990,14 @@ class _MediaCardList extends StatelessWidget {
                     if (metadataLine.isNotEmpty) ...[
                       ExcludeSemantics(
                         child: Text.rich(
-                          _metadataTextSpan(metadataLine, Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: tokens(context).textMuted.withValues(alpha: 0.9),
-                            fontSize: _metadataFontSize,
-                            fontWeight: .w500,
-                          )),
+                          _metadataTextSpan(
+                            metadataLine,
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.9),
+                              fontSize: _metadataFontSize,
+                              fontWeight: .w500,
+                            ),
+                          ),
                           maxLines: 1,
                           overflow: .ellipsis,
                         ),
@@ -1246,7 +1263,7 @@ class _MediaCardHelpers {
   /// A card without a caption still occupies the caption line. Grid cells
   /// reserve it ([MediaCard.gridCaptionBandHeight]); dropping it would hand
   /// the line to the Expanded artwork and crop it.
-  static Widget _emptyCaption(BuildContext context) => _caption(context, '');
+  static Widget _emptyCaption(BuildContext context) => _caption(context, '\u00a0');
 
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {

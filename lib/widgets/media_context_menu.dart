@@ -423,7 +423,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final serverId = collection.serverId ?? menu.mediaClient?.serverId.value;
       if (serverId != null && serverId.isNotEmpty) {
         final pinKey = homePinnedCollectionKey(serverId, collection.id);
-        final isPinned = SettingsService.instance.read(SettingsService.homePinnedCollections).contains(pinKey);
+        final settings = await SettingsService.getInstance();
+        final isPinned = settings.read(SettingsService.homePinnedCollections).contains(pinKey);
         menuActions.insert(
           0,
           _MenuAction(
@@ -433,6 +434,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           ),
         );
       }
+    }
+    if (!mounted || !context.mounted) {
+      _isContextMenuOpen = false;
+      return;
     }
     for (var i = 0; i < widget.extraEntries.length; i++) {
       final entry = widget.extraEntries[i];
@@ -879,6 +884,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           pins.add(pinKey);
         }
         await settings.write(SettingsService.homePinnedCollections, pins);
+        if (!context.mounted) break;
         try {
           await context.read<DiscoverProvider>().load();
         } on ProviderNotFoundException {

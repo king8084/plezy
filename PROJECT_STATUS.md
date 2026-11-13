@@ -40,6 +40,30 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
+- Owner authorized “build apple tv” on November 13. Codemagic build
+  `6af74d5690e83b09c4f9e43f` succeeded for commit `8f9254a71` in 5m 33s;
+  the unsigned IPA is `/home/koolo7000/Downloads/Plezy-tvOS (1).ipa`.
+  tvsign reports signing and installation on Basement succeeded at 21:25;
+  owner subsequently confirmed playback and reported the delay remains.
+  The currently installed tvsign UI has no visible replace-IPA control. An
+  attempt to upload via New app was rejected by automatic approval review
+  because it could create a second app and separate renewal entry. The prior
+  installed app and tvsign entry were left intact.
+  Owner requested replacement, but the Unraid image `ghcr.io/esalwey/tvsign:1`
+  is reported up to date; upstream documents IPA replacement for 1.1.0,
+  while latest published release observed was 1.0.2. No container update or
+  IPA upload was made at that point. Unraid reports tvsign Autostart OFF, so it will not
+  automatically restart after an Unraid reboot unless that is enabled.
+  Subsequently, owner requested an in-place update. Backed up the old IPA as
+  `ipas/1/original-before-8f9254a.ipa`, uploaded the new IPA to the existing
+  folder, copied it over `original.ipa` with owner-only permissions, and used
+  the existing entry's manual Renew. Signing succeeded; installation stalled
+  at 0%. tvsign suggests the app may be open, but its source labels any stalled
+  installation this way; owner reports Plezy is not open. Awaiting force-close
+  or Apple TV restart. A second install stalled and was interrupted when the
+  owner deleted the old app; a final manual Renew then succeeded at 21:25.
+  No new tvsign entry was made. Because the owner deleted the app on the TV,
+  its local settings and login may need to be configured again.
 - CI build: standard fork CI queued; device IPA run `43454148475` was not
   acquired by a hosted runner while waiting for `macos-26`. Run `43459871032`
   failed after 15 minutes without runner assignment; its annotations explicitly
@@ -55,20 +79,31 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
 - Install on Apple TV: tvsign reports it signed and installed Plezy 2.26.0 on
-  Basement and shows the app up to date. Owner confirmation on the TV is pending.
+  Basement; the owner confirmed running it. The pending local changes have not
+  been built or installed.
 - Owner-confirmed playback: reported by the owner; startup is about four
   seconds versus about 0.5 seconds in Rivulet. Media details are not yet known.
+- Log ID supplied by the owner on the current build showed source resolution
+  in 43–64 ms and first-frame signals at 211–459 ms; UI readiness followed at
+  3.0–3.5 s. Owner confirmed playback starts much faster when Apple TV Match
+  Frame Rate and Match Dynamic Range are disabled, but Rivulet remains fast
+  with both enabled. Display negotiation is a strong lead; the current logs
+  bracket the wait together with first-frame effects, so do not assert the
+  exact split without the added post-negotiation timing. AetherEngine requests
+  display criteria before loading its AVPlayer item. Plezy requests criteria
+  from decoded mpv output, later. A matching-enabled candidate is implemented
+  locally but its effect is not verified. Do not disable matching or promise
+  0.5 s.
 - Pinning collections: the owner reports not seeing the option. The installed
   build places “Pin collection to Home” in the collection card's long-press
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Wait for the owner to explicitly say “build apple tv” before starting any Apple
-TV build. After the next build and install, verify the home changes and remote
-on the TV, then collect startup timings for the same file and playback mode as
-Rivulet. The owner has no Mac; builds can use the connected Codemagic workflow.
+Develop and verify a playback improvement with Match Content enabled, then test
+the Top Shelf candidate and non-destructive updates. A further Apple TV build
+requires the owner to explicitly say “build apple tv” again. The owner has no Mac.
 
-## Unbuilt changes requested by the owner
+## Built changes awaiting owner verification
 - Home row ordering is stored on this device and accessible via the Home toolbar;
   episode artwork has an E-number badge and the toolbar has a full-description
   dialog. The spotlight uses gold stars and fetches missing Rotten Tomatoes
@@ -81,8 +116,9 @@ Rivulet. The owner has no Mac; builds can use the connected Codemagic workflow.
   is not yet established: device timings and matching source/mode are needed.
   Rivulet's AetherEngine uses byte prewarming for the next Plex episode; that
   does not prove the cause of this owner's initial Jellyfin playback delay.
-- Added focused tests for the remote-key fallback and gold audience star, but
-  Flutter and Dart are unavailable locally, so they have not been run.
+- The owner installed Flutter 3.47.1 on CachyOS at
+  `/home/koolo7000/Developer/flutter-3.47.1`; local Dart/Flutter tests can now
+  run. tvOS Swift compilation and device tests still require a Mac/Apple TV.
 - The card-size setting now offers two larger levels (6 and 7), preserving the
   previous sizes at levels 1–5. The default tvOS launcher icon uses the
   existing blue ocean artwork. Both await an authorized build and owner test.
@@ -91,11 +127,60 @@ Rivulet. The owner has no Mac; builds can use the connected Codemagic workflow.
   group. Both Mach-O executables in the unsigned IPA lack a code-signature load
   command, so no entitlement is embedded for a sideload signer to read. Current
   PlumeImpactor source detects groups from executable entitlements and may
-  suffix the group with the team ID. The installed signed app's entitlements
-  remain unverified. Added an unavailable-container diagnostic; the shelf is
-  not yet fixed. Inspect the signed app and exact tvsign signer version, then
-  determine how both targets can share an authorized group before changing
-  signing. Never log server credentials.
+  suffix the group with the team ID. Subsequent inspection of the installed
+  signed IPA confirmed that both executables lack the app-group entitlement.
+
+## Pending changes after the installed build
+- Inspected the signed IPA saved by tvsign: neither main app nor extension has
+  the application-groups entitlement, and the app log reports the Top Shelf
+  shared container unavailable. Packaging scripts now ad-hoc sign each Mach-O
+  with its requested app-group entitlement so tvsign can detect and provision
+  it. Both targets select an accessible upstream or team-suffixed group from
+  their embedded provisioning profile. Added a profile-selection contract test.
+  This is a candidate fix, not yet built, signed, or verified with the owner's
+  Apple account; signer and Apple provisioning may still reject the group.
+- The owner confirmed playback starts much faster when Apple TV match settings
+  are disabled. Added a candidate early display criteria request for eligible
+  direct-play SDR/HDR sources to overlap mode switching with startup, without
+  disabling matching. Dolby Vision, transcoding and incomplete metadata skip
+  preflight. Incorrect source metadata may still trigger a second switch; the
+  result and speed are unmeasured. Added a timing point after display
+  negotiation. The installed build cannot distinguish that wait from the
+  following first-frame effects pass. This is not yet a verified speed fix.
+- The owner reports the physical play/pause button still does nothing. The
+  player previously discarded Apple TV system media-control playback events;
+  these now enter the existing cross-source duplicate guard with play and pause
+  intent preserved. Added focused tests and an info-level remote action log.
+  Focused remote tests pass; the candidate has not been built or tested on TV.
+- Local CI checks exposed poster-row overflows and context-menu initialization
+  problems. Corrected the layout and settings initialization, aligned TV size
+  test expectations with the new default, formatted Dart, normalized missing
+  translation keys and regenerated translations. Analyzer, formatting,
+  translations, icon consistency, unused-code/file checks, CI guards, the
+  bundled Linux and Windows preferences tests (26 each) and wakelock tests (8)
+  pass. Generated outputs match a fresh generation; the standard codegen
+  checker also rejects uncommitted generated files by design, so it cannot pass
+  completely until those files are committed. The final full Flutter suite
+  passed: 8,432 tests, 7 skipped. Chrome-specific tests need Chrome, which is
+  not installed here; tvOS native tests and device behavior remain unverified.
+- The owner explicitly forbids deleting/uninstalling the app for future updates.
+  The earlier in-place installation stalled; its cause is unknown and a future
+  update preserving app data still needs proof. Inspection of the local signed
+  IPA shows that tvsign adjusted the original bundle identifier; keep the same
+  account, signing identity and existing app entry, and verify actual signed
+  identifiers before an update attempt. Newer upstream tvsign documentation
+  describes a Replace the IPA action, but the installed version previously did
+  not expose it; no Unraid update is authorized. Do not try deletion as a fix.
+- Owner requests bounded rotating diagnostics readable without manual uploads,
+  preferably on their Unraid server. Current app logs are a 5 MiB in-memory
+  ring and disappear on restart. A local authenticated receiver and a narrow,
+  redacted diagnostics stream are candidates; no receiver or persistent
+  logging has been installed or implemented yet. Do not expose full logs,
+  Apple sessions, Jellyfin tokens, or a writeable endpoint on the LAN.
+- Owner explicitly forbids any Unraid changes without permission for the
+  specific change, and forbids all Unraid deletion. The earlier IPA backup,
+  staging and replacement modified Unraid; no further change is authorized by
+  the logging request alone. Never delete the staging files or backups there.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -118,9 +203,8 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   [Rivulet](https://github.com/l984-451/Rivulet),
   [AetherEngine formats](https://github.com/superuser404notfound/AetherEngine/blob/main/docs/formats.md),
   and [Apple TV audio settings](https://support.apple.com/guide/tv/change-audio-settings-atvba773c3c9/tvos).
-- No local build or tests were run for these edits. The current environment does
-  not have the Dart executable, so local formatting/code generation is pending.
-  The Codemagic device build succeeded; owner testing is still pending.
+- The last successful Codemagic device build is installed and owner-tested.
+  Pending local changes have not been built, installed, or owner-tested.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
   for subsequent builds. It ended without any build steps running. The sideload

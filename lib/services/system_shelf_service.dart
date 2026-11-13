@@ -177,7 +177,8 @@ class SystemShelfService {
     if (override != null) return override();
     final channel = _channel;
     if (channel == null) return false;
-    final supported = await _invokeGuarded<bool>(
+    final supported =
+        await _invokeGuarded<bool>(
           channel,
           'isSupported',
           label: 'System shelf unsupported',

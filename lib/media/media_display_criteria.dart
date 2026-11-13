@@ -119,6 +119,19 @@ class MediaDisplayCriteria {
   bool get hasDisplayMetadata =>
       (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
+  /// Only preflight a well-described direct stream. The decoder still gets
+  /// the final word after open, including for transformed or interlaced video.
+  bool get canPreflightAppleTv {
+    final rate = fps;
+    if (rate == null || !rate.isFinite || rate <= 0 || rate > 120 || !hasDimensions) return false;
+    if ((width ?? 0) > 16384 || (height ?? 0) > 16384) return false;
+    if (colorType == MediaDisplayColorType.unknown) return false;
+    // DV output can be converted or disabled by player preferences; only
+    // the decoded stream can tell us which profile is actually presented.
+    if ((doviProfile ?? 0) > 0) return false;
+    return true;
+  }
+
   /// Whether the server said enough to describe a stream: a rate, or
   /// dimensions plus color/DoVi tags.
   bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);

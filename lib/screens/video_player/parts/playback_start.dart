@@ -230,6 +230,22 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         throw PlaybackException(t.messages.playbackFailed);
       }
       final streamHeaders = playbackContext.streamHeaders;
+      final displayHint = result.mediaInfo?.displayCriteria;
+      if (PlatformDetector.isAppleTV() &&
+          currentPlayer is PlayerNative &&
+          !result.isTranscoding &&
+          result.videoUrl != null &&
+          displayHint != null &&
+          displayHint.canPreflightAppleTv) {
+        try {
+          await currentPlayer.preflightAppleTvDisplay(displayHint);
+          _logStartupPhase('display criteria preflight requested');
+        } catch (e) {
+          // Preflight is optional: decoded-stream matching remains authoritative.
+          appLogger.w('Apple TV display preflight failed', error: e);
+        }
+        if (!attempt.isCurrent) return;
+      }
       final subtitleSelection = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
         result: result,

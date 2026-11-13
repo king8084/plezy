@@ -92,6 +92,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (negotiation != null) {
       if (!await negotiation || stale()) return;
     }
+    _logStartupPhase('display negotiation complete');
 
     // Effects that need the decoded picture — the persisted ambient-lighting
     // restore, its subtitle placement after a swap, the NVScaler HDR skip —
@@ -607,7 +608,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         }
 
         if (PlatformDetector.isAppleTV() && _isPlaybackMediaControlEvent(event)) {
-          appLogger.d('Media control: ${event.runtimeType} ignored on Apple TV; using native remote bridge');
+          final detail = event is PlayEvent
+              ? 'mediaPlay'
+              : event is PauseEvent
+              ? 'mediaPause'
+              : 'mediaPlayPause';
+          AppleTvRemoteTouchService.instance.handleMediaControlPlayback(detail);
           return;
         }
 

@@ -65,8 +65,7 @@ double inlineRatingBadgeWidth(
     textScaler: textScaler,
     textDirection: textDirection,
   ).width;
-  return size * (goldStars && _usesGoldStar(rating.source) ? 1 : (info?.iconAspect ?? 1)) +
-      (spacing ?? 4) + labelWidth;
+  return size * (goldStars && _usesGoldStar(rating.source) ? 1 : (info?.iconAspect ?? 1)) + (spacing ?? 4) + labelWidth;
 }
 
 bool _usesGoldStar(String source) => source == 'imdb' || source == 'audience' || source.isEmpty;

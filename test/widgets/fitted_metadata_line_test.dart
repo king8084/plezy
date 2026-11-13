@@ -68,12 +68,13 @@ void main() {
   setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
   testWidgets('home audience ratings use a gold star', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: InlineRatingBadges(
-        ratings: [MediaRatingSource(source: 'audience', value: 7.7)],
-        goldStars: true,
-      )),
-    ));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: InlineRatingBadges(ratings: [MediaRatingSource(source: 'audience', value: 7.7)], goldStars: true),
+        ),
+      ),
+    );
     final icon = tester.widget<AppIcon>(find.byType(AppIcon));
     expect(icon.icon, Symbols.star_rounded);
     expect(icon.color, const Color(0xFFB8860B));

@@ -719,7 +719,7 @@ void main() {
     final metrics = TvBrowseRailLayout.metricsForHub(
       hub: hub,
       availableWidth: 1280 - TvBrowseRailLayout.horizontalInsetForScale(scale),
-      density: LibraryDensity.defaultValue,
+      density: SettingsService.instance.read(SettingsService.libraryDensity),
       episodePosterMode: EpisodePosterMode.seriesPoster,
       scale: scale,
       fullCardLayout: true,
@@ -1038,7 +1038,7 @@ void main() {
     final metrics = TvBrowseRailLayout.metricsForHub(
       hub: hub,
       availableWidth: size.width - TvBrowseRailLayout.horizontalInsetForScale(scale),
-      density: LibraryDensity.defaultValue,
+      density: SettingsService.instance.read(SettingsService.libraryDensity),
       episodePosterMode: EpisodePosterMode.seriesPoster,
       scale: scale,
       gridSpacing: SettingsService.instance.read(SettingsService.gridSpacing),

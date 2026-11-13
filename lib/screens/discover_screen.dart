@@ -225,24 +225,30 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 key: ValueKey(_homeRowKey(rows[index])),
                 title: Text(rows[index].title),
                 subtitle: rows[index].serverName == null ? null : Text(rows[index].serverName!),
-                trailing: FocusableActionBar(actions: [
-                  FocusableAction(
-                    icon: Symbols.arrow_upward_rounded,
-                    tooltip: 'Move up',
-                    onPressed: index == 0 ? null : () => updateDialog(() {
-                      final row = rows.removeAt(index);
-                      rows.insert(index - 1, row);
-                    }),
-                  ),
-                  FocusableAction(
-                    icon: Symbols.arrow_downward_rounded,
-                    tooltip: 'Move down',
-                    onPressed: index == rows.length - 1 ? null : () => updateDialog(() {
-                      final row = rows.removeAt(index);
-                      rows.insert(index + 1, row);
-                    }),
-                  ),
-                ]),
+                trailing: FocusableActionBar(
+                  actions: [
+                    FocusableAction(
+                      icon: Symbols.arrow_upward_rounded,
+                      tooltip: 'Move up',
+                      onPressed: index == 0
+                          ? null
+                          : () => updateDialog(() {
+                              final row = rows.removeAt(index);
+                              rows.insert(index - 1, row);
+                            }),
+                    ),
+                    FocusableAction(
+                      icon: Symbols.arrow_downward_rounded,
+                      tooltip: 'Move down',
+                      onPressed: index == rows.length - 1
+                          ? null
+                          : () => updateDialog(() {
+                              final row = rows.removeAt(index);
+                              rows.insert(index + 1, row);
+                            }),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -281,7 +287,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: Text(item.title ?? item.displayTitle),
-        content: SingleChildScrollView(child: Text(summary == null || summary.isEmpty ? 'No description available.' : summary)),
+        content: SingleChildScrollView(
+          child: Text(summary == null || summary.isEmpty ? 'No description available.' : summary),
+        ),
         actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
     );
@@ -929,11 +937,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       onPressed: () => unawaited(_reorderHomeRows()),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          AppIcon(Symbols.swap_vert_rounded, color: foregroundColor),
-                          const SizedBox(width: 4),
-                          Text('Reorder rows', style: TextStyle(color: foregroundColor)),
-                        ]),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppIcon(Symbols.swap_vert_rounded, color: foregroundColor),
+                            const SizedBox(width: 4),
+                            Text('Reorder rows', style: TextStyle(color: foregroundColor)),
+                          ],
+                        ),
                       ),
                     ),
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
@@ -1215,11 +1226,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return () async {
       final client = context.tryGetMediaClientForServer(ServerId(serverId));
       if (client == null) return const <MediaItem>[];
-      return fetchAllCollectionItemsPaged(
-        client,
-        collectionId,
-        libraryId: hub.libraryId,
-      );
+      return fetchAllCollectionItemsPaged(client, collectionId, libraryId: hub.libraryId);
     };
   }
 

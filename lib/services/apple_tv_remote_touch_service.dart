@@ -153,6 +153,12 @@ class AppleTvRemoteTouchService {
     return _duplicateInputGuard.handleNativeKeyEvent(event);
   }
 
+  /// Routes a system media command through the same duplicate guard as UIKit
+  /// and Flutter key events, which can also report the same remote press.
+  void handleMediaControlPlayback(String detail) {
+    _emitPlayPause('media_control', detail);
+  }
+
   Future<void> handleMessage(dynamic arguments) async {
     if (arguments is! Map) {
       _log('ignore message reason=not-map valueType=${arguments.runtimeType}');
@@ -200,13 +206,15 @@ class AppleTvRemoteTouchService {
     final now = _now();
     final previous = _lastPlaybackActionAt;
     // UIKit and Flutter can report the same remote press through both paths.
-    if (previous != null && _lastPlaybackActionSource != source &&
+    if (previous != null &&
+        _lastPlaybackActionSource != source &&
         now.difference(previous).abs() < const Duration(milliseconds: 250)) {
       _log('ignore duplicate play/pause from $source');
       return;
     }
     _lastPlaybackActionAt = now;
     _lastPlaybackActionSource = source;
+    appLogger.i('Apple TV remote: playback action source=$source detail=$detail');
     _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
     _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
   }

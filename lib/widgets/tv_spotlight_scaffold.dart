@@ -207,8 +207,12 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     _ratingsParent = null;
     final item = widget.item;
     final client = widget.client;
-    if (item == null || client == null || item.catalogItem != null ||
-        mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) return;
+    if (item == null ||
+        client == null ||
+        item.catalogItem != null ||
+        mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) {
+      return;
+    }
     final id = item.isEpisode ? item.grandparentId : item.id;
     if (id == null || id.isEmpty) return;
     final key = '${client.serverId.value}:$id';

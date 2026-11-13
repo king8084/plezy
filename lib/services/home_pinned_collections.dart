@@ -1,6 +1,5 @@
 import '../media/ids.dart';
 import '../media/media_hub.dart';
-import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
