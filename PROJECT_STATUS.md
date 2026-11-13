@@ -160,8 +160,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Finish local checks for the QMS SDR fast-start path, focused-Home Play action,
-episode summaries, detail stars, larger Home text and rotating diagnostics.
+Local app changes are committed as `e4b4390b6`; signer preservation/history is
+committed as `9d30e24cd`. Local Dart/Flutter checks and generated-file freshness
+pass. Next is an explicitly authorized device build, followed by an in-place
+installation and separate owner confirmation of QMS startup and Home Play.
 A further Apple TV build requires the owner to explicitly say “build apple tv”
 again. Keep the existing tvsign entry/account and preserve the installed app.
 CI success, installation and owner-confirmed playback remain separate milestones.
@@ -178,6 +180,8 @@ The owner has no Mac, so native compilation and on-device timing remain pending.
   display manager's completion flag. HDR/Dolby Vision and an explicit nonzero
   Display Switch Delay keep the existing wait. The new Playback setting
   “QMS fast start for SDR” can restore waiting on displays that blank.
+  This policy uses the owner-confirmed setup, not automatic QMS detection;
+  SDR following an HDR output mode may still involve a physical range switch.
   This is an implemented candidate, not an Apple TV timing result.
 - Native display diagnostics now record requested range/rate/dimensions,
   start/end notifications, pending/in-progress state and release reason at
@@ -211,9 +215,10 @@ The owner has no Mac, so native compilation and on-device timing remain pending.
   workflow/script guards, icon consistency and unused-code/file checks pass.
   Native-format runner cannot run here because JDK 17+ is missing; Swift/Xcode
   native compilation and the new native policy tests are also unavailable on
-  this Linux host. Translation bindings were regenerated; the freshness checker
-  requires generated files to be committed before its final pass. No CI build,
-  installation or owner playback verification exists for these local changes.
+  this Linux host. Translation bindings were regenerated and the isolated
+  generated-file freshness checker passed after commit `e4b4390b6`.
+  No CI build, installation or owner playback verification exists for these
+  local changes.
 
 ## Earlier built changes / historical investigation
 - Home row ordering is stored on this device and accessible via the Home toolbar;
