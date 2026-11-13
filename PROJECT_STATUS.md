@@ -13,8 +13,9 @@ Settings. This strongly suggests Home/Top Shelf activity held the update; it
 does not establish the exact process or lock. Future update procedure: close
 Plezy and remain in Apple TV Settings until installation finishes.
 Owner playback/QMS speed and Home Play confirmation on this new build are
-pending. Network diagnostics are installed; enabling sharing and verifying
-the owner-provided private LAN URL are the next step.
+pending. Network diagnostics are installed; sharing is enabled and port 18765 is reachable on `192.168.100.48`. An
+unauthenticated request returned HTTP 403 as expected. The private URL/key is
+still needed before reading the retained traces.
 
 Log `j1hgqr` from the installed build shows source resolution in 25–50 ms,
 first-frame signals in 130–244 ms, and display-negotiation completion at
@@ -242,6 +243,9 @@ policy tests and on-device playback timing remain unverified.
   The installed build has none of this yet. The owner now explicitly asks to
   keep diagnostics network-readable. This needs no Unraid logging container;
   after installation, obtain the private LAN link once through View Logs.
+  Owner enabled sharing; a LAN probe of `192.168.100.48:18765/diagnostics`
+  returned HTTP 403 as expected without a key. Awaiting the complete private
+  link to verify authenticated reads; never commit its key to the repository.
 - Validation: full Flutter suite passes (8,436 tests, 7 skipped). Final analyzer,
   Dart formatting, strict translation hygiene, hardcoded-string/error checks,
   workflow/script guards, icon consistency and unused-code/file checks pass.
