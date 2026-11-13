@@ -1,0 +1,172 @@
+diff --git a/vendor/Impactor/crates/plume_core/src/auth/account/flow_tests.rs b/vendor/Impactor/crates/plume_core/src/auth/account/flow_tests.rs
+index 0a6c323..eaa57ff 100644
+--- a/vendor/Impactor/crates/plume_core/src/auth/account/flow_tests.rs
++++ b/vendor/Impactor/crates/plume_core/src/auth/account/flow_tests.rs
+@@ -1345,6 +1345,82 @@ fn the_override_replaces_the_client_info_and_user_agent_on_every_request() {
+ 
+ // ---------------------------------------------------------------- the developer portal
+ 
++#[test]
++fn app_group_conflict_recovers_only_when_the_exact_group_is_now_owned_by_the_team() {
++    for returned_identifier in [
++        Some("group.example.shared.TEAM"),
++        Some("group.other.TEAM"),
++        None,
++    ] {
++        let run = open_session(Apple::new(TwoFa::None), false, None, unavailable);
++        let session = run.result.as_ref().ok().expect("local session");
++        let lookups = Arc::new(Mutex::new(0));
++        let counter = lookups.clone();
++        let (url, seen) = serve(move |req| {
++            let mut response = dict(vec![
++                ("creationTimestamp", string("2026-11-13T20:00:00Z")),
++                ("resultCode", int(0)),
++                ("userLocale", string("en_US")),
++                ("protocolVersion", string("QH65B2")),
++                ("responseId", string("group-test")),
++            ]);
++            if req.path.ends_with("/addApplicationGroup.action") {
++                response.insert("resultCode".into(), int(35));
++                response.insert("userString".into(), string("Identifier not available"));
++            } else if req.path.ends_with("/listApplicationGroups.action") {
++                let mut count = counter.lock().unwrap();
++                *count += 1;
++                let groups = if *count > 1 {
++                    returned_identifier
++                        .map(|identifier| {
++                            Value::Dictionary(dict(vec![
++                                ("applicationGroup", string("opaque-group-id")),
++                                ("name", string("Shared group")),
++                                ("status", string("current")),
++                                ("prefix", string("TEAM")),
++                                ("identifier", string(identifier)),
++                            ]))
++                        })
++                        .into_iter()
++                        .collect()
++                } else {
++                    Vec::new()
++                };
++                response.insert("applicationGroupList".into(), Value::Array(groups));
++            } else {
++                panic!("unexpected local endpoint: {}", req.path);
++            }
++            Resp::plist(response)
++        });
++        crate::developer::TEST_DEVELOPER_HOST.with(|host| *host.borrow_mut() = Some(url));
++        let result = block_on(session.qh_ensure_app_group(
++            &"TEAM".to_string(),
++            &"Shared group".to_string(),
++            &"group.example.shared.TEAM".to_string(),
++        ));
++        if returned_identifier == Some("group.example.shared.TEAM") {
++            assert_eq!(result.unwrap().application_group, "opaque-group-id");
++        } else {
++            assert!(matches!(
++                result,
++                Err(Error::DeveloperApi {
++                    result_code: 35,
++                    ..
++                })
++            ));
++        }
++        assert_eq!(*lookups.lock().unwrap(), 2);
++        assert_eq!(
++            seen.lock()
++                .unwrap()
++                .iter()
++                .filter(|r| r.path.ends_with("/addApplicationGroup.action"))
++                .count(),
++            1
++        );
++    }
++}
++
+ /// The answer of `listTeams.action` with no team: all that a session needs to be established.
+ fn teams_response() -> Resp {
+     Resp::plist(dict(vec![
+diff --git a/vendor/Impactor/crates/plume_core/src/developer/qh/app_groups.rs b/vendor/Impactor/crates/plume_core/src/developer/qh/app_groups.rs
+index 7857ab4..9433ba7 100644
+--- a/vendor/Impactor/crates/plume_core/src/developer/qh/app_groups.rs
++++ b/vendor/Impactor/crates/plume_core/src/developer/qh/app_groups.rs
+@@ -63,8 +63,26 @@ impl DeveloperSession {
+         if let Some(app_group) = self.qh_get_app_group(team_id, identifier).await? {
+             Ok(app_group)
+         } else {
+-            let response = self.qh_add_app_group(team_id, name, identifier).await?;
+-            Ok(response.application_group)
++            match self.qh_add_app_group(team_id, name, identifier).await {
++                Ok(response) => Ok(response.application_group),
++                Err(error) => {
++                    // Another request may have created this exact group after
++                    // the initial lookup. Only accept it if it now belongs
++                    // to this team; otherwise preserve Apple's original error.
++                    if matches!(
++                        &error,
++                        Error::DeveloperApi {
++                            result_code: 35,
++                            ..
++                        }
++                    ) {
++                        if let Ok(Some(group)) = self.qh_get_app_group(team_id, identifier).await {
++                            return Ok(group);
++                        }
++                    }
++                    Err(error)
++                }
++            }
+         }
+     }
+ 
+diff --git a/vendor/Impactor/crates/plume_utils/src/signer.rs b/vendor/Impactor/crates/plume_utils/src/signer.rs
+index 5bab778..7658954 100644
+--- a/vendor/Impactor/crates/plume_utils/src/signer.rs
++++ b/vendor/Impactor/crates/plume_utils/src/signer.rs
+@@ -1,5 +1,4 @@
+ // TODO: move to plist macro
+-use futures::future::try_join_all;
+ use plist::Value;
+ use std::sync::Arc;
+ use tokio::fs;
+@@ -294,6 +293,8 @@ impl Signer {
+ 
+                 if let Some(app_groups) = macho.app_groups_for_entitlements() {
+                     let mut app_group_ids: Vec<String> = Vec::new();
++                    let default_group = format!("group.{}.{}", id, team_id);
++                    let mut default_group_requested = false;
+ 
+                     for group in &app_groups {
+                         if !group.starts_with("group.") {
+@@ -304,14 +305,16 @@ impl Signer {
+                         if is_refresh {
+                             group_name = group.clone();
+                         }
++                        if group_name == default_group {
++                            default_group_requested = true;
++                        }
+                         let group_id = session
+                             .qh_ensure_app_group(&team_id, &group_name, &group_name)
+                             .await?;
+                         app_group_ids.push(group_id.application_group);
+                     }
+ 
+-                    let default_group = format!("group.{}.{}", id, team_id);
+-                    if !app_group_ids.contains(&default_group) {
++                    if !default_group_requested {
+                         let default_group_id = session
+                             .qh_ensure_app_group(&team_id, &default_group, &default_group)
+                             .await?;
+@@ -355,7 +358,12 @@ impl Signer {
+             })
+         });
+ 
+-        let provisionings: Vec<MobileProvision> = try_join_all(futures).await?;
++        // An app and its extensions often share a group. Registering them
++        // concurrently races Apple's check-and-create API for that group.
++        let mut provisionings: Vec<MobileProvision> = Vec::new();
++        for future in futures {
++            provisionings.push(future.await?);
++        }
+         self.provisioning_files = provisionings;
+ 
+         Ok(())

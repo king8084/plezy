@@ -40,6 +40,64 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
+- Nov 13 at 22:45: tvsign reports successful signing and installation of build
+  `0a77954d6` on Basement through the existing app entry, using the patched
+  signer installed by the owner. No app deletion/uninstallation was performed.
+  The new IPA is active as `ipas/1/original.ipa` (0600); the older renewal
+  source is additionally preserved as `original-renewal-before-signer-retry.ipa`.
+  Both earlier IPA backups, the rejected-attempt IPA and
+  `plumesign-before-group-fix` remain saved. The app-group signing refusal did
+  not recur. The owner confirms Top Shelf Continue Watching now works and
+  playback play/pause works. Startup still takes about four seconds. The
+  requested missing remote action is Play from a focused Home card. Retained
+  settings have not been explicitly confirmed.
+- Owner authorized a new Apple TV build on November 13 after the local tests.
+  Codemagic build `6af7606290e83b09c4f9eb93` targets commit `0a77954d6`
+  on `codex/first-tvos-test-build`; succeeded on a Mac mini M2 in 5m 58s.
+  IPA: `/home/koolo7000/Downloads/Plezy-tvOS (2).ipa`; archive integrity passed,
+  bundle ID matches the prior unsigned app, and both executable signatures
+  contain app-group entitlements. Actual Apple provisioning remains unverified.
+  Owner requested installation and specifically authorized securing the uploaded
+  IPA, preserving both older IPAs, replacing the existing entry's source and
+  pressing Renew. The new `original.ipa` has mode 0600; the old files are
+  `original-before-0a77954.ipa` and `signed-before-0a77954.ipa` in the same
+  tvsign IPA folder. On Nov 13 at 22:24, signing failed before installation:
+  Apple Developer API error 35 says the team-suffixed application group is not
+  available. tvsign plans an automatic retry in 45 minutes. The existing Apple
+  TV app remains installed; no installation or playback confirmation exists for
+  the new build. The owner then explicitly authorized restoration. The old
+  unsigned IPA was copied back to `original.ipa` (0600), preserving both backups;
+  the new build is retained as `original-0a77954-signing-failed.ipa`. No deletion
+  or additional installation was performed. Renewals now use the old source.
+  Do not change Unraid further without specific owner authorization.
+- Investigated tvsign v1.0.2's exact vendored signer. It concurrently provisions
+  app and extension groups, allowing duplicate creation races, and compares
+  opaque resource IDs to identifiers when deciding whether the default group
+  already exists. A local patch serializes provisioning, avoids duplicate
+  default-group creation, and recovers error 35 only if the same team's exact
+  group is subsequently found. Compile check passed; a fake-API regression
+  test passed recovery, unrelated-group and missing-group scenarios. See
+  `tvos/patches/README.md`. This is a candidate fix, not live Apple validation.
+  The owner subsequently authorized and deployed the patch; signing and
+  installation succeeded at 22:45. No new Apple TV build was necessary.
+- Owner explicitly approved administrator Docker packaging on CachyOS,
+  replacing only the tvsign signer on Unraid with the original preserved, and
+  retrying the existing IPA in place. Automatic review now allowed the local
+  build command, but `sudo -n` reports that a password is required. Packaging
+  has not run; no signer deployment or new install has been attempted. Owner
+  must run the local packaging command in their terminal so their password
+  stays private. Prepared source is `/tmp/plezy-tvsign-v102`; patch remains in
+  `tvos/patches/tvsign-1.0.2-app-groups.patch`.
+- Owner completed local Docker packaging. Verified a 17,570,040-byte x86-64
+  Debian-compatible signer, SHA-256
+  `762c5b1beaac69594e4484ca5273924415dee237ce5c8bf425658c3215f0fabd`.
+  Uploaded it as `ipas/1/plumesign` on Unraid and restricted it to 0600.
+  The owner subsequently ran the deployment block and reported version 2.6.1;
+  the preserved original signer was also visible in Unraid's file manager.
+  Existing SSH authentication fails; the connected browser's terminal button
+  does not open an accessible terminal, and `/webterminal/` returns 404.
+  The owner completed the Docker copy/backup block; the new IPA was activated
+  and the in-place signing/installation retry succeeded at 22:45.
 - Owner authorized “build apple tv” on November 13. Codemagic build
   `6af74d5690e83b09c4f9e43f` succeeded for commit `8f9254a71` in 5m 33s;
   the unsigned IPA is `/home/koolo7000/Downloads/Plezy-tvOS (1).ipa`.
@@ -79,8 +137,8 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
 - Install on Apple TV: tvsign reports it signed and installed Plezy 2.26.0 on
-  Basement; the owner confirmed running it. The pending local changes have not
-  been built or installed.
+  Basement; the owner confirmed running that older build. Commit `0a77954d6`
+  was installed in place at 22:45; owner testing is pending.
 - Owner-confirmed playback: reported by the owner; startup is about four
   seconds versus about 0.5 seconds in Rivulet. Media details are not yet known.
 - Log ID supplied by the owner on the current build showed source resolution
@@ -137,8 +195,8 @@ requires the owner to explicitly say “build apple tv” again. The owner has n
   with its requested app-group entitlement so tvsign can detect and provision
   it. Both targets select an accessible upstream or team-suffixed group from
   their embedded provisioning profile. Added a profile-selection contract test.
-  This is a candidate fix, not yet built, signed, or verified with the owner's
-  Apple account; signer and Apple provisioning may still reject the group.
+  This candidate was built in `0a77954d6` and successfully signed with the
+  owner's account using the patched signer. Top Shelf display awaits owner test.
 - The owner confirmed playback starts much faster when Apple TV match settings
   are disabled. Added a candidate early display criteria request for eligible
   direct-play SDR/HDR sources to overlap mode switching with startup, without
@@ -151,7 +209,7 @@ requires the owner to explicitly say “build apple tv” again. The owner has n
   player previously discarded Apple TV system media-control playback events;
   these now enter the existing cross-source duplicate guard with play and pause
   intent preserved. Added focused tests and an info-level remote action log.
-  Focused remote tests pass; the candidate has not been built or tested on TV.
+  Focused remote tests pass; the candidate has been built but not tested on TV.
 - Local CI checks exposed poster-row overflows and context-menu initialization
   problems. Corrected the layout and settings initialization, aligned TV size
   test expectations with the new default, formatted Dart, normalized missing
@@ -159,8 +217,7 @@ requires the owner to explicitly say “build apple tv” again. The owner has n
   translations, icon consistency, unused-code/file checks, CI guards, the
   bundled Linux and Windows preferences tests (26 each) and wakelock tests (8)
   pass. Generated outputs match a fresh generation; the standard codegen
-  checker also rejects uncommitted generated files by design, so it cannot pass
-  completely until those files are committed. The final full Flutter suite
+  checker passed after the generated files were committed. The full Flutter suite
   passed: 8,432 tests, 7 skipped. Chrome-specific tests need Chrome, which is
   not installed here; tvOS native tests and device behavior remain unverified.
 - The owner explicitly forbids deleting/uninstalling the app for future updates.
@@ -203,8 +260,8 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   [Rivulet](https://github.com/l984-451/Rivulet),
   [AetherEngine formats](https://github.com/superuser404notfound/AetherEngine/blob/main/docs/formats.md),
   and [Apple TV audio settings](https://support.apple.com/guide/tv/change-audio-settings-atvba773c3c9/tvos).
-- The last successful Codemagic device build is installed and owner-tested.
-  Pending local changes have not been built, installed, or owner-tested.
+- The previous Codemagic device build is installed and owner-tested. The newer
+  successful `0a77954d6` build was installed in place but is not yet owner-tested.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
   for subsequent builds. It ended without any build steps running. The sideload
