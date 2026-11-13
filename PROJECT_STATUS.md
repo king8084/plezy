@@ -6,7 +6,8 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 ## Current status
 Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
 macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. No
-fork CI build, Apple TV install, or owner-confirmed playback has happened yet.
+device IPA build, Apple TV install, or owner-confirmed playback has happened
+yet. The standard CI workflow is queued for the latest main commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
 Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
@@ -34,14 +35,14 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   choosing a change.
 
 ## Milestones
-- CI build: not run for this fork.
+- CI build: standard fork CI queued; device IPA build not yet run.
 - Install on Apple TV: not done; planned through tvsign on Unraid.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Dispatch “Build tvOS sideload IPA” from GitHub Actions, download its
-`plezy-tvos-ipa` artifact, then upload the IPA to tvsign on Unraid. Install on
-Apple TV, confirm startup, sign-in, and playback, and record the app commit
+Push `codex/first-tvos-test-build` to trigger the IPA workflow, then download
+its `plezy-tvos-ipa` artifact and upload the IPA to tvsign on Unraid. Install
+on Apple TV, confirm startup, sign-in, and playback, and record the app commit
 plus video/audio details. Capture open-to-first-frame timings for representative
 direct-play files before changing the player.
 
@@ -69,6 +70,6 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
 - No build or tests run for these edits. The current environment does not have
   the Dart executable available, so Dart formatting/code generation is also
   pending.
-- The workflow is pushed but has not been dispatched: GitHub CLI's saved token
-  is invalid, and the available GitHub browser session is signed out. Dispatch
-  it from the signed-in GitHub Actions UI.
+- The workflow has a branch-limited push trigger on
+  `codex/first-tvos-test-build` for this first IPA build; normal `main` pushes
+  continue to use the manual dispatch trigger only.

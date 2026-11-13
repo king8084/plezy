@@ -1,6 +1,9 @@
 name: Build tvOS sideload IPA
 
 on:
+  push:
+    branches:
+      - codex/first-tvos-test-build
   workflow_dispatch:
 
 permissions:
