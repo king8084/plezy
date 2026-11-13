@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/utils/rating_utils.dart';
@@ -65,6 +66,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
+  testWidgets('home audience ratings use a gold star', (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: InlineRatingBadges(
+        ratings: [MediaRatingSource(source: 'audience', value: 7.7)],
+        goldStars: true,
+      )),
+    ));
+    final icon = tester.widget<AppIcon>(find.byType(AppIcon));
+    expect(icon.icon, Symbols.star_rounded);
+    expect(icon.color, const Color(0xFFB8860B));
+    expect(find.text('7.7'), findsOneWidget);
+  });
 
   testWidgets('renders every field and badge when the line fits', (tester) async {
     await _pumpLine(tester, width: 700);

@@ -190,9 +190,72 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
-    _tvBrowseHubsCache = hubs;
+    final saved = SettingsService.instance.read(SettingsService.homeRowOrder);
+    final positions = {for (var i = 0; i < saved.length; i++) saved[i]: i};
+    final indexed = [for (var i = 0; i < hubs.length; i++) (index: i, hub: hubs[i])];
+    indexed.sort((a, b) {
+      final aPos = positions[_homeRowKey(a.hub)] ?? saved.length + a.index;
+      final bPos = positions[_homeRowKey(b.hub)] ?? saved.length + b.index;
+      return aPos.compareTo(bPos);
+    });
+    _tvBrowseHubsCache = [for (final entry in indexed) entry.hub];
     _tvBrowseHubsCacheKey = key;
-    return hubs;
+    return _tvBrowseHubsCache!;
+  }
+
+  String _homeRowKey(MediaHub hub) => '${hub.serverId ?? ''}\u001f${hub.id}\u001f${hub.libraryId ?? ''}';
+
+  Future<void> _reorderHomeRows() async {
+    final rows = List<MediaHub>.of(_tvBrowseHubs);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) => AlertDialog(
+          title: const Text('Reorder Home rows'),
+          content: SizedBox(
+            width: 580,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: rows.length,
+              findChildIndexCallback: (key) {
+                final index = rows.indexWhere((row) => ValueKey(_homeRowKey(row)) == key);
+                return index < 0 ? null : index;
+              },
+              itemBuilder: (context, index) => ListTile(
+                key: ValueKey(_homeRowKey(rows[index])),
+                title: Text(rows[index].title),
+                subtitle: rows[index].serverName == null ? null : Text(rows[index].serverName!),
+                trailing: FocusableActionBar(actions: [
+                  FocusableAction(
+                    icon: Symbols.arrow_upward_rounded,
+                    tooltip: 'Move up',
+                    onPressed: index == 0 ? null : () => updateDialog(() {
+                      final row = rows.removeAt(index);
+                      rows.insert(index - 1, row);
+                    }),
+                  ),
+                  FocusableAction(
+                    icon: Symbols.arrow_downward_rounded,
+                    tooltip: 'Move down',
+                    onPressed: index == rows.length - 1 ? null : () => updateDialog(() {
+                      final row = rows.removeAt(index);
+                      rows.insert(index + 1, row);
+                    }),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Done'))],
+        ),
+      ),
+    );
+    final order = rows.map(_homeRowKey).toList();
+    final previous = SettingsService.instance.read(SettingsService.homeRowOrder);
+    order.addAll(previous.where((key) => !order.contains(key)));
+    await SettingsService.instance.write(SettingsService.homeRowOrder, order);
+    if (!mounted) return;
+    setState(() => _tvBrowseHubsCache = null);
   }
 
   /// The synthesized Continue Watching row, rendered ahead of the backend hubs
@@ -208,6 +271,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   );
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+
+  void _showFullDescription() {
+    final item = _spotlight.resolve(_tvBrowseHubs);
+    if (item == null) return;
+    final hidden = SettingsService.instance.read(SettingsService.hideSpoilers) && item.shouldHideSpoiler;
+    final summary = hidden ? null : item.summary;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(item.title ?? item.displayTitle),
+        content: SingleChildScrollView(child: Text(summary == null || summary.isEmpty ? 'No description available.' : summary)),
+        actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
+  }
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -836,6 +914,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
+                  if (PlatformDetector.isTV())
+                    FocusableAction(
+                      tooltip: 'Read full description',
+                      onPressed: _showFullDescription,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Text('Read more', style: TextStyle(color: foregroundColor)),
+                      ),
+                    ),
+                  if (PlatformDetector.isTV())
+                    FocusableAction(
+                      tooltip: 'Reorder Home rows',
+                      onPressed: () => unawaited(_reorderHomeRows()),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          AppIcon(Symbols.swap_vert_rounded, color: foregroundColor),
+                          const SizedBox(width: 4),
+                          Text('Reorder rows', style: TextStyle(color: foregroundColor)),
+                        ]),
+                      ),
+                    ),
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(

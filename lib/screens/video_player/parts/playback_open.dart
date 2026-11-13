@@ -907,6 +907,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       _lastLogError = null;
       _transportFaultSeen = false;
       onOpening?.call();
+      _logStartupPhase('opening media');
       return player.open(
         media,
         // The last word on the vehicle and the resume profile picker, taken here because this is
@@ -923,6 +924,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
 
     try {
       await openMedia(shouldPlay: play, externalSubtitles: externalSubtitlesAtOpen);
+      _logStartupPhase('media open returned');
       onOpened?.call();
       onMediaAvailabilityChanged?.call(true);
     } catch (_) {

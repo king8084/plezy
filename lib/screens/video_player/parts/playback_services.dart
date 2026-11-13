@@ -88,6 +88,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // resolves false: that open holds and reveals its own first frame, and
     // the same player instance makes the guards above blind to the swap.
     final negotiation = _frameRate.displayNegotiation;
+    _logStartupPhase('first-frame signal before display negotiation');
     if (negotiation != null) {
       if (!await negotiation || stale()) return;
     }
@@ -103,6 +104,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (stale()) return;
 
     _firstFrame.markReady();
+    _logStartupPhase('first-frame UI ready');
     // This request is proven: a later in-place switch that fails restores it.
     _workingOpenRequest = _currentOpenRequest;
     _http503Watchdog.disarm();

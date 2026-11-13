@@ -226,9 +226,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               FocusableSlider(
                 value: density.toDouble(),
-                min: 1,
-                max: 5,
-                divisions: 4,
+                min: LibraryDensity.min.toDouble(),
+                max: LibraryDensity.max.toDouble(),
+                divisions: LibraryDensity.max - LibraryDensity.min,
                 onChanged: (v) => SettingsService.instance.write(SettingsService.libraryDensity, v.round()),
               ),
               Row(

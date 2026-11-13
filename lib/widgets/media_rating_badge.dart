@@ -55,6 +55,7 @@ double inlineRatingBadgeWidth(
   required TextDirection textDirection,
   double? iconSize,
   double? spacing,
+  bool goldStars = false,
 }) {
   final size = iconSize ?? textStyle.fontSize ?? 13;
   final info = ratingInfoForSource(rating.source, rating.value);
@@ -64,8 +65,11 @@ double inlineRatingBadgeWidth(
     textScaler: textScaler,
     textDirection: textDirection,
   ).width;
-  return size * (info?.iconAspect ?? 1) + (spacing ?? 4) + labelWidth;
+  return size * (goldStars && _usesGoldStar(rating.source) ? 1 : (info?.iconAspect ?? 1)) +
+      (spacing ?? 4) + labelWidth;
 }
+
+bool _usesGoldStar(String source) => source == 'imdb' || source == 'audience' || source.isEmpty;
 
 /// The bare badge row for an explicit list of scores, for single-line
 /// metadata strips that already own their separators.
@@ -83,12 +87,14 @@ class InlineRatingBadges extends StatelessWidget {
     this.iconSize,
     this.spacing,
     this.entrySpacing,
+    this.goldStars = false,
   });
 
   final List<MediaRatingSource> ratings;
   final TextStyle? textStyle;
   final Color? foregroundColor;
   final double? iconSize;
+  final bool goldStars;
 
   /// Gap between a badge's icon and its value.
   final double? spacing;
@@ -120,6 +126,7 @@ class InlineRatingBadges extends StatelessWidget {
           style: style,
           iconSize: iconSize,
           spacing: spacing,
+          goldStar: goldStars && _usesGoldStar(rating.source),
         ),
       );
     }
@@ -140,13 +147,16 @@ Widget _buildContent({
   required TextStyle style,
   required double? iconSize,
   required double? spacing,
+  required bool goldStar,
 }) {
   final size = iconSize ?? style.fontSize ?? 13;
   final info = source == null ? null : ratingInfoForSource(source, value);
   return Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (info != null)
+      if (goldStar)
+        AppIcon(Symbols.star_rounded, fill: 1, color: const Color(0xFFB8860B), size: size)
+      else if (info != null)
         // A tight box at the viewBox's own aspect: identical to the svg's
         // natural fit at this height, but with a width that is known before
         // layout so fitted lines can measure a badge exactly (#1893).

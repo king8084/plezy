@@ -211,6 +211,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           throw PlaybackException(t.messages.playbackDataNotPrepared);
         }
         playbackContext = await playbackDataFuture;
+        _logStartupPhase('player initialized and playback data ready');
         if (!mounted || player != currentPlayer) return;
 
         if (playbackContext.result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {

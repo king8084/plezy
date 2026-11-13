@@ -156,7 +156,7 @@ class TvBrowseRailLayout {
     final usableWidth = (availableWidth - horizontalPadding).clamp(1.0, double.infinity).toDouble();
     final gapCount = targetCards > 1 ? targetCards - 1 : 0.0;
     final fittedWidth = (usableWidth - (itemGap * gapCount)) / targetCards;
-    return fittedWidth.clamp(minWidth, maxWidth).toDouble();
+    return fittedWidth.clamp(minWidth, maxWidth).toDouble() * LibraryDensity.extraLargeScale(density);
   }
 
   static TvBrowseRailLayoutMetrics metricsForHub({

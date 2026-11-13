@@ -7,15 +7,16 @@ class GridSizeCalculator {
   static double _lerp(double min, double max, double t) => min + (max - min) * t;
 
   /// Calculates the maximum cross-axis extent for grid items based on screen size and density.
-  /// [density] is an int 1–5 (1 = most compact, 5 = most comfortable).
+  /// [density] is an int 1–7, with two extra-large sizes above the original range.
   static double getMaxCrossAxisExtent(BuildContext context, int density) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final f = LibraryDensity.factor(density);
+    final extra = LibraryDensity.extraLargeScale(density);
 
-    if (PlatformDetector.isTV()) return _lerp(90, 180, f);
-    if (ScreenBreakpoints.isDesktopOrLarger(screenWidth)) return _lerp(140, 280, f);
-    if (ScreenBreakpoints.isTablet(screenWidth)) return _lerp(120, 230, f);
-    return _lerp(100, 200, f);
+    if (PlatformDetector.isTV()) return _lerp(90, 180, f) * extra;
+    if (ScreenBreakpoints.isDesktopOrLarger(screenWidth)) return _lerp(140, 280, f) * extra;
+    if (ScreenBreakpoints.isTablet(screenWidth)) return _lerp(120, 230, f) * extra;
+    return _lerp(100, 200, f) * extra;
   }
 
   /// Calculates the number of columns for a given available width.

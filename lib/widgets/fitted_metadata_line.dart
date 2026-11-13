@@ -67,6 +67,7 @@ class FittedMetadataLine extends StatelessWidget {
     this.ratingIconSize,
     this.ratingSpacing,
     this.ratingEntrySpacing,
+    this.goldRatingStars = false,
   });
 
   /// Style shared by every text part, the separators, and the badge values.
@@ -81,6 +82,7 @@ class FittedMetadataLine extends StatelessWidget {
 
   /// Gap between adjacent badges inside the ratings slot.
   final double? ratingEntrySpacing;
+  final bool goldRatingStars;
 
   /// Also for callers that append their own trailing widget to the line.
   static const String separator = '  •  ';
@@ -129,6 +131,7 @@ class FittedMetadataLine extends StatelessWidget {
                     textDirection: textDirection,
                     iconSize: iconSize,
                     spacing: badgeGap,
+                    goldStars: goldRatingStars,
                   ),
               ],
             },
@@ -204,6 +207,7 @@ class FittedMetadataLine extends StatelessWidget {
               iconSize: iconSize,
               spacing: badgeGap,
               entrySpacing: entryGap,
+              goldStars: goldRatingStars,
             ),
           });
         }

@@ -793,6 +793,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // overlaps with MPV property configuration. Awaited inside `_startPlayback`
   // immediately before `player.open()` needs the video URL.
   Future<PlaybackContext>? _playbackDataFuture;
+  final Stopwatch _startupTiming = Stopwatch();
+
+  void _logStartupPhase(String phase) {
+    if (PlatformDetector.isAppleTV()) {
+      appLogger.i('tvOS playback startup: $phase at ${_startupTiming.elapsedMilliseconds} ms');
+    }
+  }
 
   // The item currently loaded in the player: resolver output + effective
   // selections, swapped atomically by [_commitPlaybackSession]. Null until
@@ -1393,6 +1400,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+    _startupTiming.start();
+    _logStartupPhase('player screen opened');
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
       stopAndExit: _stopVideoAndExit,
@@ -1813,6 +1822,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
+        final resolveTiming = Stopwatch()..start();
         _playbackDataFuture = playbackResolver.resolve(
           PlaybackInitializationOptions(
             metadata: _currentMetadata,
@@ -1836,7 +1846,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           ),
           offlineLibraryMode: false,
           downloadOutranksQuality: _downloadOutranksQuality,
-        );
+        ).whenComplete(() {
+          if (PlatformDetector.isAppleTV()) {
+            appLogger.i('tvOS playback startup: source resolution took ${resolveTiming.elapsedMilliseconds} ms');
+          }
+        });
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
         // unhandled async error. The later `await` still receives the error.
@@ -1878,6 +1892,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
+      _logStartupPhase('creating player');
       final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
@@ -2240,6 +2255,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       initPhase = 'starting playback';
+      _logStartupPhase('player configuration finished');
       await _startPlayback();
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
@@ -2682,7 +2698,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
-    await _remoteTransport(TransportCommand.toggle, source: 'Apple TV remote');
+    final command = switch (action.detail) {
+      'mediaPlay' || 'remoteControlPlay' => TransportCommand.play,
+      'mediaPause' || 'remoteControlPause' => TransportCommand.pause,
+      _ => TransportCommand.toggle,
+    };
+    await _remoteTransport(command, source: 'Apple TV remote');
   }
 
   /// Announce an *accepted user transport command* with a centred transient disc.

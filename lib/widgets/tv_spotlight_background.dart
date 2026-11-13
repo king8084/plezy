@@ -24,6 +24,7 @@ import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
   final MediaItem? item;
+  final MediaItem? ratingsFallback;
   final MediaServerClient? client;
   final bool hideSpoilers;
   final double contentBottom;
@@ -40,6 +41,7 @@ class TvSpotlightBackground extends StatelessWidget {
   const TvSpotlightBackground({
     super.key,
     required this.item,
+    this.ratingsFallback,
     required this.client,
     this.hideSpoilers = false,
     this.contentBottom = 360,
@@ -338,11 +340,16 @@ class TvSpotlightBackground extends StatelessWidget {
     } else if (media.isShow) {
       parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
-    // Hub listings carry the scalar rating pair, so the dashboard spotlight
-    // shows every score the shelf request already returned — no per-item
-    // hydration to lengthen it.
-    final ratings = mediaRatingsFor(media);
-    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
+    // Keep the selected item's scores and add missing Rotten Tomatoes scores
+    // supplied by its full metadata or, for episodes, the parent series.
+    final ratings = [...mediaRatingsFor(media)];
+    if (ratingsFallback != null) {
+      final sources = ratings.map((rating) => rating.source).toSet();
+      ratings.addAll(mediaRatingsFor(ratingsFallback!).where(
+        (rating) => rating.source.startsWith('rottenTomatoes') && !sources.contains(rating.source),
+      ));
+    }
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: -1));
     if (media.contentRating != null) {
       parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
     }
@@ -363,6 +370,7 @@ class TvSpotlightBackground extends StatelessWidget {
             ratingIconSize: textStyle.fontSize,
             ratingSpacing: 4 * scale,
             ratingEntrySpacing: 12 * scale,
+            goldRatingStars: true,
           );
     final trailing = metadataTrailing;
     if (trailing == null) return line ?? const SizedBox.shrink();

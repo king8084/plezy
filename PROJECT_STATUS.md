@@ -10,7 +10,8 @@ official tvsign container is installed on Unraid at
 `192.168.100.46:8765` and reports healthy; the owner reports tvsign setup and
 Apple TV pairing are complete. Codemagic produced an unsigned device IPA and
 tvsign reports successful signing and installation on Basement. The owner has
-not yet confirmed app launch or playback on the TV. The standard CI workflow
+reported playback on the TV with approximately four seconds of startup delay.
+The standard CI workflow
 was previously queued for the latest main commit.
 Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
@@ -31,9 +32,9 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   plugin. More items are loaded through the collection paging API.
 - Audio pass-through and startup speed are under investigation. Rivulet uses
   AetherEngine, while this Plezy tvOS fork currently uses its Flutter/mpv
-  playback path. Rivulet documents AC3/E-AC3 stream-copy into tvOS, but Apple
-  TV does not expose raw compressed bitstream output to third-party apps;
-  output format is mediated by tvOS and the selected Apple TV audio settings.
+  playback path. Rivulet documents AC3/E-AC3 stream-copy into AVFoundation;
+  that does not by itself establish unchanged HDMI bitstream output. Output
+  format is mediated by tvOS and the selected Apple TV audio settings.
   TrueHD/DTS are decoded to PCM unless optional AetherEngine object rendering
   is used. First-frame startup needs timing on the same source/device before
   choosing a change.
@@ -55,14 +56,46 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   signed in, and Apple TV pairing complete.
 - Install on Apple TV: tvsign reports it signed and installed Plezy 2.26.0 on
   Basement and shows the app up to date. Owner confirmation on the TV is pending.
-- Owner-confirmed playback: not done.
+- Owner-confirmed playback: reported by the owner; startup is about four
+  seconds versus about 0.5 seconds in Rivulet. Media details are not yet known.
+- Pinning collections: the owner reports not seeing the option. The installed
+  build places “Pin collection to Home” in the collection card's long-press
+  context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Ask the owner to launch Plezy on Basement and confirm startup, sign-in, and
-playback. Record the app commit plus video/audio details. Capture
-open-to-first-frame timings for representative direct-play files before
-changing the player. The owner has no Mac; future builds can use the connected
-Codemagic Apple Silicon workflow in `codemagic.yaml`.
+Wait for the owner to explicitly say “build apple tv” before starting any Apple
+TV build. After the next build and install, verify the home changes and remote
+on the TV, then collect startup timings for the same file and playback mode as
+Rivulet. The owner has no Mac; builds can use the connected Codemagic workflow.
+
+## Unbuilt changes requested by the owner
+- Home row ordering is stored on this device and accessible via the Home toolbar;
+  episode artwork has an E-number badge and the toolbar has a full-description
+  dialog. The spotlight uses gold stars and fetches missing Rotten Tomatoes
+  ratings for a movie or an episode's parent series when available.
+- The tvOS media-key fallback now emits playback actions instead of swallowing
+  them, with duplicate suppression. Neither the remote nor these UI changes
+  have been verified on the Apple TV.
+- Added timestamps for source resolution, player configuration, media open,
+  first-frame signal and display-ready gate. The cause of the reported delay
+  is not yet established: device timings and matching source/mode are needed.
+  Rivulet's AetherEngine uses byte prewarming for the next Plex episode; that
+  does not prove the cause of this owner's initial Jellyfin playback delay.
+- Added focused tests for the remote-key fallback and gold audience star, but
+  Flutter and Dart are unavailable locally, so they have not been run.
+- The card-size setting now offers two larger levels (6 and 7), preserving the
+  previous sizes at levels 1–5. The default tvOS launcher icon uses the
+  existing blue ocean artwork. Both await an authorized build and owner test.
+- The installed unsigned IPA already includes the Top Shelf extension, but the
+  owner reports a black shelf. The app and extension hardcode the upstream app
+  group. Both Mach-O executables in the unsigned IPA lack a code-signature load
+  command, so no entitlement is embedded for a sideload signer to read. Current
+  PlumeImpactor source detects groups from executable entitlements and may
+  suffix the group with the team ID. The installed signed app's entitlements
+  remain unverified. Added an unavailable-container diagnostic; the shelf is
+  not yet fixed. Inspect the signed app and exact tvsign signer version, then
+  determine how both targets can share an authorized group before changing
+  signing. Never log server credentials.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG

@@ -66,15 +66,18 @@ enum ThemeMode {
   };
 }
 
-/// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
+/// Card size is an int 1–7; levels 6 and 7 extend the existing larger sizes.
 /// Default is 3.
 class LibraryDensity {
   static const int min = 1;
-  static const int max = 5;
+  static const int max = 7;
   static const int defaultValue = 3;
 
   /// Returns a 0.0–1.0 factor for interpolation (0 = most compact, 1 = most comfortable).
-  static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
+  static double factor(int density) => (density.clamp(min, 5) - min) / 4;
+
+  /// Extra-large options leave the existing 1–5 sizes unchanged.
+  static double extraLargeScale(int density) => 1 + (density.clamp(5, max) - 5) * 0.2;
 }
 
 /// Gap between cards in media grids (#2083, #1597). Touch, pointer and car
@@ -248,7 +251,7 @@ const String _legacyAudioDownmixKey = 'audio_downmix';
 const String _legacyDeinterlaceKey = 'deinterlace';
 const String _playerScopeGlobalsResetKey = 'player_scope_globals_reset';
 
-/// Migrates from the legacy enum-string format and clamps to 1..5.
+/// Migrates from the legacy enum-string format and clamps to 1..7.
 class _LibraryDensityPref extends Pref<int> {
   const _LibraryDensityPref() : super('library_density');
   @override
@@ -1016,6 +1019,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const libraryDensity = _LibraryDensityPref();
   static const homePinnedCollections = StringListPref('home_pinned_collections');
+  static const homeRowOrder = StringListPref('home_row_order');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1632,6 +1636,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static final List<Pref<Object?>> _resetOnlyPrefs = [
     customDownloadPathType,
     homePinnedCollections,
+    homeRowOrder,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

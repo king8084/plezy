@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,7 @@ import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../models/catalog/catalog_item.dart';
 import '../navigation/main_screen_scope.dart';
@@ -14,6 +17,7 @@ import '../utils/layout_constants.dart';
 import '../utils/formatters.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
+import 'media_rating_badge.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
   TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})
@@ -175,11 +179,15 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
   CatalogItem? _catalogItem;
   MediaItem? _renderItem;
   Color? _accentColor;
+  MediaItem? _ratingsParent;
+  final Map<String, MediaItem> _parentCache = {};
+  int _parentRequest = 0;
 
   @override
   void initState() {
     super.initState();
     _rehydrateCatalogItem();
+    _loadRatingsParent();
   }
 
   @override
@@ -187,9 +195,38 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.item, oldWidget.item)) {
       _rehydrateCatalogItem();
+      _loadRatingsParent();
     } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
       _projectArtwork();
     }
+    if (widget.client != oldWidget.client) _loadRatingsParent();
+  }
+
+  void _loadRatingsParent() {
+    final request = ++_parentRequest;
+    _ratingsParent = null;
+    final item = widget.item;
+    final client = widget.client;
+    if (item == null || client == null || item.catalogItem != null ||
+        mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) return;
+    final id = item.isEpisode ? item.grandparentId : item.id;
+    if (id == null || id.isEmpty) return;
+    final key = '${client.serverId.value}:$id';
+    final cached = _parentCache[key];
+    if (cached != null) {
+      _ratingsParent = cached;
+      return;
+    }
+    unawaited(() async {
+      try {
+        final parent = await client.fetchItem(id);
+        if (parent == null || !mounted || request != _parentRequest) return;
+        _parentCache[key] = parent;
+        setState(() => _ratingsParent = parent);
+      } catch (_) {
+        // The episode remains usable if its parent metadata is unavailable.
+      }
+    }());
   }
 
   void _rehydrateCatalogItem() {
@@ -253,6 +290,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final accentColor = _accentColor;
     final background = TvSpotlightBackground(
       item: _renderItem,
+      ratingsFallback: _ratingsParent,
       client: widget.client,
       hideSpoilers: widget.hideSpoilers,
       contentTop: widget.contentTop,

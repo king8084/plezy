@@ -662,6 +662,18 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     final overlays = <Widget>[
       if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
+      if (item is MediaItem && item.isEpisode && item.index != null)
+        Positioned(
+          top: item.isWatched ? 36 : 6,
+          right: 6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.78), borderRadius: BorderRadius.circular(5)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              child: Text('E${item.index}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+            ),
+          ),
+        ),
     ];
     return ExcludeSemantics(
       child: _CatalogFocusBorder(
