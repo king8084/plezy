@@ -7,6 +7,7 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 Personal tvOS changes are in progress on top of the stock Plezy fork. A manual
 macOS GitHub Actions workflow now packages an unsigned tvOS IPA for tvsign. No
 fork CI build, Apple TV install, or owner-confirmed playback has happened yet.
+Commit `606fc715b` is pushed to `king8084/plezy` on `main`.
 
 Upstream inspection: CI prepares Flutter 3.47.1 and the separately pinned tvOS
 engine, installs CocoaPods, then runs the Runner native reliability tests on a
@@ -38,12 +39,11 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Commit and push the in-progress changes to the fork, run the “Build tvOS
-sideload IPA” workflow, download its `plezy-tvos-ipa` artifact, then upload the
-IPA to tvsign on Unraid. Install on Apple TV, confirm startup, sign-in, and
-playback, and record the app commit plus video/audio details. Capture
-open-to-first-frame timings for representative direct-play files before
-changing the player.
+Dispatch “Build tvOS sideload IPA” from GitHub Actions, download its
+`plezy-tvos-ipa` artifact, then upload the IPA to tvsign on Unraid. Install on
+Apple TV, confirm startup, sign-in, and playback, and record the app commit
+plus video/audio details. Capture open-to-first-frame timings for representative
+direct-play files before changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -69,3 +69,6 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
 - No build or tests run for these edits. The current environment does not have
   the Dart executable available, so Dart formatting/code generation is also
   pending.
+- The workflow is pushed but has not been dispatched: GitHub CLI's saved token
+  is invalid, and the available GitHub browser session is signed out. Dispatch
+  it from the signed-in GitHub Actions UI.
