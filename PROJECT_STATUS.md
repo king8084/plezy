@@ -44,8 +44,10 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
   report that a hosted runner did not acquire the job after multiple attempts
   and cite macOS ARM64 capacity constraints. Redundant retry `43462680240` was
   cancelled before runner assignment. Codemagic build `6af73c8290e83b09c4f9dda6`
-  was started on commit `bbf2edb15` and is waiting for an M2 machine. No IPA
-  artifact exists yet.
+  failed during archive on a Mac mini M2 at commit `bbf2edb15`: the pinned
+  collection lookup called a nonexistent `MultiServerProvider.getClient`.
+  The call has been corrected to `getClientForServer`; a new build is needed.
+  No IPA artifact exists yet.
 - tvsign on Unraid: installed and healthy, using
   `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete, Apple ID
   signed in, and Apple TV pairing complete.
@@ -55,7 +57,7 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 ## Next milestone
 Keep tvsign on Choose an app. The owner has no Mac. A Codemagic Apple Silicon
 M2 workflow is prepared in `codemagic.yaml`; the repository is connected and
-its first build is waiting for a machine. Once an IPA exists, add Plezy through
+its first build failed at Dart compilation; rerun after the fix. Once an IPA exists, add Plezy through
 “Other app…” and install it on the paired Apple TV. Confirm startup, sign-in,
 and playback, and record the app commit plus video/audio details. Capture
 open-to-first-frame timings for representative direct-play files before
@@ -103,5 +105,5 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   https://docs.github.com/en/actions/how-tos/manage-runners/larger-runners/use-larger-runners.
 - Codemagic documents a personal free tier with 500 monthly M2 build minutes.
   The prepared workflow follows the existing unsigned IPA steps. Its YAML was
-  parsed locally; Codemagic accepted the first build, which has not started.
+  parsed locally; the first Codemagic build identified a Dart compilation error.
   https://docs.codemagic.io/billing/pricing/

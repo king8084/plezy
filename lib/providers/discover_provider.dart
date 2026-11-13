@@ -727,7 +727,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       fetchPinnedHomeCollectionHubs(
         settings: settings,
         serverIds: serverIds,
-        clientForServer: _multiServer.getClient,
+        clientForServer: _multiServer.getClientForServer,
       );
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
