@@ -40,19 +40,20 @@ IPA, so producing a stock device build will need a fork-side macOS workflow.
 ## Milestones
 - CI build: standard fork CI queued; device IPA run `43454148475` was cancelled
   while waiting for its `macos-26` runner. GitHub returned no executed steps,
-  build logs, or IPA artifact. The sideload workflow is being moved to the
-  stable `macos-15` ARM runner before retrying.
+  build logs, or IPA artifact. Replacement run `43459871032` is queued on the
+  stable `macos-15` ARM runner; no build steps have started yet.
 - tvsign on Unraid: installed and healthy, using
-  `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete.
+  `/mnt/cacheapp/appdata/docker/tvsign`; first-run setup complete and Apple ID
+  signed in. Apple TV pairing is in progress.
 - Install on Apple TV: not done; planned through tvsign after the IPA build.
 - Owner-confirmed playback: not done.
 
 ## Next milestone
-Retry the IPA workflow on the stable `macos-15` ARM runner. After it succeeds,
-download its `plezy-tvos-ipa` artifact and upload the IPA to tvsign. Install on
-Apple TV, confirm startup, sign-in, and playback, and record the app commit plus
-video/audio details. Capture open-to-first-frame timings for representative
-direct-play files before changing the player.
+Complete Apple TV pairing in tvsign while run `43459871032` waits for a runner.
+When the workflow succeeds, download its `plezy-tvos-ipa` artifact and upload
+the IPA to tvsign. Install on Apple TV, confirm startup, sign-in, and playback,
+and record the app commit plus video/audio details. Capture open-to-first-frame
+timings for representative direct-play files before changing the player.
 
 ## Playback testing
 Record the app commit, source video profile, audio format, and what the LG
@@ -81,5 +82,5 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
 - Run `43454148475` was started by a branch-limited push trigger on
   `codex/first-tvos-test-build`; the workflow is back to manual dispatch only
   for subsequent builds. It ended cancelled before any build steps ran. The
-  sideload workflow now targets `macos-15` to avoid the `macos-26` preview
-  runner pool used by the first attempt.
+  sideload workflow now targets `macos-15`; run `43459871032` was dispatched
+  manually from the updated branch and remains queued without build logs.
