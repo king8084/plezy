@@ -7,8 +7,10 @@ Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 Installed build `0a77954d6` was updated in place through the existing tvsign
 entry on November 13 at 22:45; no deletion/uninstallation was performed.
 The owner confirms working Top Shelf Continue Watching and playback play/pause.
-Startup still takes about four seconds. New changes below are local only;
-no new Apple TV build has been authorized for them.
+Startup still takes about four seconds. The owner has now explicitly authorized
+“build apple tv” and installation of the fix using Unraid. Preparing one
+Codemagic build of the tested source, then an in-place update through the same
+tvsign entry/account. Preserve all existing files and app data; no deletion.
 
 Log `j1hgqr` from the installed build shows source resolution in 25–50 ms,
 first-frame signals in 130–244 ms, and display-negotiation completion at
@@ -162,10 +164,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
 ## Next milestone
 Local app changes are committed as `e4b4390b6`; signer preservation/history is
 committed as `9d30e24cd`. Local Dart/Flutter checks and generated-file freshness
-pass. Next is an explicitly authorized device build, followed by an in-place
-installation and separate owner confirmation of QMS startup and Home Play.
-A further Apple TV build requires the owner to explicitly say “build apple tv”
-again. Keep the existing tvsign entry/account and preserve the installed app.
+pass. The owner now authorizes a device build and in-place installation.
+Track the build result, installation and owner confirmation of QMS startup
+and Home Play separately. Do not start additional feature builds without a
+new explicit “build apple tv” instruction. Keep the existing tvsign entry/account and preserve the installed app.
 CI success, installation and owner-confirmed playback remain separate milestones.
 The owner has no Mac, so native compilation and on-device timing remain pending.
 
@@ -208,8 +210,9 @@ The owner has no Mac, so native compilation and on-device timing remain pending.
   and key survive relaunch, and Stop Sharing closes the listener. It is
   reachable while Plezy runs on the LAN. The owner must enable it and share
   the displayed URL after installation before the assistant can read it.
-  The installed build has none of this yet. No Unraid change was made or
-  authorized for diagnostics.
+  The installed build has none of this yet. The owner now explicitly asks to
+  keep diagnostics network-readable. This needs no Unraid logging container;
+  after installation, obtain the private LAN link once through View Logs.
 - Validation: full Flutter suite passes (8,436 tests, 7 skipped). Final analyzer,
   Dart formatting, strict translation hygiene, hardcoded-string/error checks,
   workflow/script guards, icon consistency and unused-code/file checks pass.
