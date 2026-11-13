@@ -84,3 +84,7 @@ and Denon report. Evaluate AetherEngine after testing the stock build.
   for subsequent builds. It ended cancelled before any build steps ran. The
   sideload workflow now targets `macos-15`; run `43459871032` was dispatched
   manually from the updated branch and remains queued without build logs.
+- The pinned tvOS engine release contains only the ARM64 host
+  `gen_snapshot`; an Intel macOS runner is not compatible with this bundle.
+  Keep the sideload job on a GitHub-hosted ARM64 macOS runner while waiting for
+  runner capacity.
