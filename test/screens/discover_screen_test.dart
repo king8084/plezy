@@ -209,6 +209,10 @@ void main() {
     // would rebuild the whole rail); its bleed layer reads the scope's
     // sideNavigationWidth itself. Assert the rendered bleed position instead.
     final browseRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(browseRail.onActivateItem, isNotNull, reason: 'Apple TV Select opens details through its own handler');
+    await settings.write(SettingsService.homeTextSize, 130);
+    await tester.pump();
+    expect(tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground)).textScale, 1.3);
     expect(browseRail.backgroundBleedLeft, isNull);
     final railBleedPositions = tester
         .widgetList<Positioned>(find.descendant(of: find.byType(TvBrowseRail), matching: find.byType(Positioned)))

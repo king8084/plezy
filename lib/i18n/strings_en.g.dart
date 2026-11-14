@@ -1406,6 +1406,9 @@ class Translations$settings$en {
 	/// en: 'Home Screen'
 	String get homeScreen => 'Home Screen';
 
+	/// en: 'Home text size'
+	String get homeTextSize => 'Home text size';
+
 	/// en: 'Navigation'
 	String get navigation => 'Navigation';
 
@@ -8646,6 +8649,7 @@ extension on Translations {
 			'settings.display' => 'Display',
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
+			'settings.homeTextSize' => 'Home text size',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
 			'settings.liveTv' => 'Live TV',
@@ -8693,9 +8697,9 @@ extension on Translations {
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
-			'themeEditor.slots.outline' => 'Outline',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
@@ -9207,9 +9211,9 @@ extension on Translations {
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
-			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
@@ -9721,9 +9725,9 @@ extension on Translations {
 			'liveTv.manageRecording' => 'Manage recording',
 			'liveTv.cancelRecording' => 'Cancel recording',
 			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
-			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
 			'liveTv.deleteRule' => 'Delete rule',
 			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
 			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
@@ -10235,9 +10239,9 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
-			'performanceOverlay.sampleRate' => 'Sample Rate',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
 			'performanceOverlay.matrix' => 'Matrix',

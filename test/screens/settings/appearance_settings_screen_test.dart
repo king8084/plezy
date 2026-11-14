@@ -9,6 +9,7 @@ import 'package:plezy/services/settings_service.dart' as settings show ThemeMode
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -22,6 +23,8 @@ void main() {
   });
 
   testWidgets('appearance screen renders every reorganized group', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 3000);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -47,6 +50,11 @@ void main() {
     ]) {
       expect(find.text(group), findsOneWidget, reason: 'group $group missing');
     }
+    await tester.tap(find.text(t.settings.homeTextSize));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('130%'));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.homeTextSize), 130);
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(find.text(t.settings.liveTv), 500, scrollable: scrollable);
     expect(find.text(t.settings.liveTvDefaultFavorites), findsOneWidget);

@@ -118,12 +118,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _launchingFromRemote = true;
     appLogger.i('Apple TV remote: Home direct playback requested');
     try {
-      await navigateToMediaItem(context, item, playDirectly: true);
+      await navigateToMediaItem(context, item, playDirectly: true, forcePlayback: true);
     } catch (e, st) {
       appLogger.w('Home remote playback failed', error: e, stackTrace: st);
+      if (mounted) showErrorSnackBar(context, t.messages.playbackFailed);
     } finally {
       _launchingFromRemote = false;
     }
+  }
+
+  Future<bool> _openHomeCardDetails(MediaHub hub, MediaItem item) async {
+    if (!item.isMovie && !item.isEpisode && !item.isShow && !item.isSeason) return false;
+    await navigateToMediaItemDetails(context, item, onRefresh: _discover.updateItem);
+    return true;
   }
 
   bool _initialLoadComplete = false;
@@ -1073,6 +1080,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
+        SettingsService.homeTextSize,
       ],
       builder: (context) => _buildContent(context),
     );
@@ -1232,6 +1240,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
+      onActivateItem: PlatformDetector.isAppleTV() ? _openHomeCardDetails : null,
       // Every other hub pages from its server in View All, as on phones; handing
       // it the preview items only showed that preview again.
       loadMoreItems: _loadHubItems,
@@ -1283,6 +1292,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
+      textScale: svc.read(SettingsService.homeTextSize) / 100,
       foreground: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,

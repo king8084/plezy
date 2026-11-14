@@ -658,6 +658,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static int _clampHomeTextSize(int value) => value.clamp(85, 150);
+  static const homeTextSize = IntPref('home_text_size', defaultValue: 100, transform: _clampHomeTextSize);
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
@@ -1588,6 +1590,7 @@ class SettingsService extends BaseSharedPreferencesService {
     libraryDensity,
     gridSpacing,
     automotiveUiScale,
+    homeTextSize,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,
@@ -1695,6 +1698,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'default_box_fit_mode' => (0, 2),
     'default_video_zoom' => (minimumVideoZoom, maximumVideoZoom),
     'library_density' => (LibraryDensity.min, LibraryDensity.max),
+    'home_text_size' => (85, 150),
     'automotive_ui_scale' => (AutomotiveUiScale.min, AutomotiveUiScale.max),
     'remembered_brightness_level' => (-1, 1),
     _ => null,

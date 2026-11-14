@@ -108,6 +108,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
         SettingsGroup(
           title: t.settings.homeScreen,
           children: [
+            if (PlatformDetector.isTV())
+              SettingSelectionTile<int>(
+                pref: SettingsService.homeTextSize,
+                icon: Symbols.format_size_rounded,
+                title: t.settings.homeTextSize,
+                subtitleBuilder: (value) => '$value%',
+                options: [
+                  for (final value in [85, 100, 115, 130, 150]) DialogOption(value: value, title: '$value%'),
+                ],
+              ),
             if (!PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.showHeroSection,

@@ -34,7 +34,7 @@ class TvPlaybackDiagnostics {
     return RegExp(
           r'^tvOS playback startup: (?:player initialized and playback data ready|display criteria preflight requested|'
           r'first-frame signal before display negotiation|display negotiation complete|first-frame UI ready|'
-          r'opening media|media open returned|source resolution) (?:at|took) [0-9]+ ms$',
+          r'opening media|media open returned|source resolution|primary media discovered|file-loaded signal) (?:at|took) [0-9]+ ms$',
         ).hasMatch(message) ||
         message == 'Apple TV remote: Home direct playback requested' ||
         RegExp(r'^Apple TV remote: playback action source=[a-z_]+ detail=[a-zA-Z]+$').hasMatch(message) ||

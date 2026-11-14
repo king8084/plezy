@@ -299,7 +299,8 @@ void main() {
     expect(find.text('62%'), findsOneWidget);
     expect(find.text('87%'), findsOneWidget);
     expect(find.text('7.4'), findsOneWidget);
-    expect(find.byType(SvgPicture), findsNWidgets(3));
+    expect(find.byType(SvgPicture), findsNWidgets(2));
+    expect(tester.widget<Icon>(find.byIcon(Symbols.star_rounded)).color, const Color(0xFFB8860B));
     expect(find.textContaining('★ 6.2', findRichText: true), findsNothing);
     // The redundant type label no longer opens the line.
     expect(find.text('Movie'), findsNothing);
@@ -1070,6 +1071,7 @@ void main() {
       kind: MediaKind.episode,
       title: 'The One Where the Title Matters',
       summary: 'The episode summary.',
+      rating: 7.2,
       index: 1,
       durationMs: 1380000,
       parentId: season.id,
@@ -1084,6 +1086,7 @@ void main() {
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
       title: 'The One After',
+      summary: 'The second episode summary.',
       index: 2,
       durationMs: 1500000,
       parentId: season.id,
@@ -1129,8 +1132,10 @@ void main() {
     // The hero line is the readable copy of the title (#2217).
     expect(heroTitle, findsOneWidget);
     expect(tester.widget<Text>(heroTitle).data, 'The One Where the Title Matters');
-    expect(find.text('The episode summary.'), findsNWidgets(2));
-    expect(find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The episode summary.')), findsOneWidget);
+    expect(find.text('The episode summary.'), findsOneWidget);
+    expect(find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The episode summary.')), findsNothing);
+    expect(tester.widget<Icon>(find.byIcon(Symbols.star_rounded)).color, const Color(0xFFB8860B));
+    expect(find.byIcon(Symbols.people_rounded), findsNothing);
     // The title sits above the episode's metadata line, inside the block that
     // opens the details sheet.
     final metadataLine = find.byType(FittedMetadataLine);
@@ -1162,6 +1167,14 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.widget<Text>(heroTitle).data, 'The One After');
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_summary'))).data,
+      'The second episode summary.',
+    );
+    expect(
+      find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The second episode summary.')),
+      findsNothing,
+    );
     expect(find.text('S1E2'), findsOneWidget);
     expect(find.text('S1E1'), findsNothing);
     semantics.dispose();

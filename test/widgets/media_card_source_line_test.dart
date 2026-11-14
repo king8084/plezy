@@ -123,8 +123,7 @@ void main() {
     expect(labeled, bare);
   });
 
-  testWidgets('detail episode grid cards show the synopsis and respect hide spoilers', (tester) async {
-    final settings = await SettingsService.getInstance();
+  testWidgets('detail episode grid cards leave the synopsis to the focused hero', (tester) async {
     Future<void> pump() => tester.pumpWidget(
       MaterialApp(
         theme: monoTheme(MonoPalette.dark),
@@ -139,11 +138,6 @@ void main() {
       ),
     );
     await pump();
-    expect(find.text(_longSummary), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await settings.write(SettingsService.hideSpoilers, true);
-    await pump();
-    await tester.pump();
     expect(find.text(_longSummary), findsNothing);
     expect(tester.takeException(), isNull);
   });

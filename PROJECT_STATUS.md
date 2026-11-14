@@ -12,10 +12,17 @@ the Home screen. The same attempt completed after the owner opened Apple TV
 Settings. This strongly suggests Home/Top Shelf activity held the update; it
 does not establish the exact process or lock. Future update procedure: close
 Plezy and remain in Apple TV Settings until installation finishes.
-Owner playback/QMS speed and Home Play confirmation on this new build are
-pending. Network diagnostics are installed; sharing is enabled and port 18765 is reachable on `192.168.100.48`. An
-unauthenticated request returned HTTP 403 as expected. The private URL/key is
-still needed before reading the retained traces.
+The owner confirms startup is MUCH faster and the physical Home Play button
+now works. Authenticated LAN diagnostics were read successfully (HTTP 200);
+unauthenticated access returns HTTP 403. Six installed-build starts reached
+UI-ready at 195, 226, 499, 250, 227 and 332 ms (median 238.5 ms), with the QMS
+SDR wait skipped. The display manager still reports its end around 2.54 s in
+some starts; playback no longer waits for that flag. These are app startup
+signals corroborated by owner feedback, not a frame-by-frame HDMI benchmark.
+Private access details are kept only in `.git/plezy-diagnostics.json` (0600),
+never in Git history. The endpoint is available while Plezy runs; the owner
+was told they can close the app after diagnostics have been read. A later
+probe was unreachable, so follow-up analysis uses the saved six starts.
 
 Log `j1hgqr` from the installed build shows source resolution in 25–50 ms,
 first-frame signals in 130–244 ms, and display-negotiation completion at
@@ -49,6 +56,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- Owner-confirmed playback on installed `98c7123d4`: substantially faster start
+  and working physical Home Play. Authenticated rotating diagnostics are
+  readable directly over the LAN. No new build is authorized for the follow-up
+  UI/navigation edits below.
 - Owner authorized the next build and installation on November 13. Codemagic
   build `6af771ce90e83b09c4f9f245` started at 23:23 Arabia time for commit
   `98c7123d4b57e0c5b2657c58a03830a7528d190f` (tested app source `e4b4390b6`),
@@ -190,18 +201,46 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Local app changes are committed as `e4b4390b6`; signer preservation/history is
-committed as `9d30e24cd`. Local Dart/Flutter checks and generated-file freshness
-pass. Build and in-place installation of `98c7123d4` succeeded. Next, enable
-and verify the new private LAN diagnostics link and obtain owner confirmation
-of QMS startup, Home Play and retained settings. These remain separate from
-CI and installation success. Do not start additional feature builds without a
-new explicit “build apple tv” instruction. Keep the existing tvsign entry/account and preserve the installed app.
-CI success, installation and owner-confirmed playback remain separate milestones.
-The owner has no Mac. Native device compilation passed in Codemagic; native
-policy tests and on-device playback timing remain unverified.
+Finish local validation of the November 14 Home/detail follow-ups below, then
+wait for a new explicit “build apple tv” instruction. Installed `98c7123d4`
+has owner-confirmed fast SDR startup and a working Home Play shortcut.
+CI builds, in-place installs and owner device confirmation remain separate
+milestones. For later updates, keep the same tvsign entry/account and have
+the owner remain in Apple TV Settings until installation finishes.
 
-## Local changes after the installed build (November 13)
+## Pending local follow-ups (November 14)
+- Owner could not find a text-size setting because the installed build only
+  nudged fixed sizes. Added Settings → Appearance → Home Screen → Home text
+  size (85%, 100%, 115%, 130%, 150%). It updates the Home title, metadata/rating
+  and synopsis, preserves poster size and does not scale other detail pages.
+- Apple TV Home center Select opens movie/show/season details; episode cards
+  open their parent show with the episode selected. Physical Play explicitly
+  starts/resumes playback regardless of card activation preferences. On a show
+  it uses On Deck, or the first unwatched episode; episodes/movies add no
+  resolution lookup. Other platforms and normal detail-page actions retain
+  their existing behavior.
+- Photos show the entire Home info block shrinking/aligning per title. Replaced
+  that fitting with fixed, top-aligned logo, metadata and synopsis slots whose
+  geometry depends only on viewport and text size. Wider text column (76% of
+  viewport) and a broader scrim use the previously empty space for descriptions.
+- Owner revised the episode-card request: remove the small synopses below
+  thumbnails and show only the focused episode's description in the top panel.
+  Removed that extra card band, which restores vertical space to the hero;
+  widened its text area and fixed gold stars in its separate TV metadata path.
+  The existing focus and full-information sheet behavior remain available.
+- Performance: current saved median UI-ready is 238.5 ms; source resolution is
+  23–61 ms and most remaining time is between media open and first-frame signal.
+  Existing logs do not split demux/track discovery from first-frame decoding.
+  Added primary-media-discovered and file-loaded timing markers to the narrow
+  rotating trace. No additional speedup is claimed and no speculative decoder,
+  seek, buffer or QMS configuration change was made.
+- Validation: full Flutter suite passes (8,444 tests, 7 skipped), as do
+  analyzer, Dart formatting, strict translation hygiene and hardcoded UI/error
+  checks. Native code is unchanged. Generated bindings were regenerated; the
+  final freshness check follows the source commit. No new CI build or install
+  has been started, and no Unraid change was made for these follow-ups.
+
+## Installed changes in 98c7123d4 (November 13)
 - Remote clarification: playback play/pause already works. The missing action
   is pressing Play on a focused Home media card. Home now listens for that
   action and launches/resumes that card directly. It ignores pause-only events,
@@ -214,7 +253,8 @@ policy tests and on-device playback timing remain unverified.
   “QMS fast start for SDR” can restore waiting on displays that blank.
   This policy uses the owner-confirmed setup, not automatic QMS detection;
   SDR following an HDR output mode may still involve a physical range switch.
-  This is an implemented candidate, not an Apple TV timing result.
+  The owner now confirms a major improvement; authenticated traces show
+  UI-ready in 195–499 ms for six SDR starts. HDR/DV behavior is not yet verified.
 - Native display diagnostics now record requested range/rate/dimensions,
   start/end notifications, pending/in-progress state and release reason at
   info level. Observers are armed before the criteria write, so a switch that
@@ -227,9 +267,10 @@ policy tests and on-device playback timing remain unverified.
   Sources: https://github.com/l984-451/Rivulet and
   https://github.com/superuser404notfound/AetherEngine .
 - Home spotlight title/metadata/summary fonts are nudged larger. Show/season
-  detail rating badges now opt into gold audience stars. Episode cards in the
-  Apple TV detail rail show a three-line synopsis, respect Hide Spoilers and
-  reserve layout space even with full-card styling selected.
+  detail rating badges opt into gold audience stars. The installed build put
+  three-line synopses under episode cards; the owner now requests moving them
+  to the focused hero instead. The specialized TV hero metadata still needs the
+  separate gold-star change in the pending follow-ups above.
 - Rotating diagnostics are implemented in app-private storage: four files of
   up to 256 KiB, a bounded asynchronous queue and an allowlist of timing,
   display and remote events. Titles, media/server URLs, tokens and error
@@ -243,9 +284,9 @@ policy tests and on-device playback timing remain unverified.
   The installed build has none of this yet. The owner now explicitly asks to
   keep diagnostics network-readable. This needs no Unraid logging container;
   after installation, obtain the private LAN link once through View Logs.
-  Owner enabled sharing; a LAN probe of `192.168.100.48:18765/diagnostics`
-  returned HTTP 403 as expected without a key. Awaiting the complete private
-  link to verify authenticated reads; never commit its key to the repository.
+  Owner enabled sharing and supplied the private link in a photo. Verified
+  HTTP 403 without its key and HTTP 200 with it. Access is retained only in
+  `.git/plezy-diagnostics.json` (0600); never commit its key to the repository.
 - Validation: full Flutter suite passes (8,436 tests, 7 skipped). Final analyzer,
   Dart formatting, strict translation hygiene, hardcoded-string/error checks,
   workflow/script guards, icon consistency and unused-code/file checks pass.

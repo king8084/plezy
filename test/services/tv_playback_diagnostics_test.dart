@@ -22,6 +22,8 @@ void main() {
     diagnostics.record('tvOS playback startup: opening media at 42 ms');
     diagnostics.record('Apple TV remote: Home direct playback requested');
     diagnostics.record('tvOS display: switch END elapsedMs=2500');
+    diagnostics.record('tvOS playback startup: primary media discovered at 75 ms');
+    diagnostics.record('tvOS playback startup: file-loaded signal at 95 ms');
     diagnostics.record('GET http://server/video?token=secret');
     diagnostics.record('tvOS playback startup: http://server?token=secret at 10 ms');
     diagnostics.record('Apple TV remote: playback action source=presses detail=http://server');
@@ -29,6 +31,8 @@ void main() {
     final text = await diagnostics.read();
     expect(text, contains('opening media at 42 ms'));
     expect(text, contains('switch END'));
+    expect(text, contains('primary media discovered at 75 ms'));
+    expect(text, contains('file-loaded signal at 95 ms'));
     expect(text, isNot(contains('secret')));
     expect(text, isNot(contains('http://')));
     expect(text, isNot(contains('private')));

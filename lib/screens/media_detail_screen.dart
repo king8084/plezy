@@ -3789,7 +3789,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       children: [
         Positioned(
           left: spotlightLeft,
-          right: size.width * 0.40,
+          right: size.width * 0.24,
           top: spotlightTop,
           bottom: foregroundBottom,
           child: buildHiddenContent
@@ -4067,6 +4067,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         height: summaryLineHeight * summaryMaxLines,
                                         child: Text(
                                           description,
+                                          key: const ValueKey('tv_detail_episode_summary'),
                                           maxLines: summaryMaxLines,
                                           overflow: .ellipsis,
                                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -4274,6 +4275,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ratingIconSize: textStyle.fontSize,
       ratingSpacing: 4 * scale,
       ratingEntrySpacing: 12 * scale,
+      goldRatingStars: true,
     );
   }
 
@@ -4319,7 +4321,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
       episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
-      episodeDescriptionsForHub: _isTvDetailEpisodeHub,
       widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
       fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       gridSpacing: svc.read(SettingsService.gridSpacing),

@@ -32,6 +32,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final double? contentLeft;
   final bool compact;
   final bool showInfo;
+  final double textScale;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
 
@@ -49,6 +50,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.contentLeft,
     this.compact = false,
     this.showInfo = true,
+    this.textScale = 1,
     this.localArtworkPathResolver,
     this.allowNetwork = true,
     this.metadataTrailing,
@@ -112,7 +114,7 @@ class TvSpotlightBackground extends StatelessWidget {
             if (media != null && showInfo)
               Positioned(
                 left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: MediaQuery.sizeOf(context).width * 0.43,
+                right: MediaQuery.sizeOf(context).width * 0.24,
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
@@ -129,18 +131,15 @@ class TvSpotlightBackground extends StatelessWidget {
                     key: ValueKey(media.globalKey),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media, constraints.maxWidth));
-                        }
-
-                        return Align(
-                          alignment: .bottomLeft,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: .bottomLeft,
-                            child: SizedBox(
-                              width: constraints.maxWidth,
-                              child: _buildInfo(context, media, constraints.maxWidth),
+                        if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
+                        return ClipRect(
+                          child: Align(
+                            alignment: .topLeft,
+                            child: _buildInfo(
+                              context,
+                              media,
+                              constraints.maxWidth,
+                              availableHeight: constraints.hasBoundedHeight ? constraints.maxHeight : null,
                             ),
                           ),
                         );
@@ -188,51 +187,66 @@ class TvSpotlightBackground extends StatelessWidget {
       gradient: LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-        colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), bgColor.withValues(alpha: 0)],
-        stops: const [0.0, 0.56, 1.0],
+        colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.50), bgColor.withValues(alpha: 0)],
+        stops: const [0.0, 0.68, 1.0],
       ),
     );
   }
 
-  Widget _buildInfo(BuildContext context, MediaItem media, double width) {
+  Widget _buildInfo(BuildContext context, MediaItem media, double width, {double? availableHeight}) {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
     final title = media.grandparentTitle ?? media.displayTitle;
+    final gap = _sectionGap(scale);
+    final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
+    final summaryFontSize = _summaryFontSize(scale) * textScale;
+    final lineHeight = compact ? 1.34 : 1.45;
+    var summaryLines = compact ? (textScale >= 1.3 ? 2 : 3) : 4;
+    final desiredLogoHeight = _logoHeight(scale);
+    double remainingLogoHeight() => availableHeight == null
+        ? desiredLogoHeight
+        : availableHeight - metadataHeight - 2 * gap - summaryFontSize * lineHeight * summaryLines;
+    while (summaryLines > 1 && remainingLogoHeight() < 32 * scale) {
+      summaryLines--;
+    }
+    final logoHeight = remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
+    // Slot sizes depend only on viewport and text size, never on logo aspect,
+    // synopsis length or missing metadata. Swiping between titles therefore
+    // preserves the metadata and synopsis baselines and their actual font size.
+    final synopsis = summary ?? (shouldHideSpoiler && media.isEpisode ? media.title : null) ?? '';
 
     return Column(
       crossAxisAlignment: .start,
       mainAxisSize: .min,
       children: [
-        _buildLogoOrTitle(context, media, title, width),
-        SizedBox(height: _sectionGap(scale)),
-        _buildMetadataLine(context, media),
-        if (summary != null && summary.isNotEmpty) ...[
-          SizedBox(height: _sectionGap(scale)),
-          Text(
-            summary,
-            maxLines: compact ? 3 : 4,
+        SizedBox(
+          key: const ValueKey('tv_spotlight_logo_slot'),
+          height: logoHeight,
+          child: logoHeight == 0 ? null : _buildLogoOrTitle(context, media, title, width, logoHeight: logoHeight),
+        ),
+        SizedBox(height: gap),
+        SizedBox(
+          key: const ValueKey('tv_spotlight_metadata'),
+          height: metadataHeight,
+          child: Align(alignment: .topLeft, child: _buildMetadataLine(context, media)),
+        ),
+        SizedBox(height: gap),
+        SizedBox(
+          height: summaryFontSize * lineHeight * summaryLines,
+          child: Text(
+            synopsis,
+            key: const ValueKey('tv_spotlight_summary'),
+            maxLines: summaryLines,
             overflow: .ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.78),
-              fontSize: _summaryFontSize(scale),
-              height: compact ? 1.34 : 1.45,
+              fontSize: summaryFontSize,
+              height: lineHeight,
             ),
           ),
-        ] else if (shouldHideSpoiler && media.isEpisode) ...[
-          SizedBox(height: _sectionGap(scale)),
-          Text(
-            media.title ?? '',
-            maxLines: 2,
-            overflow: .ellipsis,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.72),
-              fontSize: _summaryFontSize(scale),
-              height: compact ? 1.34 : 1.45,
-            ),
-          ),
-        ],
+        ),
       ],
     );
   }
@@ -240,7 +254,13 @@ class TvSpotlightBackground extends StatelessWidget {
   /// The logo is contained within its slot; the title fallback gets
   /// [ClearLogoImage.fallbackWidthFor] of the info block's [availableWidth]
   /// at the slot's height (#1796).
-  Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title, double availableWidth) {
+  Widget _buildLogoOrTitle(
+    BuildContext context,
+    MediaItem media,
+    String title,
+    double availableWidth, {
+    required double logoHeight,
+  }) {
     final theme = Theme.of(context);
     // The spotlight scrim washes artwork toward the scaffold background, so
     // light themes recolor light-toned logos to stay visible.
@@ -251,7 +271,6 @@ class TvSpotlightBackground extends StatelessWidget {
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
     final logoWidth = math.min(_logoWidth(scale), availableWidth);
-    final logoHeight = _logoHeight(scale);
     final width = ClearLogoImage.fallbackWidthFor(logoWidth: logoWidth, available: availableWidth);
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: width, height: logoHeight, child: _buildTitle(context, title));
@@ -274,7 +293,7 @@ class TvSpotlightBackground extends StatelessWidget {
         width: width,
         height: logoHeight,
         child: Align(
-          alignment: .centerLeft,
+          alignment: .topLeft,
           child: blurArtwork(
             Image(
               image: logoToneTarget == null
@@ -284,7 +303,7 @@ class TvSpotlightBackground extends StatelessWidget {
               height: logoHeight,
               fit: BoxFit.contain,
               filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
-              alignment: .centerLeft,
+              alignment: .topLeft,
               // Replaces the image under Align's loose constraints, so it
               // takes the whole title slot rather than the logo's.
               errorBuilder: (context, error, stackTrace) => SizedBox.expand(child: _buildTitle(context, title)),
@@ -302,6 +321,7 @@ class TvSpotlightBackground extends StatelessWidget {
       width: logoWidth,
       height: logoHeight,
       fallbackWidth: width,
+      alignment: .topLeft,
       fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
       logoToneTarget: logoToneTarget,
       fallbackBuilder: (context) => _buildTitle(context, title),
@@ -313,9 +333,10 @@ class TvSpotlightBackground extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return FittingTitleText(
       title,
+      alignment: .topLeft,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
         color: colorScheme.onSurface,
-        fontSize: _titleFontSize(scale),
+        fontSize: _titleFontSize(scale) * textScale,
         fontWeight: .w700,
         shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 12)],
       ),
@@ -328,7 +349,7 @@ class TvSpotlightBackground extends StatelessWidget {
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final textStyle = TextStyle(
       color: colorScheme.onSurface,
-      fontSize: _metadataFontSize(scale),
+      fontSize: _metadataFontSize(scale) * textScale,
       fontWeight: .w700,
       letterSpacing: 0.1,
     );

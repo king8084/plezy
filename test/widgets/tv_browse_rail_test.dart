@@ -121,16 +121,6 @@ void main() {
       expect(compactForcedLayout.useWideLayout, isTrue);
       expect(compactForcedLayout.cardWidth, lessThan(forcedLayout.cardWidth));
       expect(compactForcedLayout.posterHeight, lessThan(forcedLayout.posterHeight));
-      final withDescriptions = TvBrowseRailLayout.metricsForHub(
-        hub: hub,
-        availableWidth: 1040,
-        density: LibraryDensity.defaultValue,
-        episodePosterMode: EpisodePosterMode.episodeThumbnail,
-        scale: 0.85,
-        fullCardLayout: true,
-        episodeDescriptions: true,
-      );
-      expect(withDescriptions.height, forcedLayout.height + MediaCard.episodeDescriptionHeight);
     });
 
     test('estimated rail height is stable across mixed hub heights', () {

@@ -15,9 +15,16 @@ import '../test_helpers/prefs.dart';
 /// tab all render through [TvSpotlightBackground]) shows every score the hub
 /// listing already returned. Listings carry the scalar rating pair, so this is
 /// normally one or two entries — never a reason to re-fetch an item.
-Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item) async {
+Future<void> _pumpSpotlight(
+  WidgetTester tester,
+  MediaItem item, {
+  double textScale = 1,
+  Size canvas = const Size(1920, 1080),
+  double contentTop = 80,
+  double contentBottom = 200,
+}) async {
   await SettingsService.getInstance();
-  tester.view.physicalSize = const Size(1920, 1080);
+  tester.view.physicalSize = canvas;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -34,8 +41,9 @@ Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item) async {
               client: null,
               allowNetwork: false,
               compact: true,
-              contentTop: 80,
-              contentBottom: 200,
+              textScale: textScale,
+              contentTop: contentTop,
+              contentBottom: contentBottom,
             ),
           ),
         ),
@@ -57,6 +65,70 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  testWidgets('larger Home text scales descriptions and rating icons without overflow', (tester) async {
+    const item = MediaItem.jellyfin(
+      id: 'scaled',
+      kind: MediaKind.movie,
+      title: 'Title',
+      summary: 'Episode synopsis',
+      rating: 8.3,
+      ratings: [MediaRatingSource(source: 'audience', value: 8.3)],
+    );
+    await _pumpSpotlight(tester, item);
+    final normal = tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize!;
+    await _pumpSpotlight(tester, item, textScale: 1.5);
+    expect(tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize, normal * 1.5);
+    expect(tester.widget<Text>(find.text('Episode synopsis')).maxLines, 2);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('spotlight text rows keep the same baseline and size across synopsis lengths', (tester) async {
+    const short = MediaItem.jellyfin(
+      id: 'short',
+      kind: MediaKind.movie,
+      title: 'Short title',
+      summary: 'Short synopsis.',
+      year: 2024,
+    );
+    final long = short.copyWith(
+      id: 'long',
+      title: 'A longer show title',
+      summary: List.filled(12, 'A longer synopsis uses more available horizontal space.').join(' '),
+    );
+    await _pumpSpotlight(tester, short);
+    final metadata = find.byKey(const ValueKey('tv_spotlight_metadata'));
+    final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
+    final initialMetadataTop = tester.getTopLeft(metadata);
+    final initialSummaryTop = tester.getTopLeft(summary);
+    final initialFont = tester.widget<Text>(summary).style!.fontSize;
+    await _pumpSpotlight(tester, long);
+    expect(tester.getTopLeft(metadata), initialMetadataTop);
+    expect(tester.getTopLeft(summary), initialSummaryTop);
+    expect(tester.widget<Text>(summary).style!.fontSize, initialFont);
+    expect(tester.getSize(summary).width, greaterThan(1920 * 0.65));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('maximum Home text size stays inside the short spotlight band on a 960x540 TV', (tester) async {
+    const item = MediaItem.jellyfin(
+      id: 'tight',
+      kind: MediaKind.movie,
+      title: 'A long title on the small TV canvas',
+      summary: 'A long description that still has to stay above the posters, with the largest text size.',
+      year: 2024,
+    );
+    await _pumpSpotlight(
+      tester,
+      item,
+      textScale: 1.5,
+      canvas: const Size(960, 540),
+      contentTop: 54,
+      contentBottom: 400,
+    );
+    expect(tester.getBottomLeft(find.byKey(const ValueKey('tv_spotlight_summary'))).dy, lessThanOrEqualTo(140.01));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('dashboard spotlight badges every rating the listing carried', (tester) async {
     await _pumpSpotlight(
