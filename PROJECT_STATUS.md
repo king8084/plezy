@@ -4,6 +4,56 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up, local changes only (not built/installed): owner supplied
+an Industry season-page photo showing a one-line synopsis and clipped actions
+when moving Up to Show Info, requested no Rotten Tomatoes on episode-level
+Continue Watching, and asked for IMDb score/votes on Seerr request details.
+- Show/season info and action focus now reserve at least a 320-scaled-pixel
+  reading band, allow five synopsis lines, and increase the tab/hero,
+  summary/action and action/rail gaps. When necessary, the existing rail slides
+  below the fold; poster sizes and the selected episode stay intact. Returning
+  to episodes restores the compact rail position. Only chrome-focus changes
+  rebuild this layout; scrubbing episodes keeps the existing isolated updates.
+- TV Home episode metadata filters Rotten Tomatoes, including percentages
+  present on the episode itself; it never borrows series RT for an episode.
+  Series metadata still supplies genres/age rating. Detail episode focus also
+  uses only the episode's scores; show/movie-level metadata retains RT on
+  Favorites, lists, collections and other title surfaces.
+- Seerr request detail headlines now use an attributed IMDb score and its own
+  votes from the existing community-ratings integration (MDBList is already
+  supported), explicitly labelled IMDb with the existing dark-gold star. The
+  native Seerr TMDB scalar/count is no longer used as that headline. Missing
+  IMDb means no headline score; missing IMDb votes never borrows TMDB's count.
+  Other catalog sources retain their existing headlines and the existing
+  attributed-ratings section remains available.
+- Seerr rows already have TMDB ids, so their community lookup now starts in
+  parallel with Seerr detail/recommendation fetching. Existing per-profile
+  cache/coalescing (12 hours, 300 entries) is reused. Only an opened request
+  detail triggers that lookup; no per-card MDBList hydration for the 60-title
+  recommendation shelf, no new API service/key, no request submitted.
+Research: official MDBList API documents ratings/votes and lookup by TMDB/IMDb:
+https://api.mdblist.com/docs/
+The current MDBList client already reads `ratings[].source/value/votes` via
+`/{provider}/{movie|show}/{id}`. Seerr documents IMDb combined movie ratings,
+while its TV ratings docs do not promise the same IMDb/vote contract; reusing
+MDBList's existing common movie/show mapping is the quickest implementation.
+https://docs.seerr.dev/api/get-rt-and-imdb-movie-ratings-combined/
+https://docs.seerr.dev/api/get-tv-ratings/
+Validation: 162 affected detail, catalog-detail, spotlight, community-cache and
+MDBList-source tests pass (`/tmp/plezy-info-ratings-tests-final.log`). Integration
+regressions use the real MDBList client/adapter with mocked HTTP for movie/show:
+IMDb 8.5 / 12K votes appears while Seerr detail is still pending, repeat visits
+make one cached lookup, and missing IMDb/votes cannot substitute native TMDB.
+Local 1280x720 and 1920x1080 renders inspected with readable Noto test fonts,
+large posters and supplemental rails: `/tmp/plezy-show-info-1280.png` and
+`/tmp/plezy-show-info-1920.png` (placeholder art/icons). Temporary visual test
+removed. String/error/diff guards pass. Whole-project analysis passes
+(`/tmp/plezy-info-ratings-analyze-final.log`).
+Next step: owner review; an explicit "build apple tv" is required before CI,
+and a new scoped authorization before any further Unraid change. Latest
+installed source remains `0619ea0fe`; owner device verification of these three
+follow-ups remains pending. No new build/install or Unraid access in this task.
+
 November 14: owner explicitly requested "build apple tv" for `0619ea0fe`,
 authorizing Unraid for all steps needed for this build only and confirming
 Plezy closed / Apple TV awake inside Settings. Pushed the tested app revision

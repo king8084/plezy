@@ -404,7 +404,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // only the foreground info panel, never the whole screen with its rail
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
-  bool _tvDetailActionRowHasFocus = false;
+  final _tvDetailActionRowHasFocus = ValueNotifier(false);
+  late final _tvDetailChromeFocus = Listenable.merge([_tvDetailInfoFocusNode, _tvDetailActionRowHasFocus]);
 
   // Full item snapshots are reusable across preference changes; resolved
   // sources are not. A generation retires probes after refresh or selection.
@@ -427,6 +428,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final Listenable _tvDetailForegroundListenable = Listenable.merge([
     _tvDetailFocusedEpisode,
     _focusedEpisodeMetadataRevision,
+    _tvDetailChromeFocus,
   ]);
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
@@ -1161,6 +1163,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _backButtonFocusNode.dispose();
     _overviewFocusNode.dispose();
     _tvDetailInfoFocusNode.dispose();
+    _tvDetailActionRowHasFocus.dispose();
     _infoRowsFocusNode.dispose();
     _extrasSelectLongPress.dispose();
     for (final node in _seasonTabFocusNodes) {
@@ -2609,7 +2612,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool get _hasTvSeasonTabs => _metadata.isShow && !_showEpisodesDirectly && _seasons.length > 1;
 
   void _focusTvSeasonTabs() {
-    _tvDetailActionRowHasFocus = false;
+    _tvDetailActionRowHasFocus.value = false;
     _clearTvDetailFocusedEpisode();
     _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
     _scrollSeasonTabIntoView(_selectedSeasonIndex);
@@ -2724,7 +2727,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       if (changedSeason) _selectSeason(index);
                       if (PlatformDetector.isTV()) {
                         _clearTvDetailFocusedEpisode();
-                        _tvDetailActionRowHasFocus = false;
+                        _tvDetailActionRowHasFocus.value = false;
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (!_canUseDetail) return;
                           final rail = _tvDetailRailKey.currentState;
@@ -3803,6 +3806,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     BuildContext context,
     MediaItem metadata,
     KeyEventResult Function(FocusNode, KeyEvent) handleBack,
+  ) => ListenableBuilder(
+    listenable: _tvDetailChromeFocus,
+    builder: (context, _) => _buildTvDetailLayout(context, metadata, handleBack),
+  );
+
+  Widget _buildTvDetailLayout(
+    BuildContext context,
+    MediaItem metadata,
+    KeyEventResult Function(FocusNode, KeyEvent) handleBack,
   ) {
     final size = MediaQuery.sizeOf(context);
     final detailHubs = _tvDetailHubs(metadata);
@@ -3811,10 +3823,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
+    final expandShowInfo =
+        (_tvDetailInfoFocusNode.hasFocus || _tvDetailActionRowHasFocus.value) && (metadata.isShow || metadata.isSeason);
     final seasonTabsHeight = _hasTvSeasonTabs ? 48.0 : 0.0;
     final seasonTabsTop = MediaQuery.paddingOf(context).top + 64.0;
     final spotlightTop = _hasTvSeasonTabs
-        ? seasonTabsTop + seasonTabsHeight + 16 * detailScale
+        ? seasonTabsTop + seasonTabsHeight + (expandShowInfo ? 24 : 16) * detailScale
         : (size.height * 0.08).clamp(56.0 * detailScale, 110.0 * detailScale).toDouble();
     final rawRailHeight = _estimateTvDetailRailHeight(size, detailHubs);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
@@ -3823,8 +3837,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final stableRailHeight = _tvDetailStableRailHeight;
     final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
     final railTopPadding = 12 * detailScale;
-    final actionRailGap = _hasTvSeasonTabs ? 20.0 : _tvDetailActionRailGap;
-    final foregroundBottom = (railHeight - railTopPadding) + actionRailGap * detailScale;
+    final actionRailGap = expandShowInfo
+        ? 40.0
+        : _hasTvSeasonTabs
+        ? 20.0
+        : _tvDetailActionRailGap;
+    final compactForegroundBottom = (railHeight - railTopPadding) + actionRailGap * detailScale;
+    // Show Info gets a real reading band, even with large poster settings or
+    // a tall recommendation row. Slide the existing rail below the fold;
+    // its cards keep their configured size and return when focus leaves info.
+    final availableInfoHeight = size.height - spotlightTop - compactForegroundBottom;
+    final railShift = expandShowInfo ? (320 * detailScale - availableInfoHeight).clamp(0.0, railHeight) : 0.0;
+    final foregroundBottom = compactForegroundBottom - railShift;
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
     // See _tvDetailRouteSettled. The children stay in place (only their
     // content is withheld) so the Stack keeps its elements across the swap.
@@ -3893,7 +3917,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           Positioned(
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: -railShift,
             child: TvBrowseRail(
               key: _tvDetailRailKey,
               hubs: detailHubs,
@@ -3957,6 +3981,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     final theme = Theme.of(context);
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    final expandShowInfo =
+        (_tvDetailInfoFocusNode.hasFocus || _tvDetailActionRowHasFocus.value) && (metadata.isShow || metadata.isSeason);
     // The focused episode's own title. The logo/title slot above keeps the
     // show's name, so without this line the episode title exists only on the
     // (usually truncated) rail card (#2217).
@@ -3976,11 +4002,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final episodeTitleGap = 4 * scale;
         final metadataLineHeight = 22 * scale;
         final logoMetadataGap = 14 * scale;
-        final summaryGap = 10 * scale;
+        final summaryGap = (expandShowInfo ? 16 : 10) * scale;
         final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
         final summaryLineHeight = summaryFontSize * 1.35;
         final actionHeight = _tvDetailActionSize * scale;
-        final actionGap = 16 * scale;
+        final actionGap = (expandShowInfo ? 24 : 16) * scale;
         final hasDescription = description != null && description.isNotEmpty;
         final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
         final episodeTitleBlockHeight = hasEpisodeTitle ? episodeTitleLineHeight + episodeTitleGap : 0.0;
@@ -3993,7 +4019,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // A focused thumbnail's extra title row must not evict its synopsis.
         // Keep at least one line when supplied, shrinking the show logo first.
         final minimumSummaryLines = hasDescription ? 1 : 0;
-        for (var lines = hasDescription ? 3 : 0; lines >= minimumSummaryLines; lines--) {
+        for (var lines = hasDescription ? (expandShowInfo ? 5 : 3) : 0; lines >= minimumSummaryLines; lines--) {
           final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
           final reservedHeight =
               logoMetadataGap +
@@ -4144,7 +4170,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       ),
                     ),
                     SizedBox(height: actionGap),
-                    SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                    SizedBox(
+                      key: const ValueKey('tv_detail_actions'),
+                      height: actionHeight,
+                      child: _buildActionButtons(metadata),
+                    ),
                   ],
                 ),
               ),
@@ -4199,8 +4229,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final episodeRatings = focusedEpisode == null
         ? const <MediaRatingSource>[]
         : mediaRatingsFor(_withProbedRatings(focusedEpisode));
-    // An episode without scores of its own shows the title's.
-    final ratings = episodeRatings.isNotEmpty ? episodeRatings : _titleRatings(metadata);
+    final ratings = focusedEpisode == null
+        ? _titleRatings(metadata)
+        : episodeRatings.where((rating) => !rating.source.startsWith('rottenTomatoes')).toList();
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
 
     return parts;
@@ -4592,18 +4623,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _setTvDetailActionRowFocus(bool hasFocus) {
-    _tvDetailActionRowHasFocus = hasFocus;
+    _tvDetailActionRowHasFocus.value = hasFocus;
     if (hasFocus) _clearTvDetailFocusedEpisode();
   }
 
   void _focusTvDetailActionRow() {
-    _tvDetailActionRowHasFocus = true;
+    _tvDetailActionRowHasFocus.value = true;
     _clearTvDetailFocusedEpisode();
     _playButtonFocusNode.requestFocus();
   }
 
   void _handleTvDetailFocusedRailItemChanged(MediaHub hub, MediaItem item) {
-    if (_tvDetailActionRowHasFocus) {
+    if (_tvDetailActionRowHasFocus.value) {
       _clearTvDetailFocusedEpisode();
       return;
     }

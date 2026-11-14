@@ -73,6 +73,38 @@ void main() {
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
+  testWidgets('episode spotlight keeps its score without title-level Rotten Tomatoes', (tester) async {
+    const episode = MediaItem.jellyfin(
+      id: 'ep',
+      kind: MediaKind.episode,
+      title: 'Episode',
+      ratings: [
+        MediaRatingSource(source: 'audience', value: 7.2),
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.1),
+      ],
+    );
+    const show = MediaItem.jellyfin(
+      id: 'show',
+      kind: MediaKind.show,
+      title: 'Show',
+      genres: ['Comedy'],
+      ratings: [
+        MediaRatingSource(source: 'imdb', value: 8.5),
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.3),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 9.4),
+      ],
+    );
+    await _pumpSpotlight(tester, episode, ratingsFallback: show);
+    expect(find.text('7.2'), findsOneWidget);
+    for (final value in ['91%', '93%', '94%', '8.5']) {
+      expect(find.text(value), findsNothing);
+    }
+    await _pumpSpotlight(tester, show);
+    expect(find.text('93%'), findsOneWidget);
+    expect(find.text('94%'), findsOneWidget);
+    expect(find.text('8.5'), findsOneWidget);
+  });
+
   testWidgets('episode file tags never borrow the parent series video format', (tester) async {
     const episode = MediaItem.jellyfin(id: 'episode', kind: MediaKind.episode, title: 'Episode');
     const parent = MediaItem.jellyfin(

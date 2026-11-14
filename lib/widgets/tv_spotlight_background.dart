@@ -397,10 +397,13 @@ class TvSpotlightBackground extends StatelessWidget {
     } else if (media.isShow) {
       parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
-    // Keep the selected item's scores and add missing Rotten Tomatoes scores
-    // supplied by its full metadata or, for episodes, the parent series.
-    final ratings = [...mediaRatingsFor(media)];
-    if (ratingsFallback != null) {
+    // Episode scores stay episode-level. Critic/audience percentages describe
+    // a whole title and remain available on show/movie-level surfaces only.
+    final ratings = [
+      for (final rating in mediaRatingsFor(media))
+        if (!media.isEpisode || !rating.source.startsWith('rottenTomatoes')) rating,
+    ];
+    if (!media.isEpisode && ratingsFallback != null) {
       final sources = ratings.map((rating) => rating.source).toSet();
       ratings.addAll(
         mediaRatingsFor(

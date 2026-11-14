@@ -643,6 +643,102 @@ void main() {
     expect(find.text('S1E1'), findsOneWidget);
   });
 
+  for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
+    testWidgets('show info has five synopsis lines and clear actions above large rails at $canvas', (tester) async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.libraryDensity, LibraryDensity.max);
+      await settings.write(SettingsService.episodePosterMode, EpisodePosterMode.episodeThumbnail);
+      tester.view.physicalSize = canvas;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final show =
+          testMediaItem(
+            id: 'industry',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.show,
+            title: 'Industry',
+            summary: List.filled(15, 'Young graduates compete in international finance.').join(' '),
+            serverId: 'server_1',
+            year: 2020,
+            durationMs: 3420000,
+            contentRating: 'TV-MA',
+            roles: const [MediaRole(id: 'actor', tag: 'Cast Member')],
+          ).copyWith(
+            ratings: const [
+              MediaRatingSource(source: 'imdb', value: 7.5),
+              MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.1),
+            ],
+          );
+      final seasons = [
+        for (var i = 1; i <= 4; i++)
+          testMediaItem(
+            id: 's$i',
+            backend: show.backend,
+            kind: MediaKind.season,
+            title: 'Season $i',
+            index: i,
+            parentId: show.id,
+            serverId: show.serverId,
+          ),
+      ];
+      final episodes = [
+        for (var i = 1; i <= 8; i++)
+          testMediaItem(
+            id: 'e$i',
+            backend: show.backend,
+            kind: MediaKind.episode,
+            title: 'Episode $i',
+            index: i,
+            parentIndex: 1,
+            parentId: 's1',
+            grandparentId: show.id,
+            serverId: show.serverId,
+          ),
+      ];
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {show.id: seasons, for (final season in seasons) season.id: episodes},
+        relatedHubs: [
+          MediaHub(id: 'related', title: 'Related', type: 'show', items: [show]),
+        ],
+      );
+      final provider = testMultiServer(clients: [client]).provider;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
+      final actions = find.byKey(const ValueKey('tv_detail_actions'));
+      final originalRailTop = tester.getTopLeft(find.byType(TvBrowseRail)).dy;
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+      }
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
+      expect(tester.widget<Text>(summary).maxLines, 5);
+      expect(tester.getSize(summary).height, greaterThanOrEqualTo(100));
+      final scale = TvLayoutConstants.scaleForSize(canvas);
+      expect(
+        tester.getBottomLeft(actions).dy + 24 * scale,
+        lessThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),
+      );
+      expect(tester.getTopLeft(find.byType(TvBrowseRail)).dy, greaterThanOrEqualTo(originalRailTop));
+      // Return to the episode rail without changing its selected item.
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(tester.getTopLeft(find.byType(TvBrowseRail)).dy, originalRailTop);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('TV detail keeps one season row with options and switches it from tabs', (tester) async {
     await SettingsService.getInstance();
 

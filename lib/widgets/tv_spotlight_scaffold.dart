@@ -219,7 +219,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     if (item == null || client == null || item.catalogItem != null) return;
 
     final needsDescription =
-        !mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes')) ||
+        (!item.isEpisode && !mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) ||
         item.genres?.any((genre) => genre.trim().isNotEmpty) != true ||
         item.contentRating?.trim().isNotEmpty != true;
     final version = item.mediaVersions?.firstOrNull;
