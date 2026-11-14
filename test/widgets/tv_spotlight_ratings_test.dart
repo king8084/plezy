@@ -79,7 +79,7 @@ void main() {
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
-  testWidgets('tight Home header shrinks the logo before dropping synopsis lines', (tester) async {
+  testWidgets('tight Home header keeps the normal logo size', (tester) async {
     final episode = MediaItem.jellyfin(
       id: 'episode',
       kind: MediaKind.episode,
@@ -89,17 +89,19 @@ void main() {
       index: 16,
       summary: List.filled(20, 'Phil trains for a charity basketball game.').join(' '),
     );
-    await _pumpSpotlight(tester, episode, contentBottom: 800);
+    await _pumpSpotlight(tester, episode, contentBottom: 760);
     final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
-    expect(tester.widget<Text>(summary).maxLines, 3);
-    expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(280));
-    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, greaterThan(0));
+    expect(tester.widget<Text>(summary).maxLines, 1);
+    expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(320));
+    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, 96);
     expect(tester.takeException(), isNull);
   });
 
   for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
     for (final density in [6, 7]) {
-      testWidgets('Home keeps three synopsis lines with poster size $density at $canvas', (tester) async {
+      testWidgets('Home keeps its normal logo and readable synopsis with poster size $density at $canvas', (
+        tester,
+      ) async {
         final settings = await SettingsService.getInstance();
         await settings.write(SettingsService.libraryDensity, density);
         await settings.write(SettingsService.episodePosterMode, EpisodePosterMode.seriesPoster);
@@ -125,12 +127,14 @@ void main() {
           episodePosterMode: settings.read(SettingsService.episodePosterMode),
           tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+          showNextHubPeek: false,
         );
         final spotlight = ValueNotifier<MediaItem?>(episode);
         addTearDown(spotlight.dispose);
         await tester.pumpWidget(
           MaterialApp(
             home: TvSpotlightScaffold(
+              showNextHubPeek: false,
               hubs: hubs,
               spotlightListenable: spotlight,
               resolveSpotlight: () => episode,
@@ -144,7 +148,13 @@ void main() {
         );
         await tester.pumpAndSettle();
         final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
-        expect(tester.widget<Text>(summary).maxLines, 3);
+        expect(tester.getSize(summary).width, greaterThan(canvas.width * 0.9));
+        expect(tester.widget<Text>(summary).style!.shadows, isNotEmpty);
+        expect(tester.widget<Text>(summary).maxLines, greaterThanOrEqualTo(density == 6 ? 3 : 2));
+        expect(
+          tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height,
+          closeTo(96 * (canvas.height / 1080).clamp(0.85, 1.35), 0.01),
+        );
         final rail = find.byKey(const ValueKey('home_rail_bounds'));
         expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(rail).dy));
         expect(tester.getBottomRight(rail).dy, lessThanOrEqualTo(canvas.height));
@@ -279,7 +289,7 @@ void main() {
     final normal = tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize!;
     await _pumpSpotlight(tester, item, textScale: 1.5);
     expect(tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize, normal * 1.5);
-    expect(tester.widget<Text>(find.text('Episode synopsis')).maxLines, 2);
+    expect(tester.widget<Text>(find.text('Episode synopsis')).maxLines, 3);
     expect(find.text('4K'), findsOneWidget);
     expect(find.text('HEVC'), findsOneWidget);
     expect(find.text('Dolby Vision'), findsOneWidget);

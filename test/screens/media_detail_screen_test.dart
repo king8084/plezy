@@ -717,13 +717,14 @@ void main() {
       final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
       final actions = find.byKey(const ValueKey('tv_detail_actions'));
       final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
-      expect(tester.widget<Text>(summary).maxLines, inInclusiveRange(1, 4));
+      expect(tester.widget<Text>(summary).maxLines, 4);
       expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
       expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
       final firstCard = find.byType(MediaCard).first;
       expect(tester.getBottomRight(firstCard).dy, lessThanOrEqualTo(canvas.height));
       expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
       final originalRailTop = tester.getTopLeft(find.byType(TvBrowseRail)).dy;
+      final episodeRailHeight = tester.getSize(find.byType(TvBrowseRail)).height;
       for (var i = 0; i < 2; i++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
         await tester.pumpAndSettle();
@@ -751,6 +752,7 @@ void main() {
         expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
         expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
         if (i == 1) {
+          expect(tester.getSize(find.byType(TvBrowseRail)).height, greaterThan(episodeRailHeight));
           final activeCard = find
               .byWidgetPredicate(
                 (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).id == show.id,

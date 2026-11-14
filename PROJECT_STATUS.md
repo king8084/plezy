@@ -4,6 +4,33 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up after installed `24959a1ed`: owner rejects the tiny Home
+logo and missing episode synopsis, asks to use more horizontal text space,
+improve bright-artwork contrast, and move posters down into the next-row
+heading preview. Home restores the normal compact logo height, uses the full
+inset text width and up to four synopsis lines. Home and detail hide the next
+row preview and reclaim 12 scaled pixels of empty row trailing padding; card
+size/captions stay intact and Down still navigates every row. Episode detail
+now reserves the focused row's height instead of the tallest supplemental
+poster row, so episodes retain four synopsis lines and their full visible row.
+Moving down recalculates the band for cast/recommendations. Summary, episode
+title and metadata text have a thin black outline for bright artwork.
+Owner also reports a possible slight delay changing Continue Watching items:
+reduced spotlight settling from 150 to 80 ms and info crossfade from 280 to
+120 ms; artwork rotation/playback behavior and the season tag preload remain.
+Validation: all 147 detail, rail, spotlight and controller tests pass
+(`/tmp/plezy-logo-reading-tests.log`). Tests verify normal Home logo height,
+wide outlined synopsis, sizes 6/7, full initial/lower rows, four episode
+synopsis lines, and 80 ms title settling. Static analysis and diff checks pass
+(`/tmp/plezy-logo-reading-analyze.log`). Local 720p/1080p layout renders checked:
+`/tmp/plezy-home-reading-1280.png`, `/tmp/plezy-home-reading-1920.png`,
+`/tmp/plezy-season-reading-1280.png`, `/tmp/plezy-season-reading-1920.png`;
+these use placeholder art and some fallback font/icon glyphs, not device
+visual proof. Temporary capture fixtures removed. Owner requested pushing the
+fixes; no new build/install is authorized yet. Latest installed remains
+`24959a1ed`. Next: explicit Apple TV build request and build-scoped Unraid
+permission, then owner visual/tag/response/playback confirmation separately.
+
 November 14: owner explicitly requested another Apple TV build, authorized
 Unraid and confirmed Plezy closed / TV in Settings. Pushed
 `24959a1edb2e215fe79cdce48c0ea30929548463`; Codemagic build #13

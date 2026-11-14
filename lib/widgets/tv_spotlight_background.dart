@@ -122,13 +122,13 @@ class TvSpotlightBackground extends StatelessWidget {
             if (media != null && showInfo)
               Positioned(
                 left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: MediaQuery.sizeOf(context).width * 0.24,
+                right: contentLeft ?? TvLayoutConstants.horizontalInset,
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
                 // saveLayers are bounded to the text region, not the screen.
                 child: AnimatedSwitcher(
-                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
+                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 120)),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeOutCubic,
                   // Expand instead of the default loose centered Stack so the
@@ -228,7 +228,7 @@ class TvSpotlightBackground extends StatelessWidget {
         availableHeight == null ||
         availableHeight >=
             episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight;
-    var summaryLines = compact ? (textScale >= 1.3 ? 2 : 3) : 4;
+    var summaryLines = compact ? (textScale >= 1.3 ? 3 : 4) : 4;
     final desiredLogoHeight = _logoHeight(scale);
     double remainingLogoHeight() => availableHeight == null
         ? desiredLogoHeight
@@ -238,9 +238,7 @@ class TvSpotlightBackground extends StatelessWidget {
               (showBadgeRow ? badgeGap + badgeHeight : 0) -
               2 * gap -
               summaryFontSize * lineHeight * summaryLines;
-    // Large posters reduce the header band. Give up logo height before
-    // synopsis lines; keeping a minimum logo used to collapse the text early.
-    while (summaryLines > 1 && remainingLogoHeight() < 0) {
+    while (summaryLines > 1 && remainingLogoHeight() < desiredLogoHeight) {
       summaryLines--;
     }
     final logoHeight = remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
@@ -272,6 +270,7 @@ class TvSpotlightBackground extends StatelessWidget {
               overflow: .ellipsis,
               style: TextStyle(
                 color: colorScheme.onSurface,
+                shadows: TvLayoutConstants.heroTextShadows,
                 fontSize: _metadataFontSize(scale) * textScale,
                 fontWeight: .w600,
                 height: 1.3,
@@ -306,6 +305,7 @@ class TvSpotlightBackground extends StatelessWidget {
             overflow: .ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.78),
+              shadows: TvLayoutConstants.heroTextShadows,
               fontSize: summaryFontSize,
               height: lineHeight,
             ),
@@ -413,6 +413,7 @@ class TvSpotlightBackground extends StatelessWidget {
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final textStyle = TextStyle(
       color: colorScheme.onSurface,
+      shadows: TvLayoutConstants.heroTextShadows,
       fontSize: _metadataFontSize(scale) * textScale,
       fontWeight: .w700,
       letterSpacing: 0.1,

@@ -61,6 +61,12 @@ class GridLayoutConstants {
 }
 
 class TvLayoutConstants {
+  static const heroTextShadows = [
+    Shadow(color: Color(0xE6000000), offset: Offset(-1, 0)),
+    Shadow(color: Color(0xE6000000), offset: Offset(1, 0)),
+    Shadow(color: Color(0xE6000000), offset: Offset(0, -1)),
+    Shadow(color: Color(0xE6000000), offset: Offset(0, 1)),
+  ];
   static const double horizontalInset = 72;
   static const double shelfHorizontalInset = 56;
   static const double shelfVerticalGap = 32;

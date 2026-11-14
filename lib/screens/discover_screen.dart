@@ -1232,6 +1232,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       key: _tvBrowseRailKey,
       hubs: browseHubs,
       initialHubId: 'continue_watching',
+      showNextHubPeek: false,
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hubIconFor(hub),
@@ -1287,6 +1288,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final browseHubs = _tvBrowseHubs;
 
     return TvSpotlightScaffold(
+      showNextHubPeek: false,
       hubs: browseHubs,
       spotlightListenable: _spotlight,
       resolveSpotlight: () => _spotlight.resolve(browseHubs),

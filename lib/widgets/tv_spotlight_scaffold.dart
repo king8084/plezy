@@ -20,7 +20,7 @@ import 'tv_spotlight_background.dart';
 import 'media_rating_badge.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
-  TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})
+  TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 80)})
     : _settleDelay = settleDelay,
       _debouncer = Debouncer(settleDelay),
       super(null);
@@ -75,6 +75,7 @@ class TvSpotlightScaffold extends StatelessWidget {
     required this.foreground,
     this.hideSpoilers,
     this.textScale = 1,
+    this.showNextHubPeek = true,
   });
 
   final List<MediaHub> hubs;
@@ -84,6 +85,7 @@ class TvSpotlightScaffold extends StatelessWidget {
   final Widget foreground;
   final bool? hideSpoilers;
   final double textScale;
+  final bool showNextHubPeek;
 
   @override
   Widget build(BuildContext context) {
@@ -103,13 +105,11 @@ class TvSpotlightScaffold extends StatelessWidget {
             gridSpacing: settings.read(SettingsService.gridSpacing),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
             widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+            showNextHubPeek: showNextHubPeek,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
     final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
+    final desiredSpotlightBottom = minimumSpotlightBottom;
     final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
     final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();

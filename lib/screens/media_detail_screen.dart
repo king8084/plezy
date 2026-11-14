@@ -402,13 +402,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedSeasons = false;
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
-  double? _tvDetailStableRailHeight;
   // ValueNotifier (not setState) so d-pad scrubbing across episodes rebuilds
   // only the foreground info panel, never the whole screen with its rail
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   final _tvDetailActionRowHasFocus = ValueNotifier(false);
-  late final _tvDetailChromeFocus = Listenable.merge([_tvDetailInfoFocusNode, _tvDetailActionRowHasFocus]);
+  final _tvDetailActiveHubId = ValueNotifier<String?>(null);
+  late final _tvDetailChromeFocus = Listenable.merge([
+    _tvDetailInfoFocusNode,
+    _tvDetailActionRowHasFocus,
+    _tvDetailActiveHubId,
+  ]);
 
   // Full item snapshots are reusable across preference changes; resolved
   // sources are not. A generation retires probes after refresh or selection.
@@ -1103,7 +1107,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_canUseDetail) return;
       setState(() {
-        _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
         _tvDetailRevealScheduled = false;
         _tvDetailRevealed = true;
       });
@@ -1167,6 +1170,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _overviewFocusNode.dispose();
     _tvDetailInfoFocusNode.dispose();
     _tvDetailActionRowHasFocus.dispose();
+    _tvDetailActiveHubId.dispose();
     _infoRowsFocusNode.dispose();
     _extrasSelectLongPress.dispose();
     for (final node in _seasonTabFocusNodes) {
@@ -3840,8 +3844,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
       _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
     }
-    final stableRailHeight = _tvDetailStableRailHeight;
-    final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
+    final railHeight = rawRailHeight;
     final railTopPadding = 12 * detailScale;
     final actionRailGap = expandShowInfo
         ? 40.0
@@ -3867,7 +3870,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       children: [
         Positioned(
           left: spotlightLeft,
-          right: size.width * 0.24,
+          right: spotlightLeft,
           top: spotlightTop,
           bottom: foregroundBottom,
           child: buildHiddenContent
@@ -3931,6 +3934,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             bottom: -railShift,
             child: TvBrowseRail(
               key: _tvDetailRailKey,
+              fitActiveHub: true,
+              showNextHubPeek: false,
               hubs: detailHubs,
               focusMemory: _hubFocusMemory,
               iconForHub: _getTvDetailHubIcon,
@@ -4150,6 +4155,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                             style: TextStyle(
                                               color: foregroundColor,
                                               fontSize: 24 * scale,
+                                              shadows: TvLayoutConstants.heroTextShadows,
                                               fontWeight: .w700,
                                               height: 1.2,
                                             ),
@@ -4191,6 +4197,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                           overflow: .ellipsis,
                                           style: theme.textTheme.bodyLarge?.copyWith(
                                             color: mutedForegroundColor,
+                                            shadows: TvLayoutConstants.heroTextShadows,
                                             fontSize: summaryFontSize,
                                             height: 1.35,
                                           ),
@@ -4386,6 +4393,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
     final textStyle = TextStyle(
       color: _tvDetailForegroundColor(context),
+      shadows: TvLayoutConstants.heroTextShadows,
       fontSize: 18 * scale,
       fontWeight: .w700,
       letterSpacing: 0.1,
@@ -4454,11 +4462,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       gridSpacing: svc.read(SettingsService.gridSpacing),
       tallPosterScale: _tvDetailTallPosterScale,
+      showNextHubPeek: false,
     );
   }
 
   double _estimateTvDetailRailHeight(Size size, List<MediaHub> hubs) {
-    final hubRailHeight = _estimateTvBrowseRailHeight(size, hubs);
+    final activeId = _tvDetailActiveHubId.value ?? _tvDetailInitialHubId(_metadata);
+    final activeHub = hubs.where((hub) => hub.id == activeId).firstOrNull ?? hubs.firstOrNull;
+    final hubRailHeight = _estimateTvBrowseRailHeight(size, activeHub == null ? const [] : [activeHub]);
     if (hubRailHeight > 0) return hubRailHeight;
     return _estimateTvDetailEmptyRailReserveHeight(size);
   }
@@ -4695,6 +4706,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _handleTvDetailHubChanged(MediaHub hub, int index) {
+    _tvDetailActiveHubId.value = hub.id;
     if (!_isTvDetailEpisodeHub(hub)) {
       _clearTvDetailFocusedEpisode();
       return;
