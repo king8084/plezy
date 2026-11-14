@@ -186,6 +186,8 @@ void main() {
       )!;
 
       expect(buildMediaQualityLabels(item), ['4K', 'DV P8', 'AAC Stereo']);
+      // Browsing tags use track 1 even when the user selected track 2.
+      expect(buildMediaTechnicalLabels(item), ['4K', 'HEVC', 'Dolby Vision', 'EAC3 5.1']);
     });
 
     test('uses selected audio stream and stereo label', () {

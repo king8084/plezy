@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_stream.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
@@ -22,6 +25,8 @@ Future<void> _pumpSpotlight(
   Size canvas = const Size(1920, 1080),
   double contentTop = 80,
   double contentBottom = 200,
+  MediaItem? ratingsFallback,
+  MediaItem? technicalItem,
 }) async {
   await SettingsService.getInstance();
   tester.view.physicalSize = canvas;
@@ -38,6 +43,8 @@ Future<void> _pumpSpotlight(
           body: SizedBox.expand(
             child: TvSpotlightBackground(
               item: item,
+              ratingsFallback: ratingsFallback,
+              technicalItem: technicalItem,
               client: null,
               allowNetwork: false,
               compact: true,
@@ -66,6 +73,28 @@ void main() {
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
+  testWidgets('episode file tags never borrow the parent series video format', (tester) async {
+    const episode = MediaItem.jellyfin(id: 'episode', kind: MediaKind.episode, title: 'Episode');
+    const parent = MediaItem.jellyfin(
+      id: 'series',
+      kind: MediaKind.show,
+      title: 'Show',
+      mediaVersions: [MediaVersion(id: 'wrong', videoResolution: '4k', videoCodec: 'hevc')],
+    );
+    await _pumpSpotlight(tester, episode, ratingsFallback: parent, technicalItem: parent);
+    expect(find.text('4K'), findsNothing);
+    expect(find.text('HEVC'), findsNothing);
+
+    final detail = episode.copyWith(
+      mediaVersions: [const MediaVersion(id: 'right', videoResolution: '1080', videoCodec: 'h264')],
+    );
+    await _pumpSpotlight(tester, episode, ratingsFallback: parent, technicalItem: detail);
+    expect(find.text('1080p'), findsOneWidget);
+    expect(find.text('H.264'), findsOneWidget);
+    expect(find.text('4K'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('larger Home text scales descriptions and rating icons without overflow', (tester) async {
     const item = MediaItem.jellyfin(
       id: 'scaled',
@@ -74,12 +103,34 @@ void main() {
       summary: 'Episode synopsis',
       rating: 8.3,
       ratings: [MediaRatingSource(source: 'audience', value: 8.3)],
+      mediaVersions: [
+        MediaVersion(
+          id: '4k',
+          videoResolution: '4k',
+          videoCodec: 'hevc',
+          parts: [
+            MediaPart(
+              id: 'part',
+              streams: [
+                MediaStream(id: 'video', kind: MediaStreamKind.video, dolbyVision: true),
+                MediaStream(id: 'audio1', kind: MediaStreamKind.audio, codec: 'aac', channels: 2),
+                MediaStream(id: 'audio2', kind: MediaStreamKind.audio, codec: 'eac3', channels: 6, selected: true),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
     await _pumpSpotlight(tester, item);
     final normal = tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize!;
     await _pumpSpotlight(tester, item, textScale: 1.5);
     expect(tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize, normal * 1.5);
     expect(tester.widget<Text>(find.text('Episode synopsis')).maxLines, 2);
+    expect(find.text('4K'), findsOneWidget);
+    expect(find.text('HEVC'), findsOneWidget);
+    expect(find.text('Dolby Vision'), findsOneWidget);
+    expect(find.text('AAC Stereo'), findsOneWidget);
+    expect(find.text('EAC3 5.1'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

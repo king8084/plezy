@@ -202,7 +202,7 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
 
 ## Next milestone
 Local validation of the November 14 Home/detail follow-ups is complete at
-`0b58063aa`, with the final genre/age metadata addition validated separately
+`0b58063aa`, with genre/age and source-file badge additions validated separately
 below. Wait for a new explicit “build apple tv” instruction before building.
 Installed `98c7123d4`
 has owner-confirmed fast SDR startup and a working Home Play shortcut.
@@ -211,6 +211,25 @@ milestones. For later updates, keep the same tvsign entry/account and have
 the owner remain in Apple TV Settings until installation finishes.
 
 ## Pending local follow-ups (November 14)
+- Source-file tags requested from the Matrix reference: a separate compact pill
+  row below Home metadata shows resolution (1080p/4K), video codec (H.264/HEVC),
+  Dolby Vision/HDR when reported, and exactly one audio codec/layout tag. Per
+  owner clarification, use the first audio track of the first file version,
+  regardless of selected/default flags; do not list multiple audio tracks.
+  These describe file metadata, not actual receiver output or passthrough.
+  Existing metadata order remains intact. Tags scale with Home text size,
+  reserve a consistent slot across titles, and shed trailing pills if too wide;
+  an exceptionally short hero band prioritizes the existing text over this row.
+  Missing file details load asynchronously for the exact episode/movie through
+  the shared metadata cache. Episode tags never borrow the series' file details;
+  shared movie enrichment uses one request per ID. No playback gate, broad hub
+  field expansion or player configuration was added. Existing quality helpers
+  retain their selected-audio behavior outside the new Home tags.
+  Validation: targeted analyzer clean, 52 relevant tests pass (first-audio,
+  wrong-parent isolation, 150% text, short hero and existing Home behavior),
+  formatting and hardcoded-string/raw-error checks pass. The prior full-suite
+  result below predates this small addition. No CI build, installation, device
+  confirmation or Unraid change for these tags; await “build apple tv”.
 - Final pre-build request: keep the Home line's episode number, scores,
   runtime and air date/year, then append up to two nonempty, distinct genres
   in server order, followed by the age certification (TV-MA, PG, etc.). Moved

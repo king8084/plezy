@@ -185,6 +185,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
   MediaItem? _renderItem;
   Color? _accentColor;
   MediaItem? _metadataFallback;
+  MediaItem? _technicalItem;
   final Map<String, MediaItem> _metadataCache = {};
   int _metadataRequest = 0;
 
@@ -200,47 +201,56 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.item, oldWidget.item)) {
       _rehydrateCatalogItem();
-      _loadMetadataFallback();
     } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
       _projectArtwork();
     }
-    if (widget.client != oldWidget.client) _loadMetadataFallback();
+    if (!identical(widget.item, oldWidget.item) || widget.client != oldWidget.client) _loadMetadataFallback();
   }
 
-  // Share the existing cached rating probe with missing descriptive fields.
-  // Episode genres and certification can live on the series rather than its row.
-  // This is background spotlight enrichment, never a playback prerequisite.
+  // Enrich the settled spotlight in the background, never on the Play path.
+  // Descriptive fields may come from the series; technical tags must belong
+  // to the exact focused episode/movie. Shared IDs use one cached request.
   void _loadMetadataFallback() {
     final request = ++_metadataRequest;
     _metadataFallback = null;
+    _technicalItem = null;
     final item = widget.item;
     final client = widget.client;
-    if (item == null ||
-        client == null ||
-        item.catalogItem != null ||
-        (mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes')) &&
-            item.genres?.any((genre) => genre.trim().isNotEmpty) == true &&
-            item.contentRating?.trim().isNotEmpty == true)) {
-      return;
-    }
-    final id = item.isEpisode ? item.grandparentId : item.id;
-    if (id == null || id.isEmpty) return;
-    final key = '${client.serverId.value}:$id';
-    final cached = _metadataCache[key];
-    if (cached != null) {
-      _metadataFallback = cached;
-      return;
-    }
-    unawaited(() async {
-      try {
-        final parent = await client.fetchItem(id);
-        if (parent == null || !mounted || request != _metadataRequest) return;
-        _metadataCache[key] = parent;
-        setState(() => _metadataFallback = parent);
-      } catch (_) {
-        // The episode remains usable if its parent metadata is unavailable.
+    if (item == null || client == null || item.catalogItem != null) return;
+
+    final needsDescription =
+        !mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes')) ||
+        item.genres?.any((genre) => genre.trim().isNotEmpty) != true ||
+        item.contentRating?.trim().isNotEmpty != true;
+    final needsTechnical = (item.isMovie || item.isEpisode) && item.mediaVersions?.isNotEmpty != true;
+    final descriptionId = item.isEpisode ? item.grandparentId : item.id;
+    final ids = <String>{
+      if (needsDescription && descriptionId != null && descriptionId.isNotEmpty) descriptionId,
+      if (needsTechnical) item.id,
+    };
+    for (final id in ids) {
+      final key = '${client.serverId.value}:$id';
+      void apply(MediaItem detail) {
+        if (needsDescription && id == descriptionId) _metadataFallback = detail;
+        if (needsTechnical && id == item.id) _technicalItem = detail;
       }
-    }());
+
+      final cached = _metadataCache[key];
+      if (cached != null) {
+        apply(cached);
+        continue;
+      }
+      unawaited(() async {
+        try {
+          final detail = await client.fetchItem(id);
+          if (detail == null || !mounted) return;
+          _metadataCache[key] = detail;
+          if (request == _metadataRequest) setState(() => apply(detail));
+        } catch (_) {
+          // Missing metadata must never prevent browsing or playing the item.
+        }
+      }());
+    }
   }
 
   void _rehydrateCatalogItem() {
@@ -305,6 +315,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final background = TvSpotlightBackground(
       item: _renderItem,
       ratingsFallback: _metadataFallback,
+      technicalItem: _technicalItem,
       client: widget.client,
       hideSpoilers: widget.hideSpoilers,
       contentTop: widget.contentTop,

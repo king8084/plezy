@@ -1,4 +1,5 @@
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
 import 'codec_utils.dart';
@@ -33,6 +34,23 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? p
   final version = _selectedVersion(item.mediaVersions, versionIndex);
   if (version == null) return const [];
 
+  return _videoLabels(version, partIndex: partIndex);
+}
+
+/// File badges for browsing: the first version and exactly its first audio
+/// track, irrespective of the server's selected/default audio flags. These
+/// describe the source file, not the device's eventual HDMI output.
+List<String> buildMediaTechnicalLabels(MediaItem item) {
+  if (!item.isMovie && !item.isEpisode) return const [];
+  final version = _selectedVersion(item.mediaVersions, 0);
+  if (version == null) return const [];
+  return [
+    ..._videoLabels(version, fullDolbyVisionName: true),
+    ?_formatAudio(_firstStreamOfKind(version, MediaStreamKind.audio)),
+  ];
+}
+
+List<String> _videoLabels(MediaVersion version, {int? partIndex, bool fullDolbyVisionName = false}) {
   final labels = <String>[];
   final resolution = _formatResolution(version);
   if (resolution != null) labels.add(resolution);
@@ -42,7 +60,7 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? p
   if (codec != null && codec.isNotEmpty) labels.add(CodecUtils.formatVideoCodec(codec));
 
   if (video?.dolbyVision == true) {
-    labels.add(_formatDolbyVision(video!));
+    labels.add(fullDolbyVisionName ? 'Dolby Vision' : _formatDolbyVision(video!));
   } else if (video?.hdr == true) {
     labels.add('HDR');
   }

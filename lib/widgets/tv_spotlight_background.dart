@@ -12,6 +12,7 @@ import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
+import '../utils/media_quality_labels.dart';
 import '../services/settings_service.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import 'cycling_media_backdrop.dart';
@@ -19,6 +20,7 @@ import 'fitting_title_text.dart';
 import 'fitted_metadata_line.dart';
 import 'settings_builder.dart';
 import 'media_rating_badge.dart';
+import 'media_technical_badges.dart';
 import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import 'rasterized_gradient.dart';
 
@@ -27,6 +29,9 @@ class TvSpotlightBackground extends StatelessWidget {
 
   /// Full item or parent-series metadata for missing scores, genres and age rating.
   final MediaItem? ratingsFallback;
+
+  /// Full metadata for this exact file; series metadata must not supply tags.
+  final MediaItem? technicalItem;
   final MediaServerClient? client;
   final bool hideSpoilers;
   final double contentBottom;
@@ -45,6 +50,7 @@ class TvSpotlightBackground extends StatelessWidget {
     super.key,
     required this.item,
     this.ratingsFallback,
+    this.technicalItem,
     required this.client,
     this.hideSpoilers = false,
     this.contentBottom = 360,
@@ -203,13 +209,30 @@ class TvSpotlightBackground extends StatelessWidget {
     final title = media.grandparentTitle ?? media.displayTitle;
     final gap = _sectionGap(scale);
     final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
+    final badgeHeight = MediaTechnicalBadges.rowHeight(scale, textScale);
+    final badgeGap = 6 * scale;
+    final fileItem = media.mediaVersions?.isNotEmpty == true
+        ? media
+        : technicalItem?.globalKey == media.globalKey
+        ? technicalItem
+        : null;
+    final technicalLabels = fileItem == null ? const <String>[] : buildMediaTechnicalLabels(fileItem);
     final summaryFontSize = _summaryFontSize(scale) * textScale;
     final lineHeight = compact ? 1.34 : 1.45;
+    // On an exceptionally short band at maximum text size, preserve the
+    // existing metadata and one synopsis line rather than overflowing posters.
+    final showBadgeRow =
+        availableHeight == null ||
+        availableHeight >= metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight;
     var summaryLines = compact ? (textScale >= 1.3 ? 2 : 3) : 4;
     final desiredLogoHeight = _logoHeight(scale);
     double remainingLogoHeight() => availableHeight == null
         ? desiredLogoHeight
-        : availableHeight - metadataHeight - 2 * gap - summaryFontSize * lineHeight * summaryLines;
+        : availableHeight -
+              metadataHeight -
+              (showBadgeRow ? badgeGap + badgeHeight : 0) -
+              2 * gap -
+              summaryFontSize * lineHeight * summaryLines;
     while (summaryLines > 1 && remainingLogoHeight() < 32 * scale) {
       summaryLines--;
     }
@@ -234,6 +257,17 @@ class TvSpotlightBackground extends StatelessWidget {
           height: metadataHeight,
           child: Align(alignment: .topLeft, child: _buildMetadataLine(context, media)),
         ),
+        if (showBadgeRow) ...[
+          SizedBox(height: badgeGap),
+          SizedBox(
+            key: const ValueKey('tv_spotlight_technical_badges'),
+            height: badgeHeight,
+            child: Align(
+              alignment: .topLeft,
+              child: MediaTechnicalBadges(labels: technicalLabels, scale: scale, textScale: textScale),
+            ),
+          ),
+        ],
         SizedBox(height: gap),
         SizedBox(
           height: summaryFontSize * lineHeight * summaryLines,
