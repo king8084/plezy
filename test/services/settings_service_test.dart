@@ -23,6 +23,22 @@ void main() {
     TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
+  test('rewind preserves the former shared interval, then persists independently', () async {
+    resetSharedPreferencesForTest(initialAsync: const {'seek_time_small': 30});
+    var settings = await SettingsService.getInstance();
+    expect(settings.read(SettingsService.seekTimeBackward), 30);
+    await settings.write(SettingsService.seekTimeSmall, 20);
+    expect(settings.read(SettingsService.seekTimeBackward), 30);
+    await settings.write(SettingsService.seekTimeBackward, 15);
+    SettingsService.resetForTesting();
+    settings = await SettingsService.getInstance();
+    expect(settings.read(SettingsService.seekTimeSmall), 20);
+    expect(settings.read(SettingsService.seekTimeBackward), 15);
+    await settings.resetAllSettings();
+    expect(settings.read(SettingsService.seekTimeSmall), 10);
+    expect(settings.read(SettingsService.seekTimeBackward), 10);
+  });
+
   group('SettingsService.parseMpvConfigText', () {
     test('parses plain key=value lines', () {
       final out = SettingsService.parseMpvConfigText('hwdec=auto\nvolume=100');

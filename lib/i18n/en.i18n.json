@@ -278,6 +278,8 @@
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",
     "smallSkipDuration": "Small Skip Duration",
+    "forwardSkipDuration": "Fast Forward Duration",
+    "backwardSkipDuration": "Rewind Duration",
     "largeSkipDuration": "Large Skip Duration",
     "rewindOnResume": "Rewind on Resume",
     "secondsUnit": "${seconds} seconds",

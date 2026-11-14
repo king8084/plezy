@@ -431,6 +431,32 @@ void main() {
       expect(find.byType(PlayerPerformanceOverlay), findsNothing);
       expect(toggles, 0);
     });
+
+    playerTest('configured forward and rewind steps drive both button numbers and seeks', (tester) async {
+      await settings.write(SettingsService.seekTimeSmall, 20);
+      await settings.write(SettingsService.seekTimeBackward, 15);
+      await press(tester, LogicalKeyboardKey.select);
+      final rewind = find.byWidgetPredicate(
+        (widget) =>
+            widget is VideoControlButton && widget.semanticLabel == t.videoControls.seekBackwardButton(seconds: 15),
+      );
+      final forward = find.byWidgetPredicate(
+        (widget) =>
+            widget is VideoControlButton && widget.semanticLabel == t.videoControls.seekForwardButton(seconds: 20),
+      );
+      expect(tester.widget<VideoControlButton>(rewind).iconText, '15');
+      expect(tester.widget<VideoControlButton>(forward).iconText, '20');
+      expect(find.descendant(of: rewind, matching: find.text('15')), findsOneWidget);
+      expect(find.descendant(of: forward, matching: find.text('20')), findsOneWidget);
+      await press(tester, LogicalKeyboardKey.arrowLeft);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(player.state.position, const Duration(minutes: 4, seconds: 45));
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(player.state.position, const Duration(minutes: 5, seconds: 5));
+      expect(toggles, 0);
+    });
   });
 
   // Declining a skip prompt is the mirror of taking it. Back used to fall

@@ -47,6 +47,7 @@ class DesktopVideoControls extends StatefulWidget {
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
   final int seekTimeSmall;
+  final int? seekTimeBackward;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
   final VoidCallback? onSeekBackward;
@@ -128,6 +129,7 @@ class DesktopVideoControls extends StatefulWidget {
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
     required this.seekTimeSmall,
+    this.seekTimeBackward,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
     this.onSeekBackward,
@@ -169,6 +171,7 @@ class DesktopVideoControls extends StatefulWidget {
 }
 
 class DesktopVideoControlsState extends State<DesktopVideoControls> {
+  int get _rewindSeconds => widget.seekTimeBackward ?? widget.seekTimeSmall;
   TrackControlsState get _trackControlsState => widget.trackControlsState;
   bool get _canControl => _trackControlsState.canControl;
   bool get _isLive => _trackControlsState.isLive;
@@ -575,6 +578,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       }
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
+      final seekSeconds = isForward ? widget.seekTimeSmall : _rewindSeconds;
       final effectiveMultiplier = event is KeyRepeatEvent ? steppedSeekMultiplier(_seekRepeatCount) : 1.0;
 
       // Live TV: relative epoch-based seeking via the parent accumulator, which
@@ -582,7 +586,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       // acceleration multiplier still grows the per-press step; the accumulator
       // sums them.
       if (_isLive && widget.onLiveSeekBy != null) {
-        final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
+        final stepSeconds = (seekSeconds * effectiveMultiplier).clamp(1, 300).round();
         widget.onLiveSeekBy!(isForward ? stepSeconds : -stepSeconds);
         widget.onFocusActivity?.call();
         return KeyEventResult.handled;
@@ -590,7 +594,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
-      final baseStepMs = widget.seekTimeSmall * 1000;
+      final baseStepMs = seekSeconds * 1000;
       final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
@@ -809,9 +813,12 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     child: _buildFocusableButton(
                       focusNode: _skipBackFocusNode,
                       index: 2,
-                      icon: widget.getReplayIcon(widget.seekTimeSmall),
+                      icon: widget.getReplayIcon(_rewindSeconds),
+                      iconText: PlatformDetector.isAppleTV() && ![5, 10, 30].contains(_rewindSeconds)
+                          ? '$_rewindSeconds'
+                          : null,
                       onPressed: _canControl ? widget.onSeekBackward : null,
-                      semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                      semanticLabel: t.videoControls.seekBackwardButton(seconds: _rewindSeconds),
                     ),
                   ),
                 ],
@@ -840,6 +847,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       focusNode: _skipForwardFocusNode,
                       index: 4,
                       icon: widget.getForwardIcon(widget.seekTimeSmall),
+                      iconText: PlatformDetector.isAppleTV() && ![5, 10, 30].contains(widget.seekTimeSmall)
+                          ? '${widget.seekTimeSmall}'
+                          : null,
                       onPressed: _canControl ? widget.onSeekForward : null,
                       semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
                     ),
@@ -985,6 +995,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     double iconSize = 24,
     String? tooltip,
     String? label,
+    String? iconText,
   }) {
     return VideoControlButton(
       icon: icon,
@@ -992,6 +1003,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       color: color,
       tooltip: tooltip,
       label: label,
+      iconText: iconText,
       semanticLabel: semanticLabel,
       focusNode: focusNode,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),

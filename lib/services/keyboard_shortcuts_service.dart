@@ -26,13 +26,19 @@ class KeyboardShortcutsService extends ChangeNotifier {
   Map<String, HotKey?> _hotkeys = {};
   Future<void> _shortcutMutationTail = Future.value();
   int _seekTimeSmall = 10; // Default, loaded from settings
+  int _seekTimeBackward = 10;
   int _seekTimeLarge = 30; // Default, loaded from settings
   bool _disposed = false;
   bool _settingsInitialized = false;
 
   KeyboardShortcutsService._() {
     _settingsBinding = SettingsBindingOwner(
-      prefs: [SettingsService.keyboardHotkeys, SettingsService.seekTimeSmall, SettingsService.seekTimeLarge],
+      prefs: [
+        SettingsService.keyboardHotkeys,
+        SettingsService.seekTimeSmall,
+        SettingsService.seekTimeBackward,
+        SettingsService.seekTimeLarge,
+      ],
       onRefresh: _syncFromSettings,
     );
   }
@@ -79,13 +85,20 @@ class KeyboardShortcutsService extends ChangeNotifier {
   void _syncFromSettings(SettingsService service) {
     final hotkeys = service.read(SettingsService.keyboardHotkeys);
     final seekTimeSmall = service.read(SettingsService.seekTimeSmall);
+    final seekTimeBackward = PlatformDetector.isAppleTV()
+        ? service.read(SettingsService.seekTimeBackward)
+        : seekTimeSmall;
     final seekTimeLarge = service.read(SettingsService.seekTimeLarge);
 
     final changed =
-        !_hotkeyMapsEqual(_hotkeys, hotkeys) || _seekTimeSmall != seekTimeSmall || _seekTimeLarge != seekTimeLarge;
+        !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
+        _seekTimeSmall != seekTimeSmall ||
+        _seekTimeBackward != seekTimeBackward ||
+        _seekTimeLarge != seekTimeLarge;
 
     _hotkeys = Map<String, HotKey?>.from(hotkeys);
     _seekTimeSmall = seekTimeSmall;
+    _seekTimeBackward = seekTimeBackward;
     _seekTimeLarge = seekTimeLarge;
 
     final notify = _settingsInitialized;
@@ -360,7 +373,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
         case ShortcutAction.seekForward:
           performSeek(_seekTimeSmall);
         case ShortcutAction.seekBackward:
-          performSeek(-_seekTimeSmall);
+          performSeek(-_seekTimeBackward);
         case ShortcutAction.seekForwardLarge:
           performSeek(_seekTimeLarge);
         case ShortcutAction.seekBackwardLarge:
@@ -431,7 +444,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
   String getActionDisplayName(String action) {
     final shortcut = ShortcutAction.fromId(action);
     if (shortcut == null) return action;
-    return shortcut.label(seekTimeSmall: _seekTimeSmall, seekTimeLarge: _seekTimeLarge);
+    return shortcut.label(
+      seekTimeSmall: shortcut == ShortcutAction.seekBackward ? _seekTimeBackward : _seekTimeSmall,
+      seekTimeLarge: _seekTimeLarge,
+    );
   }
 
   String? getActionForHotkey(HotKey hotkey) {

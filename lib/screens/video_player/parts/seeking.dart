@@ -85,7 +85,9 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
 
   /// Skip one configured step in [forward]'s direction.
   void _skipByConfiguredStep({required bool forward}) {
-    final step = _configuredSkipStep;
+    final step = !forward && PlatformDetector.isAppleTV()
+        ? Duration(seconds: SettingsService.instance.read(SettingsService.seekTimeBackward))
+        : _configuredSkipStep;
     _seekRelative(forward ? step : -step);
   }
 

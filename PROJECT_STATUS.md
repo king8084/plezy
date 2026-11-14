@@ -4,6 +4,28 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+Owner explicitly authorized "build apple tv" and Unraid use for this build
+only, confirming Plezy closed and Apple TV awake inside Settings. Before CI
+started, they added an independent rewind interval and asked to continue.
+Implemented the addition for Apple TV: Settings → Video Playback → Seek and
+Timing now has Fast Forward Duration and Rewind Duration (1–120 seconds).
+Rewind initially inherits the formerly shared interval once, then persists
+independently; existing values and reset behavior are covered by regression.
+Now Playing's numbered buttons and spoken labels reflect each configured value,
+including custom values beyond the built-in 5/10/30 glyphs. Backward button,
+hidden/visible timeline, chapter fallback, hardware/companion skip and shortcut
+paths use the independent rewind interval on Apple TV. Other platforms retain
+their existing shared interval. No unrelated playback behavior changes.
+Validation: 272 settings, shortcut, playback-settings, Select, transient-feedback,
+controls and companion-remote tests pass (`/tmp/plezy-rewind-tests.log`), including
+independent persisted settings and actual 15 s rewind / 20 s forward seeks with
+matching visible button numbers. Whole-project analysis passes
+(`/tmp/plezy-rewind-analyze.log`); translation generation, string/error guards
+and diff whitespace checks pass. The previous four UI additions retain their
+184-test validation below. Preparing the single authorized Codemagic build;
+CI, in-place installation and owner playback confirmation are separate pending
+milestones. Preserve existing IPA backups and app data; no Unraid deletions.
+
 November 14 follow-up: implemented the owner's four small UI changes locally.
 No new CI build, Apple TV install or Unraid access was started for this task.
 - Apple TV Now Playing uses the episode's existing series clear logo instead

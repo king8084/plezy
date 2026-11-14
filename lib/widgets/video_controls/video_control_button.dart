@@ -21,6 +21,7 @@ class VideoControlButton extends StatelessWidget {
   final Color? color;
 
   final double iconSize;
+  final String? iconText;
 
   /// Optional tooltip text shown on hover or long press.
   final String? tooltip;
@@ -62,6 +63,7 @@ class VideoControlButton extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.iconSize = 24,
+    this.iconText,
     this.tooltip,
     this.label,
     this.semanticLabel,
@@ -80,9 +82,33 @@ class VideoControlButton extends StatelessWidget {
     final label = this.label;
     final effectiveSemanticLabel = semanticLabel ?? label ?? tooltip;
 
+    Widget buildIcon(Color iconColor) {
+      final iconWidget = AppIcon(icon, fill: 1, color: iconColor, size: iconSize);
+      if (iconText == null) return iconWidget;
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          iconWidget,
+          Padding(
+            padding: EdgeInsets.only(top: iconSize * 0.12),
+            child: SizedBox(
+              width: iconSize * 0.6,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  iconText!,
+                  style: TextStyle(color: iconColor, fontSize: iconSize * 0.38, fontWeight: .w700),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     Widget button(Color iconColor) => label == null
         ? IconButton(
-            icon: AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
+            icon: buildIcon(iconColor),
             iconSize: iconSize,
             onPressed: onPressed,
             tooltip: tooltip,
@@ -100,7 +126,7 @@ class VideoControlButton extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AppIcon(icon, fill: 1, color: iconColor, size: iconSize),
+                      buildIcon(iconColor),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(

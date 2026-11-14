@@ -19,6 +19,31 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
+  testWidgets('Apple TV rewind setting changes independently of fast forward', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.reset);
+    final settings = SettingsService.instance;
+    await settings.write(SettingsService.seekTimeSmall, 30);
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+    final title = find.text(t.settings.backwardSkipDuration);
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '15');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.seekTimeBackward), 15);
+    expect(settings.read(SettingsService.seekTimeSmall), 30);
+    final tile = find.widgetWithText(ListTile, t.settings.backwardSkipDuration);
+    expect(find.descendant(of: tile, matching: find.text('15 seconds')), findsOneWidget);
+  });
+
   testWidgets('shows and changes the persisted music quality', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);

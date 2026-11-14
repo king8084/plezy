@@ -29,6 +29,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         chaptersLoaded: _chaptersLoaded,
         showChapterMarkersOnTimeline: _showChapterMarkersOnTimeline,
         seekTimeSmall: _seekTimeSmall,
+        seekTimeBackward: _seekTimeBackward,
         onSeekToPreviousChapter: _seekToPreviousChapter,
         onSeekToNextChapter: _seekToNextChapter,
         onSeekBackward: () => unawaited(_seekByTime(forward: false)),

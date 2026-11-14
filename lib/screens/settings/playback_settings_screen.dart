@@ -168,11 +168,20 @@ class PlaybackSettingsScreen extends StatelessWidget {
       SettingNumberTile(
         pref: SettingsService.seekTimeSmall,
         icon: Symbols.replay_10_rounded,
-        title: t.settings.smallSkipDuration,
+        title: PlatformDetector.isAppleTV() ? t.settings.forwardSkipDuration : t.settings.smallSkipDuration,
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
+      if (PlatformDetector.isAppleTV())
+        SettingNumberTile(
+          pref: SettingsService.seekTimeBackward,
+          icon: Symbols.replay_rounded,
+          title: t.settings.backwardSkipDuration,
+          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+        ),
       SettingNumberTile(
         pref: SettingsService.seekTimeLarge,
         icon: Symbols.replay_30_rounded,

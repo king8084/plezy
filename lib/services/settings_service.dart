@@ -431,6 +431,22 @@ class _SkipMarkerModePref extends LegacyBoolEnumPref<SkipMarkerMode> {
       );
 }
 
+// Split rewind from the former shared interval without changing an existing
+// install's rewind amount. Once initialized, the two settings are independent.
+class _BackwardSeekPref extends IntPref {
+  const _BackwardSeekPref() : super('seek_time_backward', defaultValue: 10);
+
+  @override
+  int readFrom(BaseSharedPreferencesService svc) {
+    if (!svc.prefs.containsKey(key)) {
+      final value = svc.read(SettingsService.seekTimeSmall);
+      svc.prefs.setInt(key, value);
+      return value;
+    }
+    return super.readFrom(svc);
+  }
+}
+
 /// Stored as the locale enum name; null/empty falls back to the device locale.
 class _AppLocalePref extends Pref<AppLocale> {
   const _AppLocalePref() : super('app_locale');
@@ -654,6 +670,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
   static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
+  static const seekTimeBackward = _BackwardSeekPref();
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
@@ -1502,6 +1519,7 @@ class SettingsService extends BaseSharedPreferencesService {
     hdrToneMapping,
     viewMode,
     seekTimeSmall,
+    seekTimeBackward,
     seekTimeLarge,
     showHeroSection,
     sleepTimerDuration,
@@ -1682,7 +1700,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Numeric constraints used by both the settings tiles and typed callers.
   static (num, num)? numericBounds(Pref<Object?> pref) => switch (pref.key) {
-    'seek_time_small' || 'seek_time_large' => (1, 120),
+    'seek_time_small' || 'seek_time_backward' || 'seek_time_large' => (1, 120),
     'rewind_on_resume' || 'display_switch_delay' => (0, 10),
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),

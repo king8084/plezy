@@ -782,6 +782,12 @@ class Translations$settings$en {
 	/// en: 'Small Skip Duration'
 	String get smallSkipDuration => 'Small Skip Duration';
 
+	/// en: 'Fast Forward Duration'
+	String get forwardSkipDuration => 'Fast Forward Duration';
+
+	/// en: 'Rewind Duration'
+	String get backwardSkipDuration => 'Rewind Duration';
+
 	/// en: 'Large Skip Duration'
 	String get largeSkipDuration => 'Large Skip Duration';
 
@@ -8441,6 +8447,8 @@ extension on Translations {
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
+			'settings.forwardSkipDuration' => 'Fast Forward Duration',
+			'settings.backwardSkipDuration' => 'Rewind Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
 			'settings.rewindOnResume' => 'Rewind on Resume',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
@@ -8695,10 +8703,10 @@ extension on Translations {
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
 			'themeEditor.preview' => 'Preview',
-			'themeEditor.slots.bg' => 'Background',
-			'themeEditor.slots.surface' => 'Surface',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
@@ -9209,10 +9217,10 @@ extension on Translations {
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
-			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
-			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
+			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
 			'profiles.newProfile' => 'New profile',
@@ -9723,10 +9731,10 @@ extension on Translations {
 			'liveTv.recordingRules' => 'Recording Rules',
 			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
 			'liveTv.manageRecording' => 'Manage recording',
-			'liveTv.cancelRecording' => 'Cancel recording',
-			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.cancelRecording' => 'Cancel recording',
+			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
 			'liveTv.deleteRule' => 'Delete rule',
 			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
@@ -10237,10 +10245,10 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
-			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
-			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
+			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
