@@ -4,6 +4,13 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+On November 14 the owner explicitly requested “build apple tv” and authorized
+using Unraid to push/install this build. Preparing a Codemagic build of tested
+app source `2d92f1e2f`, including Home/detail follow-ups, genres/age and technical
+tags (one audio tag from track 1). Preserve the existing tvsign entry/account,
+all backups and installed app; no deletion/uninstall is authorized. New build,
+in-place installation and owner confirmation are pending, tracked separately.
+
 Build `98c7123d4` (app changes `e4b4390b6`) built successfully in Codemagic
 and tvsign reports successful in-place installation at 23:40 on November 13.
 The existing app entry/account were used; no app deletion or uninstall occurred.
@@ -56,6 +63,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 14: new build and Unraid staging/install explicitly authorized.
+  Source `2d92f1e2f` has the previously recorded full-suite validation for the
+  main follow-ups and 52 passing targeted tests after the final tag addition;
+  latest targeted analysis and string/error guards pass. No redundant GitHub
+  runner retry is planned. Codemagic will use the existing M2 workflow.
 - Owner-confirmed playback on installed `98c7123d4`: substantially faster start
   and working physical Home Play. Authenticated rotating diagnostics are
   readable directly over the LAN. No new build is authorized for the follow-up
@@ -203,7 +215,7 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
 ## Next milestone
 Local validation of the November 14 Home/detail follow-ups is complete at
 `0b58063aa`, with genre/age and source-file badge additions validated separately
-below. Wait for a new explicit “build apple tv” instruction before building.
+below. The owner has now explicitly authorized this build and its Unraid install.
 Installed `98c7123d4`
 has owner-confirmed fast SDR startup and a working Home Play shortcut.
 CI builds, in-place installs and owner device confirmation remain separate
