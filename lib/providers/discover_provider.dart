@@ -1,3 +1,4 @@
+import 'removed_continue_watching_provider.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -93,6 +94,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this.profileId,
     required this.isProfileBinding,
     WatchStateStore? watchStateStore,
+    this.removedContinueWatching,
     DateTime Function()? now,
     bool Function()? isRefreshBlocked,
     this.libraryEventDebounce = const Duration(seconds: 3),
@@ -120,6 +122,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // profile switch can't leave a stale listener on the app-global provider.
     _multiServer.addOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
+    removedContinueWatching?.addListener(_onRemovedContinueWatchingChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
@@ -143,6 +146,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   final MultiServerProvider _multiServer;
   final HiddenLibrariesProvider _hiddenLibraries;
+  final RemovedContinueWatchingProvider? removedContinueWatching;
   final LibrariesProvider _libraries;
 
   /// Injectable clock for the [staleAfter] check; tests advance it instead of
@@ -440,6 +444,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (!_multiServer.hasConnectedServers) throw Exception('No servers available');
 
       await _hiddenLibraries.ensureInitialized();
+      await removedContinueWatching?.ensureInitialized();
       if (isDisposed) return;
       _lastSeenHiddenKeys = Set.of(_hiddenLibraries.hiddenLibraryKeys);
 
@@ -633,6 +638,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     try {
       await _hiddenLibraries.ensureInitialized();
+      await removedContinueWatching?.ensureInitialized();
       if (isDisposed) return;
 
       final settings = await SettingsService.getInstance();
@@ -877,6 +883,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<List<MediaItem>> loadAllContinueWatching() async {
     if (!_multiServer.hasConnectedServers) return const [];
     await _hiddenLibraries.ensureInitialized();
+    await removedContinueWatching?.ensureInitialized();
     if (isDisposed) return const [];
     final observation = _beginObservation();
     final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
@@ -887,7 +894,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
     // Its rows past the preview open the same copy picker as the row's.
     _continueWatchingCopies = {..._continueWatchingCopies, ...fetched.copies};
-    return fetched.items;
+    await removedContinueWatching?.observeItems(fetched.items);
+    return removedContinueWatching?.filterItems(fetched.items) ?? fetched.items;
   }
 
   /// Reconcile [source] after the user acted on it: returned from its player
@@ -983,13 +991,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _replaceOnDeck(List<MediaItem> onDeck, {required bool hasMore}) {
-    _onDeck = onDeck;
+    unawaited(removedContinueWatching?.observeItems(onDeck));
+    _onDeck = removedContinueWatching?.filterItems(onDeck) ?? onDeck;
     _hasMoreContinueWatching = hasMore;
     ++_commitRevision;
   }
 
   void _replaceHubs(List<MediaHub> hubs) {
-    _hubs = hubs;
+    _hubs = removedContinueWatching?.filterHubs(hubs) ?? hubs;
     ++_commitRevision;
   }
 
@@ -1096,6 +1105,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (event.origin == DeletionOrigin.local) {
       unawaited(refreshContinueWatching());
     }
+  }
+
+  void _onRemovedContinueWatchingChanged() {
+    if (isDisposed) return;
+    _replaceOnDeck(_onDeck, hasMore: _hasMoreContinueWatching);
+    _replaceHubs(_hubs);
+    safeNotifyListeners();
+    unawaited(_syncSystemShelf(_onDeck));
+    unawaited(load());
   }
 
   void _onHiddenLibrariesChanged() {
@@ -1208,6 +1226,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void dispose() {
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
+    removedContinueWatching?.removeListener(_onRemovedContinueWatchingChanged);
     _libraries.removeListener(_onLibrariesChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;

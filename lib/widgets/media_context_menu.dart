@@ -1,3 +1,4 @@
+import '../providers/removed_continue_watching_provider.dart';
 import 'dart:async';
 import '../media/ids.dart';
 import 'package:flutter/material.dart';
@@ -667,7 +668,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
         _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
-      if (widget.isInContinueWatching && menu.canRemoveFromContinueWatching)
+      if (widget.isInContinueWatching &&
+          (menu.canRemoveFromContinueWatching || context.read<RemovedContinueWatchingProvider?>() != null))
         _MenuAction(
           value: 'remove_from_continue_watching',
           icon: Symbols.close_rounded,
@@ -1073,7 +1075,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// mark unwatched next episodes as watched.
   Future<void> _handleRemoveFromContinueWatching(BuildContext context, MediaItem item) async {
     try {
-      await WatchActions.removeFromContinueWatching(context, item);
+      final removed = context.read<RemovedContinueWatchingProvider?>();
+      if (removed != null) {
+        await removed.remove(item);
+      } else {
+        await WatchActions.removeFromContinueWatching(context, item);
+      }
       if (context.mounted) {
         showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
         if (widget.onRemoveFromContinueWatching != null) {

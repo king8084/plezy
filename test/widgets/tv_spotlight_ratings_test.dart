@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -27,6 +28,7 @@ Future<void> _pumpSpotlight(
   double contentBottom = 200,
   MediaItem? ratingsFallback,
   MediaItem? technicalItem,
+  bool hideSpoilers = false,
 }) async {
   await SettingsService.getInstance();
   tester.view.physicalSize = canvas;
@@ -43,6 +45,7 @@ Future<void> _pumpSpotlight(
           body: SizedBox.expand(
             child: TvSpotlightBackground(
               item: item,
+              hideSpoilers: hideSpoilers,
               ratingsFallback: ratingsFallback,
               technicalItem: technicalItem,
               client: null,
@@ -72,6 +75,46 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
+    testWidgets('episode title has its own line above number and long titles ellipsize at $canvas', (tester) async {
+      final title = List.filled(12, 'A very long episode title').join(' ');
+      final episode = MediaItem.jellyfin(
+        id: 'ep',
+        kind: MediaKind.episode,
+        title: title,
+        grandparentTitle: 'Modern Family',
+        parentIndex: 8,
+        index: 19,
+        rating: 7.2,
+        durationMs: 1260000,
+        originallyAvailableAt: '2017-03-01',
+      );
+      await _pumpSpotlight(tester, episode, canvas: canvas);
+      final titleFinder = find.byKey(const ValueKey('tv_spotlight_episode_title'));
+      expect(tester.widget<Text>(titleFinder).overflow, TextOverflow.ellipsis);
+      expect(tester.renderObject<RenderParagraph>(titleFinder).didExceedMaxLines, isTrue);
+      expect(tester.getBottomLeft(titleFinder).dy, lessThan(tester.getTopLeft(find.text('S8 E19')).dy));
+      expect(find.text('7.2'), findsOneWidget);
+      expect(tester.getBottomRight(find.text('7.2')).dx, lessThan(canvas.width));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('spoiler-hidden episode title appears once above metadata', (tester) async {
+    const episode = MediaItem.jellyfin(
+      id: 'ep',
+      kind: MediaKind.episode,
+      title: 'Heavy Is the Head',
+      grandparentTitle: 'Modern Family',
+      parentIndex: 8,
+      index: 14,
+      summary: 'Hidden episode synopsis',
+    );
+    await _pumpSpotlight(tester, episode, hideSpoilers: true);
+    expect(find.text('Heavy Is the Head'), findsOneWidget);
+    expect(find.text('Hidden episode synopsis'), findsNothing);
+  });
 
   testWidgets('episode spotlight keeps its score without title-level Rotten Tomatoes', (tester) async {
     const episode = MediaItem.jellyfin(
@@ -307,7 +350,7 @@ void main() {
     // Without the group's own label a reader would hear "92%, 7.4" with no
     // way to tell which score belongs to which source.
     expect(
-      find.bySemanticsLabel('${t.common.ratingSource.rottenTomatoesCritic} 92%, ${t.common.ratingSource.imdb} 7.4'),
+      find.bySemanticsLabel('${t.common.ratingSource.imdb} 7.4, ${t.common.ratingSource.rottenTomatoesCritic} 92%'),
       findsOneWidget,
     );
     semantics.dispose();

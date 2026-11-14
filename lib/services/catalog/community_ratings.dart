@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:clock/clock.dart';
-import 'package:collection/collection.dart';
 
 import '../../media/media_kind.dart';
 import '../../media/media_rating.dart';
@@ -13,23 +12,6 @@ import 'catalog_source.dart';
 
 /// One provider's community scores for a title.
 typedef CommunityRatingsAnswer = ({CatalogSourceId origin, List<MediaRatingSource> ratings});
-
-/// The order scores are shown in: Rotten Tomatoes' two panels, IMDb, TMDB,
-/// Metacritic and Letterboxd, then the trackers' own. Sources outside it
-/// (Plex's and Jellyfin's unattributed `critic`/`audience`) follow in their
-/// own order.
-const List<String> _displayOrder = [
-  'rottenTomatoesCritic',
-  'rottenTomatoesAudience',
-  'imdb',
-  'tmdb',
-  'metacritic',
-  'letterboxd',
-  'trakt',
-  'simkl',
-  'mal',
-  'anilist',
-];
 
 /// The source key a provider files its own score under; null for MDBList,
 /// which reports only other sites' scores.
@@ -56,7 +38,7 @@ List<MediaRatingSource> mergeCommunityRatings(Iterable<CommunityRatingsAnswer> a
       }
     }
   }
-  return _inDisplayOrder([for (final entry in best.values) entry.rating]);
+  return orderedMediaRatings([for (final entry in best.values) entry.rating]);
 }
 
 int _precedence(String source, CatalogSourceId origin) {
@@ -71,12 +53,12 @@ int _precedence(String source, CatalogSourceId origin) {
 /// [own] — a title's scores from its media server or catalog provider — with
 /// [community] merged in, in display order. A community score replaces
 /// [own]'s score from the same source: the server's copy is whatever its
-/// metadata agent last cached. [own] is returned as is while [community] is
-/// empty.
+/// metadata agent last cached. Ordering/deduplication also applies before
+/// community providers answer.
 List<MediaRatingSource> withCommunityRatings(List<MediaRatingSource> own, List<MediaRatingSource> community) {
-  if (community.isEmpty) return own;
+  if (community.isEmpty) return orderedMediaRatings(own);
   final covered = {for (final rating in community) _identity(rating.source)};
-  return _inDisplayOrder([
+  return orderedMediaRatings([
     ...community,
     for (final rating in own)
       if (!covered.contains(_identity(rating.source))) rating,
@@ -86,15 +68,13 @@ List<MediaRatingSource> withCommunityRatings(List<MediaRatingSource> own, List<M
 /// Plex's unsplit Rotten Tomatoes key is the Tomatometer.
 String _identity(String source) => source == 'rottenTomatoes' ? 'rottenTomatoesCritic' : source;
 
-List<MediaRatingSource> _inDisplayOrder(List<MediaRatingSource> ratings) {
-  int rank(MediaRatingSource rating) {
-    final index = _displayOrder.indexOf(_identity(rating.source));
-    return index < 0 ? _displayOrder.length : index;
+/// Shared IMDb selection for Seerr cards and their detail headline. Never
+/// reinterpret Seerr's native TMDB scalar or its vote count as IMDb.
+MediaRatingSource? catalogImdbRating(CatalogItem item, List<MediaRatingSource> community) {
+  for (final rating in withCommunityRatings(item.ratings ?? const [], community)) {
+    if (rating.source == 'imdb') return rating;
   }
-
-  // Stable, so sources outside the order keep theirs.
-  mergeSort(ratings, compare: (a, b) => rank(a).compareTo(rank(b)));
-  return ratings;
+  return null;
 }
 
 /// Asks every [CatalogCommunityRatings] provider for a title's scores at once

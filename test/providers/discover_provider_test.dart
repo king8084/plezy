@@ -1,3 +1,4 @@
+import 'package:plezy/providers/removed_continue_watching_provider.dart';
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -198,6 +199,7 @@ void main() {
   late _FakeAggregationService aggregation;
   late MultiServerProvider multiServer;
   late HiddenLibrariesProvider hiddenLibraries;
+  late RemovedContinueWatchingProvider removed;
   late LibrariesProvider libraries;
   late DiscoverProvider provider;
   late List<(String, List<MediaItem>)> shelfSyncs;
@@ -221,10 +223,13 @@ void main() {
     hiddenLibraries = HiddenLibrariesProvider();
     await hiddenLibraries.ensureInitialized();
     libraries = LibrariesProvider();
+    removed = RemovedContinueWatchingProvider(profileId: 'profile-a');
+    await removed.ensureInitialized();
     provider = DiscoverProvider(
       multiServer,
       hiddenLibraries,
       libraries,
+      removedContinueWatching: removed,
       profileId: 'profile-a',
       isProfileBinding: () => isBinding,
       isRefreshBlocked: () => playbackActive,
@@ -235,6 +240,7 @@ void main() {
 
   void disposeFixture() {
     provider.dispose();
+    removed.dispose();
     libraries.dispose();
     hiddenLibraries.dispose();
     multiServer.dispose();
@@ -242,6 +248,26 @@ void main() {
 
   setUp(initializeFixture);
   tearDown(disposeFixture);
+
+  test('removed series stays out of Home, View All and launcher shelf until restored', () async {
+    final episode = _item('e14', grandparentId: 'show');
+    final other = _item('other', grandparentId: 'other-show');
+    aggregation.onDeckResult = () => [episode, other];
+    aggregation.hubsResult = () => [
+      _hub('recent', items: [episode]),
+    ];
+    await provider.load();
+    await removed.remove(episode);
+    await provider.load();
+    expect(provider.onDeck.map((item) => item.id), ['other']);
+    expect((await provider.loadAllContinueWatching()).map((item) => item.id), ['other']);
+    expect(provider.hubs.single.items, [episode]);
+    await pumpEventQueue();
+    expect(shelfSyncs.last.$2.map((item) => item.id), ['other']);
+    await removed.restore(removed.entries.single.key);
+    await provider.load();
+    expect(provider.onDeck.map((item) => item.id), ['e14', 'other']);
+  });
 
   test('load publishes on-deck and hubs; concurrent calls coalesce', () async {
     aggregation.onDeckResult = () => [_item('a')];

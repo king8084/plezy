@@ -213,6 +213,32 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
             MetadataLineRatings() => '',
           }].join(', ')}';
 
+    if (isTv && (metadata.isShow || metadata.isSeason || metadata.isEpisode)) {
+      final selectedItem = probed?.item;
+      final versionIndex = probed?.mediaIndex;
+      final fileSummary = selectedItem == null || versionIndex == null
+          ? null
+          : buildMediaFileSummaryLabel(selectedItem, versionIndex: versionIndex);
+      return Semantics(
+        key: const ValueKey('detail_playback_tracks'),
+        label: semanticsLabel,
+        excludeSemantics: true,
+        child: MediaTechnicalBadges(
+          scale: tvScale,
+          labels: [
+            ...videoLabels,
+            if (audioLabel != null) [audioLabel.primary, ?audioLabel.secondary].join(' · '),
+            // File size/bitrate uses the same selected version as Play.
+            ?fileSummary,
+            if (preview != null)
+              subtitleLabel == null
+                  ? t.videoControls.osdSubtitlesOff
+                  : t.videoControls.osdSubtitles(track: subtitleLabel.primary),
+          ],
+        ),
+      );
+    }
+
     // Same ink as the hero's metadata line, one step lighter in weight and
     // size so it reads as a footnote to the buttons rather than a sixth one.
     final textStyle = TextStyle(

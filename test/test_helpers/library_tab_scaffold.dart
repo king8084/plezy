@@ -21,6 +21,7 @@ Future<void> pumpLibraryTab(
   Size size = const Size(1280, 720),
   double devicePixelRatio = 1,
   VoidCallback? focusSidebar,
+  TransitionBuilder? appBuilder,
 }) async {
   tester.view.devicePixelRatio = devicePixelRatio;
   tester.view.physicalSize = size * devicePixelRatio;
@@ -37,6 +38,7 @@ Future<void> pumpLibraryTab(
       ],
       child: InputModeTracker(
         child: MaterialApp(
+          builder: appBuilder,
           theme: monoTheme(MonoPalette.dark),
           home: MainScreenFocusScope(
             focusSidebar: focusSidebar ?? () {},

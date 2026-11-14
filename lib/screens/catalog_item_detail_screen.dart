@@ -841,12 +841,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
 
     final isSeerr = item.source == CatalogSourceId.seerr;
-    final imdb = isSeerr
-        ? withCommunityRatings(
-            item.ratings ?? const [],
-            _communityRatings,
-          ).where((rating) => rating.source == 'imdb').firstOrNull
-        : null;
+    final imdb = isSeerr ? catalogImdbRating(item, _communityRatings) : null;
     final headlineRating = isSeerr ? imdb?.value : item.rating;
     final headlineVotes = isSeerr ? imdb?.votes : item.votes;
     if (headlineRating case final rating?) {

@@ -36,7 +36,7 @@ void main() {
       expect(_scores(merged), [('imdb', 9.3)]);
     });
 
-    test('orders Rotten Tomatoes, IMDb, TMDB, Metacritic, Letterboxd before the trackers', () {
+    test('orders IMDb first, then Rotten Tomatoes, TMDB, Metacritic, Letterboxd before the trackers', () {
       final merged = mergeCommunityRatings([
         (
           origin: CatalogSourceId.mdblist,
@@ -54,9 +54,9 @@ void main() {
       ]);
 
       expect(merged.map((r) => r.source), [
+        'imdb',
         'rottenTomatoesCritic',
         'rottenTomatoesAudience',
-        'imdb',
         'tmdb',
         'metacritic',
         'letterboxd',
@@ -72,19 +72,34 @@ void main() {
       final community = [_r('imdb', 8.3), _r('rottenTomatoesCritic', 9.1), _r('trakt', 8.0)];
 
       expect(_scores(withCommunityRatings(own, community)), [
-        ('rottenTomatoesCritic', 9.1),
         ('imdb', 8.3),
+        ('rottenTomatoesCritic', 9.1),
         ('tmdb', 7.5),
         ('trakt', 8.0),
         ('critic', 7.0),
       ]);
     });
 
-    test('returns the item scores unchanged while no tracker has answered', () {
+    test('orders the item scores before any tracker has answered', () {
       final own = [_r('audience', 6.0), _r('imdb', 8.1)];
 
-      expect(withCommunityRatings(own, const []), same(own));
+      expect(_scores(withCommunityRatings(own, const [])), [('imdb', 8.1), ('audience', 6.0)]);
+      expect(own.first.source, 'audience');
     });
+  });
+
+  test('server headline and matching generic audience cannot repeat IMDb', () {
+    final own = [_r('audience', 8.5), _r('', 8.5), _r('tmdb', 7.9)];
+    final community = [_r('imdb', 8.5), _r('rottenTomatoesCritic', 9.1)];
+    expect(_scores(withCommunityRatings(own, community)), [
+      ('imdb', 8.5),
+      ('rottenTomatoesCritic', 9.1),
+      ('tmdb', 7.9),
+    ]);
+    expect(_scores(withCommunityRatings([_r('tmdb', 7.9), _r('imdb', 8.5), _r('imdb', 8.5)], const [])), [
+      ('imdb', 8.5),
+      ('tmdb', 7.9),
+    ]);
   });
 
   group('CommunityRatingsLoader', () {

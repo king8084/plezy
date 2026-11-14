@@ -688,6 +688,7 @@ void main() {
             backend: show.backend,
             kind: MediaKind.episode,
             title: 'Episode $i',
+            summary: List.filled(15, 'An episode synopsis with plenty of text.').join(' '),
             index: i,
             parentIndex: 1,
             parentId: 's1',
@@ -715,6 +716,12 @@ void main() {
       await tester.pumpAndSettle();
       final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
       final actions = find.byKey(const ValueKey('tv_detail_actions'));
+      final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
+      expect(tester.widget<Text>(summary).maxLines, 4);
+      expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
+      expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
+      final firstCard = find.byType(MediaCard).first;
+      expect(tester.getBottomRight(firstCard).dy, lessThanOrEqualTo(canvas.height));
       final originalRailTop = tester.getTopLeft(find.byType(TvBrowseRail)).dy;
       for (var i = 0; i < 2; i++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
@@ -1649,7 +1656,7 @@ void main() {
     // the episode's IMDb score.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
-    expect(announced(), contains('TMDB 77%, IMDb 7.8'));
+    expect(announced(), contains('IMDb 7.8, TMDB 77%'));
     expect(
       tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_summary'))).data,
       'The episode synopsis from full metadata.',
@@ -1669,7 +1676,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('TV detail action row ends with the tracks Play will use, off the focus path', (tester) async {
+  testWidgets('TV episode tracks sit above the synopsis, off the focus path', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -1766,15 +1773,11 @@ void main() {
     final audioText = find.textContaining('English');
     expect(audioText, findsOneWidget);
 
-    // At the screen's right edge — outside the hero's 60% text column, not
-    // right-aligned within it — sitting on the action row's baseline, in the
-    // hero's own ink rather than the muted chip colour.
+    // A dedicated full-width badge row precedes the synopsis and actions.
     final bar = tester.getRect(find.byType(FocusableActionBar));
     final statusRect = tester.getRect(status);
-    expect(statusRect.right, closeTo(1920 - 24, 1)); // spotlightLeft at this scale
-    expect(statusRect.left, greaterThan(1920 * 0.60));
-    expect(statusRect.bottom, closeTo(bar.bottom, 1));
-    expect(statusRect.center.dy, greaterThan(bar.center.dy));
+    expect(statusRect.left, closeTo(24, 1));
+    expect(statusRect.bottom, lessThan(bar.top));
     final ink = tester.widget<Text>(audioText).style!.color!;
     expect(ink.a, 1.0);
 

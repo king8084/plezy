@@ -1,3 +1,4 @@
+import 'package:plezy/providers/removed_continue_watching_provider.dart';
 import '../test_helpers/paged_fakes.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -69,6 +70,42 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  testWidgets('Jellyfin Continue Watching menu removes a whole show locally without server mutations', (tester) async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    final removed = RemovedContinueWatchingProvider(profileId: 'alice');
+    await removed.ensureInitialized();
+    addTearDown(removed.dispose);
+    final methods = <String>[];
+    final item = testMediaItem(
+      id: 'e14',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 14',
+      serverId: 'srv-1',
+      grandparentId: 'modern-family',
+      grandparentTitle: 'Modern Family',
+    );
+    final key = await _pumpJellyfinItemMenu(
+      tester,
+      isAdministrator: false,
+      item: item,
+      removed: removed,
+      isInContinueWatching: true,
+      handler: (request) async {
+        methods.add(request.method);
+        return http.Response('{}', 200);
+      },
+    );
+    await _openMenu(tester, key);
+    expect(find.text(t.mediaMenu.removeFromContinueWatching), findsOneWidget);
+    await tester.tap(find.text(t.mediaMenu.removeFromContinueWatching));
+    await tester.pumpAndSettle();
+    expect(removed.entries.single.item.id, 'modern-family');
+    expect(methods.where((method) => method != 'GET'), isEmpty);
+  });
+
   testWidgets('cancelled media menu restores its live captured item', (tester) async {
     final destination = FocusNode();
     addTearDown(destination.dispose);
@@ -1943,6 +1980,9 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
   bool serverOnline = true,
   List<Uri>? requests,
 
+  RemovedContinueWatchingProvider? removed,
+  bool isInContinueWatching = false,
+
   /// Push the menu onto a route above a home screen, so the navigator has
   /// something below the menu that a stray pop could reach.
   bool onPushedRoute = false,
@@ -1976,6 +2016,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
       child: MediaContextMenu(
         key: menuKey,
         item: item,
+        isInContinueWatching: isInContinueWatching,
         child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
       ),
     ),
@@ -1984,6 +2025,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
     TranslationProvider(
       child: MultiProvider(
         providers: [
+          if (removed != null) ChangeNotifierProvider<RemovedContinueWatchingProvider>.value(value: removed),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),

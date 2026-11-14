@@ -15,6 +15,9 @@ import '../media/catalog_item_ref.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/media_rating.dart';
+import '../providers/catalog_sources_provider.dart';
+import '../services/catalog/community_ratings.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/catalog/catalog_item.dart';
@@ -106,7 +109,12 @@ TextSpan _metadataTextSpan(String text, TextStyle? style) {
 /// the one value this line exists to show. The compact form therefore leads
 /// with the rating and drops certification, edition, genres and studio, all
 /// of which the detail screen and the search list still render in full.
-String _buildMediaMetadataLine(MediaItem item, {CatalogItem? catalogItem, bool compact = false}) {
+String _buildMediaMetadataLine(
+  MediaItem item, {
+  CatalogItem? catalogItem,
+  bool compact = false,
+  MediaRatingSource? seerrRating,
+}) {
   final parts = <String>[];
 
   if (item.kind == MediaKind.collection) {
@@ -118,8 +126,14 @@ String _buildMediaMetadataLine(MediaItem item, {CatalogItem? catalogItem, bool c
   }
 
   String? ratingPart() {
-    if (item.rating case final rating?) {
-      final votes = compact ? null : catalogItem?.votes;
+    final isSeerr = catalogItem?.source == CatalogSourceId.seerr;
+    final imdb = isSeerr ? seerrRating ?? catalogImdbRating(catalogItem!, const []) : null;
+    if ((isSeerr ? imdb?.value : item.rating) case final rating?) {
+      final votes = compact
+          ? null
+          : isSeerr
+          ? imdb?.votes
+          : catalogItem?.votes;
       final voteSuffix = votes != null && votes > 0 ? ' (${_formatCompactCatalogNumber(votes)})' : '';
       return '${formatRating(rating)}★$voteSuffix';
     }
@@ -856,6 +870,19 @@ class _MediaCardList extends StatelessWidget {
     return (showServerName && it.serverName != null) || libraryName != null;
   }
 
+  Widget _metadataLabel(BuildContext context, String line) => Text.rich(
+    _metadataTextSpan(
+      line,
+      Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: tokens(context).textMuted.withValues(alpha: 0.9),
+        fontSize: _metadataFontSize,
+        fontWeight: .w500,
+      ),
+    ),
+    maxLines: 1,
+    overflow: .ellipsis,
+  );
+
   String _buildMetadataLine() {
     final current = item;
     if (current is MediaPlaylist) {
@@ -987,20 +1014,15 @@ class _MediaCardList extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(height: 4),
-                    if (metadataLine.isNotEmpty) ...[
+                    if (metadataLine.isNotEmpty || catalogItem?.source == CatalogSourceId.seerr) ...[
                       ExcludeSemantics(
-                        child: Text.rich(
-                          _metadataTextSpan(
-                            metadataLine,
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: tokens(context).textMuted.withValues(alpha: 0.9),
-                              fontSize: _metadataFontSize,
-                              fontWeight: .w500,
-                            ),
-                          ),
-                          maxLines: 1,
-                          overflow: .ellipsis,
-                        ),
+                        child: catalogItem?.source == CatalogSourceId.seerr
+                            ? _SeerrCardMetadata(
+                                item: item as MediaItem,
+                                catalogItem: catalogItem!,
+                                builder: (line) => _metadataLabel(context, line),
+                              )
+                            : _metadataLabel(context, metadataLine),
                       ),
                       const SizedBox(height: 2),
                     ],
@@ -1281,6 +1303,14 @@ class _MediaCardHelpers {
     bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
+    if (catalogItem?.source == CatalogSourceId.seerr) {
+      return _SeerrCardMetadata(
+        item: mi,
+        catalogItem: catalogItem!,
+        compact: true,
+        builder: (text) => _caption(context, text),
+      );
+    }
     final catalogMetadata = catalogItem == null
         ? ''
         : _buildMediaMetadataLine(mi, catalogItem: catalogItem, compact: true);
@@ -1722,4 +1752,66 @@ class _CardTapRegion extends StatelessWidget {
       child: child,
     );
   }
+}
+
+/// Hydrates only realized Seerr card captions, using the same profile cache
+/// and in-flight coalescer as the detail screen. Never walks the whole shelf.
+class _SeerrCardMetadata extends StatefulWidget {
+  const _SeerrCardMetadata({
+    required this.item,
+    required this.catalogItem,
+    required this.builder,
+    this.compact = false,
+  });
+  final MediaItem item;
+  final CatalogItem catalogItem;
+  final bool compact;
+  final Widget Function(String) builder;
+  @override
+  State<_SeerrCardMetadata> createState() => _SeerrCardMetadataState();
+}
+
+class _SeerrCardMetadataState extends State<_SeerrCardMetadata> {
+  CatalogSourcesProvider? _provider;
+  String? _identity;
+  List<Object> _sources = const [];
+  Stream<List<MediaRatingSource>>? _ratings;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bind(context.watch<CatalogSourcesProvider?>());
+  }
+
+  @override
+  void didUpdateWidget(covariant _SeerrCardMetadata oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bind(_provider);
+  }
+
+  void _bind(CatalogSourcesProvider? provider) {
+    final identity = widget.catalogItem.identityKey;
+    final sources = provider?.connectedSources ?? const [];
+    final sameSources =
+        sources.length == _sources.length && sources.indexed.every((entry) => identical(entry.$2, _sources[entry.$1]));
+    if (identical(provider, _provider) && identity == _identity && sameSources) return;
+    _provider = provider;
+    _sources = sources;
+    _identity = identity;
+    _ratings = provider?.communityRatingsForCatalogItem(widget.catalogItem);
+  }
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<List<MediaRatingSource>>(
+    key: ValueKey(_identity),
+    stream: _ratings,
+    builder: (context, snapshot) => widget.builder(
+      _buildMediaMetadataLine(
+        widget.item,
+        catalogItem: widget.catalogItem,
+        compact: widget.compact,
+        seerrRating: catalogImdbRating(widget.catalogItem, snapshot.data ?? const []),
+      ),
+    ),
+  );
 }

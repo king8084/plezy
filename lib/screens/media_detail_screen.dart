@@ -42,6 +42,7 @@ import '../media/media_role.dart';
 import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
+import '../widgets/media_technical_badges.dart';
 import '../widgets/fitted_metadata_line.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
@@ -3843,11 +3844,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ? 20.0
         : _tvDetailActionRailGap;
     final compactForegroundBottom = (railHeight - railTopPadding) + actionRailGap * detailScale;
-    // Show Info gets a real reading band, even with large poster settings or
-    // a tall recommendation row. Slide the existing rail below the fold;
-    // its cards keep their configured size and return when focus leaves info.
+    // Episode metadata needs its own badge row and four synopsis lines, even
+    // with large poster settings or a tall recommendation row. Move the rail
+    // down as needed; keep the configured cards and focus selection intact.
     final availableInfoHeight = size.height - spotlightTop - compactForegroundBottom;
-    final railShift = expandShowInfo ? (320 * detailScale - availableInfoHeight).clamp(0.0, railHeight) : 0.0;
+    final needsEpisodeBand = metadata.isShow || metadata.isSeason || metadata.isEpisode;
+    final minimumInfoHeight = needsEpisodeBand
+        ? (expandShowInfo ? 400 : 360) * detailScale
+        : expandShowInfo
+        ? 320 * detailScale
+        : 0.0;
+    final railShift = (minimumInfoHeight - availableInfoHeight).clamp(0.0, railHeight);
     final foregroundBottom = compactForegroundBottom - railShift;
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
     // See _tvDetailRouteSettled. The children stay in place (only their
@@ -3870,29 +3877,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 )
               : const SizedBox.shrink(),
         ),
+        // Movies retain their existing trailing track status. Episodes use
+        // the dedicated badge row inside the foreground, above the synopsis.
         // The action row's track status sits at the screen's right edge,
         // bottom-aligned with the row and outside the hero's 60% text column,
         // so it reads as a note about the row rather than a sixth button
         // (#2217).
-        Positioned(
-          left: size.width * 0.60 + spotlightLeft,
-          right: spotlightLeft,
-          bottom: foregroundBottom,
-          height: _tvDetailActionSize * detailScale,
-          child: ValueListenableBuilder<MediaItem?>(
-            valueListenable: _tvDetailFocusedEpisode,
-            builder: (context, _, _) => Align(
-              alignment: .bottomRight,
-              child: _buildPlaybackTracksStatus(
-                context,
-                metadata,
-                isTv: true,
-                tvScale: detailScale,
-                maxWidth: size.width * 0.40 - spotlightLeft * 2,
+        if (!needsEpisodeBand)
+          Positioned(
+            left: size.width * 0.60 + spotlightLeft,
+            right: spotlightLeft,
+            bottom: foregroundBottom,
+            height: _tvDetailActionSize * detailScale,
+            child: ValueListenableBuilder<MediaItem?>(
+              valueListenable: _tvDetailFocusedEpisode,
+              builder: (context, _, _) => Align(
+                alignment: .bottomRight,
+                child: _buildPlaybackTracksStatus(
+                  context,
+                  metadata,
+                  isTv: true,
+                  tvScale: detailScale,
+                  maxWidth: size.width * 0.40 - spotlightLeft * 2,
+                ),
               ),
             ),
           ),
-        ),
         Positioned(
           top: 0,
           left: 0,
@@ -4001,6 +4011,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final episodeTitleLineHeight = 30 * scale;
         final episodeTitleGap = 4 * scale;
         final metadataLineHeight = 22 * scale;
+        final inlineTracks = metadata.isShow || metadata.isSeason || metadata.isEpisode;
+        final tracksGap = 8 * scale;
+        final tracksHeight = inlineTracks ? MediaTechnicalBadges.rowHeight(scale, 1) + tracksGap : 0.0;
         final logoMetadataGap = 14 * scale;
         final summaryGap = (expandShowInfo ? 16 : 10) * scale;
         final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
@@ -4019,12 +4032,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // A focused thumbnail's extra title row must not evict its synopsis.
         // Keep at least one line when supplied, shrinking the show logo first.
         final minimumSummaryLines = hasDescription ? 1 : 0;
-        for (var lines = hasDescription ? (expandShowInfo ? 5 : 3) : 0; lines >= minimumSummaryLines; lines--) {
+        final desiredSummaryLines = expandShowInfo
+            ? 5
+            : inlineTracks
+            ? 4
+            : 3;
+        for (var lines = hasDescription ? desiredSummaryLines : 0; lines >= minimumSummaryLines; lines--) {
           final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
           final reservedHeight =
               logoMetadataGap +
               episodeTitleBlockHeight +
               metadataLineHeight +
+              tracksHeight +
               descriptionHeight +
               actionGap +
               actionHeight;
@@ -4042,6 +4061,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             (showLogo ? logoHeight + logoMetadataGap : 0) +
             episodeTitleBlockHeight +
             metadataLineHeight +
+            tracksHeight +
             descriptionHeight +
             actionGap +
             actionHeight;
@@ -4144,6 +4164,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         child: _buildTvDetailMetadataLine(context, metadata, scale),
                                       ),
                                     ),
+                                    if (inlineTracks) ...[
+                                      SizedBox(height: tracksGap),
+                                      SizedBox(
+                                        key: const ValueKey('tv_detail_technical_badges'),
+                                        height: tracksHeight - tracksGap,
+                                        width: double.infinity,
+                                        child: _buildPlaybackTracksStatus(
+                                          context,
+                                          metadata,
+                                          isTv: true,
+                                          tvScale: scale,
+                                          maxWidth: constraints.maxWidth,
+                                        ),
+                                      ),
+                                    ],
                                     if (hasDescription && summaryMaxLines > 0) ...[
                                       SizedBox(height: summaryGap),
                                       SizedBox(

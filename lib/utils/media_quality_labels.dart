@@ -40,19 +40,22 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? p
 /// File badges for browsing: the first version and exactly its first audio
 /// track, irrespective of the server's selected/default audio flags. These
 /// describe the source file, not the device's eventual HDMI output.
-List<String> buildMediaTechnicalLabels(MediaItem item) {
+List<String> buildMediaTechnicalLabels(MediaItem item, {int versionIndex = 0}) {
   if (!item.isMovie && !item.isEpisode) return const [];
-  final version = _selectedVersion(item.mediaVersions, 0);
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
   if (version == null) return const [];
   return [
     ..._videoLabels(version, fullDolbyVisionName: true),
     ?_formatAudio(_firstStreamOfKind(version, MediaStreamKind.audio)),
-    ?_fileSummaryLabel(item, version),
+    ?buildMediaFileSummaryLabel(item, versionIndex: versionIndex),
   ];
 }
 
-String? _fileSummaryLabel(MediaItem item, MediaVersion version) {
-  final size = buildMediaSizeLabel(item);
+/// Size and overall bitrate for the selected file version.
+String? buildMediaFileSummaryLabel(MediaItem item, {int versionIndex = 0}) {
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
+  if (version == null) return null;
+  final size = buildMediaSizeLabel(item, versionIndex: versionIndex);
   final bitrate = version.bitrate;
   final labels = [
     if (size != null) size.replaceFirst('.0 MB', ' MB').replaceAll(' ', ''),

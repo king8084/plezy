@@ -209,6 +209,9 @@ class TvSpotlightBackground extends StatelessWidget {
     final title = media.grandparentTitle ?? media.displayTitle;
     final gap = _sectionGap(scale);
     final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
+    final episodeTitle = media.isEpisode ? media.title?.trim() : null;
+    final hasEpisodeTitle = episodeTitle?.isNotEmpty == true;
+    final episodeTitleHeight = hasEpisodeTitle ? metadataHeight + 4 * scale : 0.0;
     final badgeHeight = MediaTechnicalBadges.rowHeight(scale, textScale);
     final badgeGap = 6 * scale;
     final fileItem = technicalItem?.globalKey == media.globalKey && technicalItem?.mediaVersions?.isNotEmpty == true
@@ -223,12 +226,14 @@ class TvSpotlightBackground extends StatelessWidget {
     // existing metadata and one synopsis line rather than overflowing posters.
     final showBadgeRow =
         availableHeight == null ||
-        availableHeight >= metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight;
+        availableHeight >=
+            episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight;
     var summaryLines = compact ? (textScale >= 1.3 ? 2 : 3) : 4;
     final desiredLogoHeight = _logoHeight(scale);
     double remainingLogoHeight() => availableHeight == null
         ? desiredLogoHeight
         : availableHeight -
+              episodeTitleHeight -
               metadataHeight -
               (showBadgeRow ? badgeGap + badgeHeight : 0) -
               2 * gap -
@@ -240,7 +245,9 @@ class TvSpotlightBackground extends StatelessWidget {
     // Slot sizes depend only on viewport and text size, never on logo aspect,
     // synopsis length or missing metadata. Swiping between titles therefore
     // preserves the metadata and synopsis baselines and their actual font size.
-    final synopsis = summary ?? (shouldHideSpoiler && media.isEpisode ? media.title : null) ?? '';
+    // The episode title now has its own line; do not repeat it in the
+    // synopsis slot when spoilers are hidden.
+    final synopsis = summary ?? '';
 
     return Column(
       crossAxisAlignment: .start,
@@ -252,6 +259,25 @@ class TvSpotlightBackground extends StatelessWidget {
           child: logoHeight == 0 ? null : _buildLogoOrTitle(context, media, title, width, logoHeight: logoHeight),
         ),
         SizedBox(height: gap),
+        if (hasEpisodeTitle) ...[
+          SizedBox(
+            height: metadataHeight,
+            width: double.infinity,
+            child: Text(
+              episodeTitle!,
+              key: const ValueKey('tv_spotlight_episode_title'),
+              maxLines: 1,
+              overflow: .ellipsis,
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: _metadataFontSize(scale) * textScale,
+                fontWeight: .w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+          SizedBox(height: 4 * scale),
+        ],
         SizedBox(
           key: const ValueKey('tv_spotlight_metadata'),
           height: metadataHeight,

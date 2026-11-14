@@ -25,7 +25,7 @@ String mediaRatingLabel(MediaRatingSource rating) =>
 
 List<MediaRatingSource> _ratingsFor(MediaItem item) {
   final ratings = item.ratings;
-  if (ratings != null && ratings.isNotEmpty) return ratings;
+  if (ratings != null && ratings.isNotEmpty) return orderedMediaRatings(ratings);
   // Backends that report a bare score with no provenance (and cached rows
   // written before the attributed list existed) still get one badge.
   final rating = item.rating;

@@ -614,6 +614,15 @@ class Translations$settings$en {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Removed from Continue Watching'
+	String get removedContinueWatching => 'Removed from Continue Watching';
+
+	/// en: 'Restore shows and movies removed from this profile.'
+	String get removedContinueWatchingDescription => 'Restore shows and movies removed from this profile.';
+
+	/// en: 'Restore to Continue Watching'
+	String get restoreContinueWatching => 'Restore to Continue Watching';
+
 	/// en: 'Continue Watching Action'
 	String get continueWatchingAction => 'Continue Watching Action';
 
@@ -8409,6 +8418,9 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.removedContinueWatching' => 'Removed from Continue Watching',
+			'settings.removedContinueWatchingDescription' => 'Restore shows and movies removed from this profile.',
+			'settings.restoreContinueWatching' => 'Restore to Continue Watching',
 			'settings.continueWatchingAction' => 'Continue Watching Action',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
@@ -8718,11 +8730,11 @@ extension on Translations {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
 			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			'themeEditor.title' => 'Custom Theme',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
@@ -9232,11 +9244,11 @@ extension on Translations {
 			'profiles.profileRenamed' => 'Profile renamed.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
 			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
@@ -9746,11 +9758,11 @@ extension on Translations {
 			'liveTv.watchLive' => 'Watch Live',
 			'liveTv.goToLive' => 'Go to Live',
 			'liveTv.record' => 'Record',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.saveTo' => 'Save to',
 			'liveTv.recordings' => 'Recordings',
 			'liveTv.scheduledRecordings' => 'Scheduled',
@@ -10260,11 +10272,11 @@ extension on Translations {
 			'performanceOverlay.tunneling' => 'Tunneling',
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',
 			'performanceOverlay.dvPath' => 'DV Path',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRouteDecoder' => 'Dolby Vision decoder',
 			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
 			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',

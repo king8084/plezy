@@ -1029,6 +1029,97 @@ void main() {
     });
   }
 
+  for (final mode in [ViewMode.grid, ViewMode.list]) {
+    testWidgets('Seerr $mode card uses detail IMDb cache and never native TMDB', (tester) async {
+      final response = Completer<http.Response>();
+      var calls = 0;
+      final client = MdblistClient(
+        TrackerSession(
+          accessToken: 'test',
+          refreshToken: 'test',
+          createdAt: 0,
+          expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 86400,
+        ),
+        onSessionInvalidated: () {},
+        httpClient: MockClient((request) {
+          calls++;
+          return response.future;
+        }),
+      );
+      addTearDown(client.dispose);
+      final source = MdblistCatalogSource(client);
+      final sources = _FakeCatalogSourcesProvider(source);
+      final multi = testMultiServerProvider(MultiServerManager());
+      addTearDown(sources.dispose);
+      addTearDown(multi.dispose);
+      const item = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: MediaKind.show,
+        title: 'Are We There Yet?',
+        year: 2010,
+        rating: 6.6,
+        votes: 999,
+        ids: CatalogItemIds(tmdb: 1),
+      );
+      Future<void> pumpCard(CatalogItem card) async {
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multi),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(MonoPalette.dark),
+              home: Scaffold(
+                body: Center(
+                  child: SizedBox(
+                    width: 360,
+                    height: 500,
+                    child: MediaCard(item: card.toMediaItem(), viewModeOverride: mode, onTap: () {}),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      bool hasText(String part) => find
+          .byWidgetPredicate(
+            (widget) => widget is Text && (widget.data ?? widget.textSpan?.toPlainText() ?? '').contains(part),
+          )
+          .evaluate()
+          .isNotEmpty;
+      await pumpCard(item);
+      expect(calls, 1);
+      expect(hasText('6.6'), isFalse);
+      response.complete(
+        http.Response(
+          jsonEncode({
+            'ratings': [
+              {'source': 'imdb', 'value': 5.6, 'votes': 1990},
+              {'source': 'tmdb', 'value': 66, 'votes': 999},
+            ],
+          }),
+          200,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(hasText('5.6'), isTrue);
+      expect(hasText('6.6'), isFalse);
+      // Opening the title uses the same cached response as the card.
+      final ratings = await sources.communityRatingsForCatalogItem(item).last;
+      expect(ratings.firstWhere((rating) => rating.source == 'imdb').value, 5.6);
+      expect(calls, 1);
+      // Same identity/item refresh retains the subscription and cached score.
+      await pumpCard(item);
+      expect(hasText('5.6'), isTrue);
+      expect(calls, 1);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('Seerr omits the headline instead of substituting TMDB when IMDb is unavailable', (tester) async {
     const item = CatalogItem(
       source: CatalogSourceId.seerr,

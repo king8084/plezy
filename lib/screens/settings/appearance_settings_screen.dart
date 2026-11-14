@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
+import '../../providers/removed_continue_watching_provider.dart';
+import 'removed_continue_watching_screen.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -127,6 +129,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.showHeroSectionDescription,
               ),
             _continueWatchingActionSelector(),
+            if (context.watch<RemovedContinueWatchingProvider?>() != null)
+              SettingNavigationTile(
+                icon: Symbols.restore_rounded,
+                title: t.settings.removedContinueWatching,
+                subtitle: t.settings.removedContinueWatchingDescription,
+                destinationBuilder: (_) => const RemovedContinueWatchingScreen(),
+              ),
             _episodeActionSelector(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,

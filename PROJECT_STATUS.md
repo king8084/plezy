@@ -4,6 +4,67 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up, local changes only (not built/installed): owner confirms
+the installed UI is beautiful, then requests rating cleanup, IMDb on Seerr
+cards, episode description/tag separation, a separate Home episode-title line,
+library Select opening details, and restorable Continue Watching removals.
+- Ratings are deduplicated and ordered with IMDb first before or after community
+  data arrives. An unattributed headline and a matching generic audience score
+  cannot repeat an attributed IMDb badge. Distinct attributed scores remain.
+- Realized Seerr card captions (grid and list) use the same IMDb selector and
+  existing per-profile provider cache/coalescer as their detail headline. No
+  TMDB scalar/vote fallback is presented as IMDb. Lookups are attached to
+  realized captions, not an eager walk of all 60 recommendations. Card/detail
+  tests use the real MDBList adapter with mocked HTTP and verify one lookup.
+- TV episode/show/season technical tags now have their own pill row above the
+  synopsis, using the selected file/track preview and selected-version file
+  size/bitrate. Subtitle choice remains explicitly labelled. Four episode
+  synopsis lines and five Show Info lines have a dedicated reading band;
+  existing cards move down as needed, retaining their configured size and
+  focus. At 720p the first episode card and caption remain visible. Movie and
+  non-TV trailing track layouts retain their previous placement.
+- Continue Watching adds one episode-title line above S/E metadata, as clarified
+  by the owner's Wholphin screenshot. Long titles ellipsize on that line; the
+  metadata row keeps its full width. Hidden-spoiler titles are not repeated in
+  the synopsis slot.
+- Apple TV library recommended shelves explicitly open details on Select,
+  including Continue Watching/Next Up whose default activation previously
+  obeyed Play preferences. Video browse-grid cards use the same explicit
+  details route. Regression presses Select with both Play preferences enabled
+  and verifies the show route with S8/E14 targeting. Hardware transport mapping
+  and player controls are unchanged.
+- Continue Watching long-press exposes Remove on Jellyfin via a new
+  profile-scoped local removed-title store. Episodes suppress their whole
+  series from Home, View All, library playback shelves and launcher shelf sync;
+  ordinary library/recommendation entries remain available. Settings →
+  Appearance → Home Screen → Removed from Continue Watching lists poster,
+  title/date and a remote-selectable restore action. Persistence survives
+  restart; profile/server identities remain separate. New positive playback
+  progress or newer server playback restores the series automatically.
+  Removal preserves resume/watched state and makes no server mutation.
+Research: Wholphin's original removal flow stores removed series and exposes
+a Settings restore list, returning titles after newer playback. Its implementation
+also resets watch state; Plezy follows the hide/restore flow while preserving
+resume position. Reviewed the original PR and relevant source diffs:
+https://github.com/damontecres/Wholphin/pull/1140
+Validation: 369 combined affected tests pass
+(`/tmp/plezy-finish-polish-tests.log`); final title/spoiler/subtitle-tag changes
+pass all 84 detail/spotlight regressions
+(`/tmp/plezy-final-title-tracks-tests.log`). Tests cover Jellyfin removal without
+server writes, profile persistence, playback restoration, Settings Select,
+Home/View All/launcher filtering, Seerr card/detail cache sharing, IMDb ordering
+and deduplication, library Select and 720p/1080p layout. Local renders inspected:
+`/tmp/plezy-episode-tags-1280.png`, `/tmp/plezy-episode-tags-1920.png`,
+`/tmp/plezy-home-episode-title-1280.png`, `/tmp/plezy-home-episode-title-1920.png`,
+and `/tmp/plezy-removed-continue-watching.png` (readable local fonts, placeholder
+art/icons). Temporary visual fixtures removed. Whole-project analysis and
+string/error/diff guards pass. Early new test fixtures needed date/const/scope
+corrections; Settings preference writes needed the real test clock, and the
+restore page now directly observes its provider's initialized state.
+Next: owner review and explicit build instruction. No CI build, installation,
+Unraid access, real Seerr request or owner watch-state mutation in this task.
+Latest installed source remains `d0c3755ac`; playback confirmation is separate.
+
 November 14: owner explicitly requested an Apple TV build and authorized Unraid
 for this build, confirming Plezy closed and Apple TV awake in Settings. Pushed
 `d0c3755ac5b0412c3efdc0437e583c252c19fee3`; Codemagic build #11
