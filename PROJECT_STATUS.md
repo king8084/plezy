@@ -13,6 +13,8 @@ tolerance now applies to both width and height at every tier; cases including
 3832×1600 → 4K, 1880×1072 → 1080p and 1240×712 → 720p pass, including stale
 cached labels. All 63 affected resolution/mapper/spotlight tests and targeted
 analysis pass, in addition to the earlier 406 tests for the three fixes.
+Owner clarified the actual 1080p file is 1912×1072. Added that exact case to
+the regression table; all 12 quality-label tests pass, classifying it as 1080p.
 Preparing this single authorized build; CI, installation and owner test pending.
 
 Latest build `ae237fb423cd5a086da92f233d09d1d6d3dcac33` (tested app source
