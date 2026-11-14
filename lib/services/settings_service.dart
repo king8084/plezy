@@ -897,6 +897,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+  static const pinFavoritesToSidebar = BoolPref('pin_favorites_to_sidebar');
+  static const pinCollectionsToSidebar = BoolPref('pin_collections_to_sidebar');
+  static const sidebarOrder = StringListPref('sidebar_order');
 
   /// Sidebar Libraries section expansion. Persisted so a collapsed section
   /// stays collapsed across launches instead of springing back open (#1896).
@@ -1568,6 +1571,9 @@ class SettingsService extends BaseSharedPreferencesService {
     startupSection,
     showExploreTab,
     alwaysKeepSidebarOpen,
+    pinFavoritesToSidebar,
+    pinCollectionsToSidebar,
+    sidebarOrder,
     librariesSectionExpanded,
     showUnwatchedCount,
     showWatchedIndicators,

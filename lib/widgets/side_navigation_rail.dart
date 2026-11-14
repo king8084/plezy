@@ -14,8 +14,13 @@ import '../focus/focus_memory_tracker.dart';
 import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_library.dart';
+import '../media/media_hub.dart';
+import '../screens/hub_detail_screen.dart';
+import '../screens/sidebar_favorites_screen.dart';
+import '../services/sidebar_library_items.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/sidebar_order.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -470,6 +475,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const _kExplore = 'explore';
   static const _kNowPlaying = 'nowPlaying';
   static const _kLibraries = 'libraries';
+  static const _kFavorites = 'favorites';
+  static const _kCollections = 'collections';
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
@@ -497,6 +504,41 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// edge shadow. Every docked shape — collapsed, always-open, or D-pad
   /// focus-expanded — displaces content instead and stays transparent on TV.
   bool get _isFloatingPanel => _interactionExpanded && !widget.alwaysExpanded;
+
+  bool get _showFavorites =>
+      !widget.isOfflineMode && SettingsService.instance.read(SettingsService.pinFavoritesToSidebar);
+  bool get _showCollections =>
+      !widget.isOfflineMode && SettingsService.instance.read(SettingsService.pinCollectionsToSidebar);
+
+  void _openLibraryShortcut({required bool favorites}) {
+    final multiServer = context.read<MultiServerProvider>();
+    final libraries = context.read<LibrariesProvider>();
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final title = favorites ? t.libraries.filterCategories.favorites : t.collections.title;
+    // The same profile-visible, non-hidden libraries as the sidebar itself.
+    final sources = [
+      for (final library in libraries.libraries)
+        if (!hidden.contains(library.globalKey) && multiServer.onlineServerIds.contains(library.serverId))
+          if (multiServer.getClientForServer(ServerId(library.serverId!)) case final client?)
+            (library: library, client: client),
+    ];
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => favorites && PlatformDetector.isTV()
+            ? SidebarFavoritesScreen(loadItems: () => fetchSidebarLibraryItems(favorites: true, sources: sources))
+            : HubDetailScreen(
+                hub: MediaHub(
+                  id: favorites ? 'sidebar_favorites' : 'sidebar_collections',
+                  title: title,
+                  type: favorites ? 'mixed' : 'collection',
+                  items: const [],
+                  more: true,
+                ),
+                loadItems: () => fetchSidebarLibraryItems(favorites: favorites, sources: sources),
+              ),
+      ),
+    );
+  }
 
   bool get _showDownloads => !PlatformDetector.isAppleTV();
 
@@ -682,6 +724,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kHome,
       if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
+      if (_showFavorites) _kFavorites,
+      if (_showCollections) _kCollections,
       if (hasExplore) _kExplore,
       _kSearch,
       if (_showDownloads) _kDownloads,
@@ -760,28 +804,32 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasExplore,
     required bool isCollapsed,
   }) {
-    return [
-      if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+    final visible = {
       if (!widget.isOfflineMode) ...[
         _kHome,
         if (hasNowPlaying) _kNowPlaying,
         _kLibraries,
-        // Library rows render inside ExcludeFocus(excluding: !_librariesExpanded
-        // || isCollapsed); keep the D-pad order in lockstep with that render
-        // condition so a collapsed rail never targets a focus-excluded row.
-        if (_librariesExpanded && !isCollapsed) ...[
-          ..._focusKeysForLibraryRows(visibleRows),
-          if (hasHiddenLibraries) ...[
-            _kHiddenLibraries,
-            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
-          ],
-        ],
+        if (_showFavorites) _kFavorites,
+        if (_showCollections) _kCollections,
         if (hasLiveTv) 'liveTv',
         if (hasExplore) _kExplore,
         _kSearch,
       ],
       if (_showDownloads) _kDownloads,
       _kSettings,
+    };
+    return [
+      if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+      for (final key in resolveSidebarOrder(SettingsService.instance.read(SettingsService.sidebarOrder), visible)) ...[
+        key,
+        if (key == _kLibraries && _librariesExpanded && !isCollapsed) ...[
+          ..._focusKeysForLibraryRows(visibleRows),
+          if (hasHiddenLibraries) ...[
+            _kHiddenLibraries,
+            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
+          ],
+        ],
+      ],
       if (_showFullscreenToggle) _kFullscreen,
     ];
   }
@@ -900,6 +948,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
         SettingsService.instance.listenable(SettingsService.showExploreTab),
         SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
+        SettingsService.instance.listenable(SettingsService.pinFavoritesToSidebar),
+        SettingsService.instance.listenable(SettingsService.pinCollectionsToSidebar),
+        SettingsService.instance.listenable(SettingsService.sidebarOrder),
       ]),
       builder: (context, _) {
         final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
@@ -929,6 +980,102 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasExplore: hasExplore,
           ),
         );
+        final primaryRows = <String, Widget>{
+          if (widget.isOfflineMode && widget.onReconnect != null)
+            _kReconnect: _buildReconnectItem(isCollapsed: isCollapsed),
+          if (!widget.isOfflineMode) ...{
+            'home': _buildNavItem(
+              icon: Symbols.home_rounded,
+              selectedIcon: Symbols.home_rounded,
+              label: Translations.of(context).common.home,
+              isSelected: widget.selectedTab == NavigationTabId.discover,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
+              focusNode: _focusTracker.get(_kHome),
+              isCollapsed: isCollapsed,
+            ),
+            if (nowPlayingTrack != null && musicService != null)
+              'nowPlaying': _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
+            'libraries': _buildLibrariesSection(
+              visibleRows,
+              hiddenRows,
+              hiddenLibraries.length,
+              t,
+              isCollapsed: isCollapsed,
+            ),
+            if (_showFavorites)
+              'favorites': _buildNavItem(
+                selectedIcon: Symbols.favorite_rounded,
+                icon: Symbols.favorite_rounded,
+                label: Translations.of(context).libraries.filterCategories.favorites,
+                isSelected: false,
+                onTap: () => _openLibraryShortcut(favorites: true),
+                focusNode: _focusTracker.get(_kFavorites),
+                isCollapsed: isCollapsed,
+              ),
+            if (_showCollections)
+              'collections': _buildNavItem(
+                selectedIcon: Symbols.collections_rounded,
+                icon: Symbols.collections_rounded,
+                label: Translations.of(context).collections.title,
+                isSelected: false,
+                onTap: () => _openLibraryShortcut(favorites: false),
+                focusNode: _focusTracker.get(_kCollections),
+                isCollapsed: isCollapsed,
+              ),
+            if (hasLiveTv)
+              'liveTv': _buildNavItem(
+                icon: Symbols.live_tv_rounded,
+                selectedIcon: Symbols.live_tv_rounded,
+                label: Translations.of(context).navigation.liveTv,
+                isSelected: widget.selectedTab == NavigationTabId.liveTv,
+                onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
+                focusNode: _focusTracker.get('liveTv'),
+                isCollapsed: isCollapsed,
+              ),
+            if (hasExplore)
+              'explore': _buildNavItem(
+                icon: Symbols.explore_rounded,
+                selectedIcon: Symbols.explore_rounded,
+                label: Translations.of(context).navigation.explore,
+                isSelected: widget.selectedTab == NavigationTabId.explore,
+                onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
+                focusNode: _focusTracker.get(_kExplore),
+                isCollapsed: isCollapsed,
+              ),
+            'search': _buildNavItem(
+              icon: Symbols.search_rounded,
+              selectedIcon: Symbols.search_rounded,
+              label: Translations.of(context).common.search,
+              isSelected: widget.selectedTab == NavigationTabId.search,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.search),
+              focusNode: _focusTracker.get(_kSearch),
+              isCollapsed: isCollapsed,
+            ),
+          },
+          if (_showDownloads)
+            'downloads': _buildNavItem(
+              icon: Symbols.download_rounded,
+              selectedIcon: Symbols.download_rounded,
+              label: Translations.of(context).navigation.downloads,
+              isSelected: widget.selectedTab == NavigationTabId.downloads,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
+              focusNode: _focusTracker.get(_kDownloads),
+              isCollapsed: isCollapsed,
+            ),
+          'settings': _buildNavItem(
+            icon: Symbols.settings_rounded,
+            selectedIcon: Symbols.settings_rounded,
+            label: Translations.of(context).common.settings,
+            isSelected: widget.selectedTab == NavigationTabId.settings,
+            onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
+            focusNode: _focusTracker.get(_kSettings),
+            isCollapsed: isCollapsed,
+          ),
+        };
+        final orderedKeys = [
+          if (primaryRows.containsKey(_kReconnect)) _kReconnect,
+          ...resolveSidebarOrder(SettingsService.instance.read(SettingsService.sidebarOrder), primaryRows.keys),
+        ];
         final focusOrder = _buildFocusOrder(
           visibleRows,
           hiddenRows,
@@ -1013,92 +1160,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                   padding: EdgeInsets.zero,
                                   clipBehavior: Clip.hardEdge,
                                   children: [
-                                    if (widget.isOfflineMode && widget.onReconnect != null) ...[
-                                      _buildReconnectItem(isCollapsed: isCollapsed),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    if (!widget.isOfflineMode) ...[
-                                      _buildNavItem(
-                                        icon: Symbols.home_rounded,
-                                        selectedIcon: Symbols.home_rounded,
-                                        label: Translations.of(context).common.home,
-                                        isSelected: widget.selectedTab == NavigationTabId.discover,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
-                                        focusNode: _focusTracker.get(_kHome),
-                                        isCollapsed: isCollapsed,
+                                    for (final key in orderedKeys)
+                                      Column(
+                                        key: ValueKey('sidebar_$key'),
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          primaryRows[key]!,
+                                          const SizedBox(height: _itemGap),
+                                        ],
                                       ),
-                                      const SizedBox(height: _itemGap),
-                                      // Now Playing — only while a music session is live.
-                                      if (nowPlayingTrack != null && musicService != null) ...[
-                                        _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      _buildLibrariesSection(
-                                        visibleRows,
-                                        hiddenRows,
-                                        hiddenLibraries.length,
-                                        t,
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                      if (context.watch<MultiServerProvider>().hasLiveTv) ...[
-                                        _buildNavItem(
-                                          icon: Symbols.live_tv_rounded,
-                                          selectedIcon: Symbols.live_tv_rounded,
-                                          label: Translations.of(context).navigation.liveTv,
-                                          isSelected: widget.selectedTab == NavigationTabId.liveTv,
-                                          onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
-                                          focusNode: _focusTracker.get('liveTv'),
-                                          isCollapsed: isCollapsed,
-                                        ),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      if (hasExplore) ...[
-                                        _buildNavItem(
-                                          icon: Symbols.explore_rounded,
-                                          selectedIcon: Symbols.explore_rounded,
-                                          label: Translations.of(context).navigation.explore,
-                                          isSelected: widget.selectedTab == NavigationTabId.explore,
-                                          onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
-                                          focusNode: _focusTracker.get(_kExplore),
-                                          isCollapsed: isCollapsed,
-                                        ),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      _buildNavItem(
-                                        icon: Symbols.search_rounded,
-                                        selectedIcon: Symbols.search_rounded,
-                                        label: Translations.of(context).common.search,
-                                        isSelected: widget.selectedTab == NavigationTabId.search,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.search),
-                                        focusNode: _focusTracker.get(_kSearch),
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    // Downloads (hidden on Apple TV — no user
-                                    // file storage)
-                                    if (_showDownloads) ...[
-                                      _buildNavItem(
-                                        icon: Symbols.download_rounded,
-                                        selectedIcon: Symbols.download_rounded,
-                                        label: Translations.of(context).navigation.downloads,
-                                        isSelected: widget.selectedTab == NavigationTabId.downloads,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
-                                        focusNode: _focusTracker.get(_kDownloads),
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    _buildNavItem(
-                                      icon: Symbols.settings_rounded,
-                                      selectedIcon: Symbols.settings_rounded,
-                                      label: Translations.of(context).common.settings,
-                                      isSelected: widget.selectedTab == NavigationTabId.settings,
-                                      onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
-                                      focusNode: _focusTracker.get(_kSettings),
-                                      isCollapsed: isCollapsed,
-                                    ),
                                   ],
                                 ),
                               ),

@@ -65,6 +65,7 @@ import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
@@ -152,7 +153,7 @@ void main() {
       final httpClient = MockClient((request) async {
         expect(request.method, 'GET');
         if (request.url.path.endsWith('/settings/public')) return jsonResponse({}, status: 404);
-        expect(request.url.path, '/api/v1/movie/1/similar');
+        expect(request.url.path, '/api/v1/movie/1/recommendations');
         return response.future;
       });
       final seerrClient = SeerrClient(
@@ -796,12 +797,21 @@ void main() {
       for (var number = 1; number <= 22; number++)
         episodes[7].copyWith(id: 's8e$number', index: number, title: 'Season 8 episode $number'),
     ];
+    final season9Episodes = [
+      for (var number = 1; number <= 20; number++)
+        episodes[8].copyWith(id: 's9e$number', index: number, title: 'Season 9 episode $number'),
+    ];
     final enteredEpisode = season8Episodes[13];
     final client = _FakeMediaServerClient(
       show: show,
       childrenByParent: {
         show.id: seasons,
-        for (var i = 0; i < seasons.length; i++) seasons[i].id: i == 7 ? season8Episodes : [episodes[i]],
+        for (var i = 0; i < seasons.length; i++)
+          seasons[i].id: i == 7
+              ? season8Episodes
+              : i == 8
+              ? season9Episodes
+              : [episodes[i]],
       },
     )..onDeckEpisode = episodes[2]; // Explicit entry beats a different on-deck season.
     final provider = testMultiServer(clients: [client]).provider;
@@ -833,8 +843,17 @@ void main() {
     expect(tester.getRect(selectedTab).left, greaterThanOrEqualTo(0));
     expect(tester.getRect(selectedTab).right, lessThanOrEqualTo(1280));
     expect(rail.hubs[1].id, 'detail_actors');
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
-    await tester.pumpAndSettle();
+    final tabsRect = tester.getRect(selectedTab);
+    expect(tabsRect.top, greaterThanOrEqualTo(tester.getRect(find.byType(AppBarBackButton)).bottom + 8));
+    expect(
+      tabsRect.bottom + 12,
+      lessThanOrEqualTo(tester.getRect(find.byKey(const ValueKey('tv_detail_information_semantics'))).top),
+    );
+    // Episodes -> actions -> information -> tabs follows their new visual order.
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+    }
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_7');
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
@@ -846,10 +865,24 @@ void main() {
     expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S9');
     final switchedRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(
-      switchedRail.hubs.where((hub) => hub.id.startsWith('detail_season_')).single.items.single.id,
-      episodes[8].id,
+      switchedRail.hubs.where((hub) => hub.id.startsWith('detail_season_')).single.items.first.id,
+      season9Episodes.first.id,
     );
     expect(switchedRail.hubs[1].id, 'detail_actors');
+    var railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(railState.focusedMediaItem?.id, season9Episodes.first.id);
+    for (var i = 0; i < 4; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+    expect(railState.focusedMediaItem?.id, season9Episodes[4].id);
+    await tester.tap(find.text('S8'));
+    await tester.pumpAndSettle();
+    railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(railState.focusedMediaItem?.id, season8Episodes.first.id);
+    await tester.tap(find.text('S9'));
+    await tester.pumpAndSettle();
+    expect(railState.focusedMediaItem?.id, season9Episodes.first.id);
     expect(tester.takeException(), isNull);
   });
 

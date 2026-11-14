@@ -4,6 +4,58 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up, local changes only (not built/installed): owner reports
+almost everything looks good on installed `25eccb2`, then requested season-tab
+position/reset fixes, Seerr recommendations, independent sidebar pins, sidebar
+ordering, and a polished Favorites page. General UI feedback is positive;
+playback confirmation remains a separate milestone.
+- Multi-season TV tabs now sit below Back, above the show hero, with 16 scaled
+  pixels before the hero and a 20-scaled-pixel action/episode-rail gap. Remote
+  Up follows episodes → actions → information → tabs → Back; Select on a
+  season still enters its full episode row. Single-season layout is unchanged.
+- Explicit season changes reset to the first media card, including revisiting
+  a cached season and loading an empty/pending page. The rail exposes a narrow
+  first-item selection method that accounts for the leading season-options
+  slot; initial Continue Watching entry still preserves S8 E14. Once a season
+  is explicitly changed, the original entry episode cannot reassert itself.
+- Seerr request shelves now use `/movie/{id}/recommendations` and
+  `/tv/{id}/recommendations`, not `/similar`. Fetch up to three pages (normally
+  60 candidates), retain recommendation order and deduplicate across pages;
+  keep the existing availability/active-request/blocklist/permission filters.
+  A later-page failure preserves earlier results. No real request submitted.
+  Official endpoints verified:
+  https://docs.seerr.dev/api/get-recommended-movies/
+  https://docs.seerr.dev/api/get-recommended-tv-series/
+- Settings → Appearance → Navigation adds Pin Favorites to Sidebar, Pin
+  Collections to Sidebar, and Sidebar Order. Pins default off and render as
+  independent destinations alongside Home/Explore/Settings, never nested in
+  Libraries. Ordering persists, handles hidden/unknown entries, and drives both
+  rendered order and D-pad order. Nested library rows move with their header;
+  reconnect/fullscreen utility controls retain their existing fixed positions.
+  In the order sheet, Select lifts a row, Up/Down moves it, Select saves; Back
+  cancels a pending move. Drag reordering is supported too.
+- Pins load the active profile's visible, non-hidden online libraries, page all
+  results and deduplicate by server/item. Favorites query only capable servers
+  with the favorite filter. Collections query one shared root per Jellyfin/Emby
+  server and each Plex library. Collections use the existing full grid screen.
+- Apple TV Favorites reuses Home's spotlight and poster rail, including Poster
+  Card Size, full-card/grid-spacing and Home text-size settings. Focus changes
+  the show/movie artwork/logo, description, ratings and descriptive metadata.
+  A show remains show-level: no episode lookup/file details stand in for it.
+  The existing context menu, explicit detail activation and Back paths remain
+  in use. Non-TV Favorites uses the existing grid.
+Validation: 228 affected detail, recommendation, rail, settings, sidebar-source,
+order-sheet and Favorites tests pass (`/tmp/plezy-sidebar-season-tests-final.log`).
+Whole-project analysis passes (`/tmp/plezy-sidebar-season-analyze-final.log`);
+string/error/diff guards pass. The final mixed-library query adjustment also
+passes its two source regressions (`/tmp/plezy-sidebar-source-tests-final.log`).
+Local renders inspected at `/tmp/plezy-top-season-tabs-preview.png` and
+`/tmp/plezy-favorites-preview.png` (test fonts/placeholders; no overlap). Temporary
+preview tests removed. Initial preview capture needed an async test-harness fix;
+that did not require any production change. Owner TV visual/remote verification
+of this follow-up remains pending. Next step: explicit owner "build apple tv"
+before CI; a new scoped authorization is required before further Unraid changes.
+
 November 14: owner explicitly requested "build apple tv" for `25eccb283` and
 clarified that the one-time Unraid permission covers ALL steps needed for this
 build, including signing and in-place installation. They confirmed Plezy is

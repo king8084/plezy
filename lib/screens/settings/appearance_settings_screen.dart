@@ -20,6 +20,7 @@ import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
 import 'settings_utils.dart';
 import 'theme_settings_screen.dart';
+import 'sidebar_order_sheet.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -159,6 +160,23 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.alwaysKeepSidebarOpen,
                 subtitle: t.settings.alwaysKeepSidebarOpenDescription,
               ),
+            if (PlatformDetector.shouldUseSideNavigation(context)) ...[
+              SettingSwitchTile(
+                pref: SettingsService.pinFavoritesToSidebar,
+                icon: Symbols.favorite_rounded,
+                title: t.settings.pinFavoritesToSidebar,
+              ),
+              SettingSwitchTile(
+                pref: SettingsService.pinCollectionsToSidebar,
+                icon: Symbols.collections_rounded,
+                title: t.settings.pinCollectionsToSidebar,
+              ),
+              SettingNavigationTile(
+                icon: Symbols.swap_vert_rounded,
+                title: t.settings.sidebarOrder,
+                onTap: () => OverlaySheetController.showAdaptive(context, builder: (_) => const SidebarOrderSheet()),
+              ),
+            ],
             if (PlatformDetector.shouldUseSideNavigation(context))
               SettingSwitchTile(
                 pref: SettingsService.groupLibrariesByServer,

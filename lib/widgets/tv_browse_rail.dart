@@ -506,6 +506,28 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _focusNode.requestFocus();
   }
 
+  /// Explicit container changes (such as a season tab) start at its first
+  /// media card, independently of the old column or this hub's prior memory.
+  void focusFirstItemInHub(String hubId) {
+    final index = widget.hubs.indexWhere((hub) => hub.id == hubId);
+    if (index < 0) return;
+    _hubIndex = index;
+    final hub = widget.hubs[index];
+    _itemIndex = _defaultSlotFor(hub);
+    _hasUserInteracted = true;
+    _hasUserChangedHub = true;
+    _hasUserChangedItem = true;
+    _displacedFocusItem = null;
+    _pendingLeadingAutoAdvanceHubKey = hub.items.isEmpty && _isLeadingSlot(hub, _itemIndex) ? _hubKey(hub) : null;
+    _focusModel.set(_hubIndex, _itemIndex);
+    _rememberFocus(hub);
+    _notifyFocusedItem();
+    _notifyActiveHubChanged();
+    _scrollToItemAfterLayout(animate: false);
+    _scrollActiveHubToTop(animate: false);
+    _focusNode.requestFocus();
+  }
+
   /// [requestFocus] as the screen's first focus: held, not dropped, while a
   /// root route covers the session ([CoveredRouteFocusBoundary.requestInitialFocus]).
   void requestInitialFocus() {

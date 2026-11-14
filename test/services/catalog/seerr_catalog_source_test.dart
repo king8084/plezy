@@ -95,7 +95,7 @@ MockClient _matrixRow() => MockClient(
 void main() {
   group('SeerrCatalogSource', () {
     for (final kind in [MediaKind.movie, MediaKind.show]) {
-      test('request shelf uses ${kind.name} similar titles and excludes owned, active and blocked items', () async {
+      test('request shelf uses ${kind.name} recommendations and excludes owned, active and blocked items', () async {
         final paths = <String>[];
         final source = _source(
           MockClient((request) async {
@@ -143,8 +143,8 @@ void main() {
           }),
           product: SeerrProduct.jellyseerr,
         );
-        final items = await source.fetchRequestableSimilar(kind, 1);
-        expect(paths, [kind == MediaKind.movie ? '/api/v1/movie/1/similar' : '/api/v1/tv/1/similar']);
+        final items = await source.fetchRequestableRecommendations(kind, 1);
+        expect(paths, [kind == MediaKind.movie ? '/api/v1/movie/1/recommendations' : '/api/v1/tv/1/recommendations']);
         expect(items.map((item) => item.ids.tmdb), [2, 32]);
         expect(items.every((item) => item.source == CatalogSourceId.seerr && item.kind == kind), isTrue);
         expect(items.first.toMediaItem().catalogItem?.ids.tmdb, 2);
@@ -153,7 +153,45 @@ void main() {
 
     test('request shelf makes no calls when the user cannot request', () async {
       final source = _source(MockClient((_) async => throw StateError('must not request')), permissions: 0);
-      expect(await source.fetchRequestableSimilar(MediaKind.movie, 1), isEmpty);
+      expect(await source.fetchRequestableRecommendations(MediaKind.movie, 1), isEmpty);
+    });
+
+    test('request recommendations keep three full pages with cross-page deduplication', () async {
+      final pages = <int>[];
+      final source = _source(
+        MockClient((request) async {
+          final page = int.parse(request.url.queryParameters['page']!);
+          pages.add(page);
+          return jsonResponse({
+            'page': page,
+            'totalPages': 8,
+            'results': [
+              {'id': 999, 'name': 'Duplicate'},
+              for (var i = 0; i < 20; i++) {'id': page * 100 + i, 'name': 'Recommended $page/$i'},
+            ],
+          });
+        }),
+      );
+      final items = await source.fetchRequestableRecommendations(MediaKind.show, 1);
+      expect(pages, [1, 2, 3]);
+      expect(items, hasLength(61));
+      expect(items.map((item) => item.ids.tmdb).toSet(), hasLength(61));
+    });
+
+    test('recommendation continuation failure preserves the first page', () async {
+      final source = _source(
+        MockClient((request) async {
+          if (request.url.queryParameters['page'] == '2') return jsonResponse({}, status: 500);
+          return jsonResponse({
+            'page': 1,
+            'totalPages': 3,
+            'results': [
+              {'id': 2, 'title': 'Keep'},
+            ],
+          });
+        }),
+      );
+      expect((await source.fetchRequestableRecommendations(MediaKind.movie, 1)).single.title, 'Keep');
     });
 
     test('trending maps row metadata, total results, and the responsive TMDB image ladders', () async {

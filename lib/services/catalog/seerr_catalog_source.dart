@@ -89,22 +89,36 @@ class SeerrCatalogSource implements CatalogSource {
     return _toPage(await results, await origin).items;
   }
 
-  /// A library detail's separate request shelf. Use Seerr's similar endpoint
-  /// (as Wholphin does) and retain only titles absent from its linked server
-  /// with no active request. Selecting a card still opens the existing detail
-  /// and explicit Request flow; fetching this shelf never submits a request.
-  Future<List<CatalogItem>> fetchRequestableSimilar(MediaKind kind, int tmdbId) async {
+  /// Recommendations absent from the linked server with no active request.
+  /// Up to three pages keep the shelf useful after availability filtering.
+  /// Selecting a card still enters the existing explicit Request flow.
+  Future<List<CatalogItem>> fetchRequestableRecommendations(MediaKind kind, int tmdbId) async {
     if ((kind != MediaKind.movie && kind != MediaKind.show) || !canRequest(kind)) return const [];
-    final pageFuture = kind == MediaKind.movie ? client.getSimilarMovies(tmdbId) : client.getSimilarTv(tmdbId);
+    Future<SeerrPage<SeerrMedia>> load(int page) => kind == MediaKind.movie
+        ? client.getMovieRecommendations(tmdbId, page: page)
+        : client.getTvRecommendations(tmdbId, page: page);
+    final firstPage = load(1);
     final originFuture = _tmdbImageOrigin();
-    final page = await pageFuture;
+    var page = await firstPage;
     final origin = await originFuture;
     final seen = <int>{tmdbId};
-    return [
-      for (final media in page.items)
-        if (media.displayTitle.isNotEmpty && seen.add(media.id) && _canOfferRequest(media.mediaInfo))
-          _toCatalogItem(media, origin),
-    ];
+    final items = <CatalogItem>[];
+    for (var number = 1; number <= 3; number++) {
+      if (!canRequest(kind)) return const [];
+      for (final media in page.items) {
+        if (media.displayTitle.isNotEmpty && seen.add(media.id) && _canOfferRequest(media.mediaInfo)) {
+          items.add(_toCatalogItem(media, origin));
+        }
+      }
+      if (!page.hasMore || page.items.isEmpty || number == 3) break;
+      try {
+        page = await load(number + 1);
+      } catch (error) {
+        appLogger.d('Seerr recommendation continuation unavailable', error: error);
+        break; // Preserve the recommendations already fetched.
+      }
+    }
+    return items;
   }
 
   bool _canOfferRequest(SeerrMediaInfo? info) {

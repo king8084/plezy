@@ -449,6 +449,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
+  bool _tvSeasonChangedByUser = false;
   final _seasonEpisodePager = _SeasonEpisodePager();
   List<FocusNode> _seasonTabFocusNodes = [];
 
@@ -2260,6 +2261,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (seasonIndex < 0 || seasonIndex >= _seasons.length) return;
     setState(() {
       _selectedSeasonIndex = seasonIndex;
+      if (PlatformDetector.isTV()) _tvSeasonChangedByUser = true;
       _syncSelectedSeasonEpisodes(seasonIndex, _seasons[seasonIndex].id);
     });
     unawaited(_fetchSeasonEpisodes(seasonIndex));
@@ -2530,11 +2532,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
-      if (_hasTvSeasonTabs) {
-        _focusTvSeasonTabs();
-      } else {
-        _tvDetailRailKey.currentState?.requestFocus();
-      }
+      _tvDetailRailKey.currentState?.requestFocus();
       return;
     }
 
@@ -2722,12 +2720,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     topImage: topImage,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
-                      if (index != _selectedSeasonIndex) _selectSeason(index);
+                      final changedSeason = index != _selectedSeasonIndex;
+                      if (changedSeason) _selectSeason(index);
                       if (PlatformDetector.isTV()) {
                         _clearTvDetailFocusedEpisode();
                         _tvDetailActionRowHasFocus = false;
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_canUseDetail) _tvDetailRailKey.currentState?.requestFocus();
+                          if (!_canUseDetail) return;
+                          final rail = _tvDetailRailKey.currentState;
+                          if (changedSeason) {
+                            rail?.focusFirstItemInHub('$_tvDetailSeasonHubIdPrefix$index');
+                          } else {
+                            rail?.requestFocus();
+                          }
                         });
                       }
                     },
@@ -2749,12 +2754,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         : null,
                     onNavigateDown: () {
                       if (PlatformDetector.isTV()) {
-                        _tvDetailRailKey.currentState?.requestFocus();
+                        _tvDetailInfoFocusNode.requestFocus();
                         return;
                       }
                       _firstEpisodeFocusNode.requestFocus();
                     },
-                    onNavigateUp: PlatformDetector.isTV() ? _focusTvDetailActionRow : null,
+                    onNavigateUp: PlatformDetector.isTV() ? _backButtonFocusNode.requestFocus : null,
                     onLongPress: () => _showSeasonTabContextMenu(index),
                     onBack: () {
                       Navigator.of(context).maybePop();
@@ -3806,7 +3811,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
-    final spotlightTop = (size.height * 0.08).clamp(56.0 * detailScale, 110.0 * detailScale).toDouble();
+    final seasonTabsHeight = _hasTvSeasonTabs ? 48.0 : 0.0;
+    final seasonTabsTop = MediaQuery.paddingOf(context).top + 64.0;
+    final spotlightTop = _hasTvSeasonTabs
+        ? seasonTabsTop + seasonTabsHeight + 16 * detailScale
+        : (size.height * 0.08).clamp(56.0 * detailScale, 110.0 * detailScale).toDouble();
     final rawRailHeight = _estimateTvDetailRailHeight(size, detailHubs);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
       _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
@@ -3814,8 +3823,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final stableRailHeight = _tvDetailStableRailHeight;
     final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
     final railTopPadding = 12 * detailScale;
-    final seasonTabsHeight = _hasTvSeasonTabs ? 48.0 : 0.0;
-    final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale) + seasonTabsHeight;
+    final actionRailGap = _hasTvSeasonTabs ? 20.0 : _tvDetailActionRailGap;
+    final foregroundBottom = (railHeight - railTopPadding) + actionRailGap * detailScale;
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
     // See _tvDetailRouteSettled. The children stay in place (only their
     // content is withheld) so the Stack keeps its elements across the swap.
@@ -3876,7 +3885,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           Positioned(
             left: spotlightLeft,
             right: spotlightLeft,
-            bottom: railHeight - railTopPadding,
+            top: seasonTabsTop,
             height: seasonTabsHeight,
             child: Align(alignment: Alignment.centerLeft, child: _buildSeasonTabs()),
           ),
@@ -3897,7 +3906,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               trailingForHub: _tvDetailTrailingState,
               leadingItemForHub: _tvDetailLeadingItemForHub,
               onRetryHub: _retryTvDetailHub,
-              onNavigateUp: _hasTvSeasonTabs ? _focusTvSeasonTabs : _focusTvDetailActionRow,
+              onNavigateUp: _focusTvDetailActionRow,
               onBack: _popMediaDetailIfBackNotSuppressed,
               tallPosterScale: _tvDetailTallPosterScale,
               widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
@@ -4066,7 +4075,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             FocusableWrapper(
                               focusNode: _tvDetailInfoFocusNode,
                               onSelect: openDetails,
-                              onNavigateUp: _backButtonFocusNode.requestFocus,
+                              onNavigateUp: _hasTvSeasonTabs ? _focusTvSeasonTabs : _backButtonFocusNode.requestFocus,
                               onNavigateDown: _focusTvDetailActionRow,
                               onBack: _popMediaDetailIfBackNotSuppressed,
                               useBackgroundFocus: true,
@@ -4517,6 +4526,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _tvDetailInitialItemId(MediaItem metadata) {
+    if (_tvSeasonChangedByUser) return null;
     if (widget.initialEpisodeId != null) return widget.initialEpisodeId;
     if (!metadata.isShow) return null;
     return _onDeckEpisode?.id;

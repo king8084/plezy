@@ -31,24 +31,24 @@ extension _MediaDetailSeerrRecommendations on _MediaDetailScreenState {
     try {
       final ids = await client.fetchExternalIds(item.id);
       if (!isCurrent() || ids.tmdb == null) return;
-      final similar = await source.fetchRequestableSimilar(item.kind, ids.tmdb!);
+      final recommendations = await source.fetchRequestableRecommendations(item.kind, ids.tmdb!);
       if (!isCurrent()) return;
       setStateIfMounted(() {
-        _seerrRecommendationsHub = similar.isEmpty
+        _seerrRecommendationsHub = recommendations.isEmpty
             ? null
             : MediaHub(
-                id: 'detail_seerr_similar',
-                identifier: 'detail.seerr.similar',
+                id: 'detail_seerr_recommendations',
+                identifier: 'detail.seerr.recommendations',
                 title: t.discover.moreLikeThisRequest,
                 type: item.isMovie ? 'movie' : 'show',
-                items: [for (final recommendation in similar) recommendation.toMediaItem()],
-                size: similar.length,
+                items: [for (final recommendation in recommendations) recommendation.toMediaItem()],
+                size: recommendations.length,
               );
       });
     } catch (error) {
       // Seerr going offline must leave the local library, episodes and cast
       // fully usable. A later account rebind or return from Request retries.
-      appLogger.d('Seerr similar-title shelf unavailable', error: error);
+      appLogger.d('Seerr recommendations shelf unavailable', error: error);
     }
   }
 }

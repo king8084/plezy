@@ -24,6 +24,8 @@ import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
+import 'package:plezy/screens/hub_detail_screen.dart';
+import 'package:plezy/screens/sidebar_favorites_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/multi_server_fixtures.dart';
@@ -172,6 +174,43 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
     LocaleSettings.setLocaleSync(AppLocale.en);
+  });
+
+  testWidgets('sidebar pins remain top-level, follow saved order and open their own grids', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.pinFavoritesToSidebar, true);
+    await settings.write(SettingsService.pinCollectionsToSidebar, true);
+    await settings.write(SettingsService.librariesSectionExpanded, false);
+    await settings.write(SettingsService.sidebarOrder, ['favorites', 'settings', 'collections', 'home', 'libraries']);
+    final key = GlobalKey<SideNavigationRailState>();
+    await _pumpBasicRail(tester, sideNavKey: key, alwaysExpanded: true, isSidebarFocused: true);
+    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Collections'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Favorites')).dy, lessThan(tester.getTopLeft(find.text('Settings')).dy));
+    expect(tester.getTopLeft(find.text('Collections')).dy, lessThan(tester.getTopLeft(find.text('Libraries')).dy));
+    final favorite = tester.widget<NavigationRailItem>(find.widgetWithText(NavigationRailItem, 'Favorites'));
+    favorite.focusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, contains('settings'));
+    // A pin works even when the Libraries group is collapsed.
+    await tester.tap(find.text('Favorites'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SidebarFavoritesScreen), findsOneWidget);
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Collections'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<HubDetailScreen>(find.byType(HubDetailScreen)).hub.id, 'sidebar_collections');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+    await settings.write(SettingsService.pinFavoritesToSidebar, false);
+    await tester.pumpAndSettle();
+    expect(find.text('Favorites'), findsNothing);
+    expect(find.text('Collections'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('closed TV rail is slim and keeps primary icons centered', (tester) async {

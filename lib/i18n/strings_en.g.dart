@@ -650,6 +650,18 @@ class Translations$settings$en {
 	/// en: 'Group sidebar libraries under each media server.'
 	String get groupLibrariesByServerDescription => 'Group sidebar libraries under each media server.';
 
+	/// en: 'Sidebar Order'
+	String get sidebarOrder => 'Sidebar Order';
+
+	/// en: 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.'
+	String get sidebarOrderDescription => 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.';
+
+	/// en: 'Pin Favorites to Sidebar'
+	String get pinFavoritesToSidebar => 'Pin Favorites to Sidebar';
+
+	/// en: 'Pin Collections to Sidebar'
+	String get pinCollectionsToSidebar => 'Pin Collections to Sidebar';
+
 	/// en: 'Always Keep Sidebar Open'
 	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
 
@@ -8409,6 +8421,10 @@ extension on Translations {
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
+			'settings.sidebarOrder' => 'Sidebar Order',
+			'settings.sidebarOrderDescription' => 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.',
+			'settings.pinFavoritesToSidebar' => 'Pin Favorites to Sidebar',
+			'settings.pinCollectionsToSidebar' => 'Pin Collections to Sidebar',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
@@ -8705,12 +8721,12 @@ extension on Translations {
 			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
 			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			'themeEditor.title' => 'Custom Theme',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
 			'themeEditor.preview' => 'Preview',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
@@ -9219,12 +9235,12 @@ extension on Translations {
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
 			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
@@ -9733,12 +9749,12 @@ extension on Translations {
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.saveTo' => 'Save to',
 			'liveTv.recordings' => 'Recordings',
 			'liveTv.scheduledRecordings' => 'Scheduled',
 			'liveTv.recordingRules' => 'Recording Rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
 			'liveTv.manageRecording' => 'Manage recording',
 			'liveTv.cancelRecording' => 'Cancel recording',
@@ -10247,12 +10263,12 @@ extension on Translations {
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',
 			'performanceOverlay.dvPath' => 'DV Path',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.dvRouteDecoder' => 'Dolby Vision decoder',
 			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
 			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',
 			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
