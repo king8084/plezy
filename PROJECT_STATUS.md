@@ -4,12 +4,37 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
-On November 14 the owner explicitly requested “build apple tv” and authorized
-using Unraid to push/install this build. Preparing a Codemagic build of tested
-app source `2d92f1e2f`, including Home/detail follow-ups, genres/age and technical
-tags (one audio tag from track 1). Preserve the existing tvsign entry/account,
-all backups and installed app; no deletion/uninstall is authorized. New build,
-in-place installation and owner confirmation are pending, tracked separately.
+Latest build `ae237fb423cd5a086da92f233d09d1d6d3dcac33` (tested app source
+`2d92f1e2f`) built successfully and tvsign reports successful in-place installation
+on Basement at 08:13 Arabia time on November 14. The owner explicitly authorized
+both the build and Unraid staging/install, and confirmed the TV was awake inside
+Apple TV Settings with Plezy closed. Used the existing app entry/account; no
+app deletion, uninstall, new entry, server configuration change or backup deletion
+occurred. This attempt completed without the prior app-close stall. Owner testing
+of this build's UI, playback and retained settings is pending.
+
+Codemagic build `6af7ebda90e83b09c4fa12ba` (index 6), M2 workflow, started at
+08:04 and succeeded in 6m 15s. Artifact:
+`/home/koolo7000/Downloads/Plezy-tvOS (4).ipa`; local staging copy
+`/tmp/Plezy-ae237fb.ipa` (73,194,728 bytes), SHA-256
+`413407ba21a40d772f41ddeaf63c5eac55bed4810a807d976d3d448499e5dceb`.
+Verified ZIP CRC, tvOS platform, bundle ID `com.edde746.plezy`, local-network
+usage description and matching app-group entitlements on main and Top Shelf
+binaries. Native archive compiled successfully; the device workflow does not run
+native tests. Build URL:
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af7ebda90e83b09c4fa12ba
+
+On Unraid preserved `original-before-ae237fb.ipa` and `signed-before-ae237fb.ipa`
+in the existing `/mnt/cacheapp/appdata/docker/tvsign/ipas/1` folder, both 0600.
+Uploaded `Plezy-ae237fb.ipa`, restricted it to 0600, then copied it over the
+existing `original.ipa` (verified 0600 and new timestamp). Older files/backups
+remain intact. Renew requested once at 08:12; signing and installation completed,
+with a new successful renewal log entry at 08:13. No signer/container update.
+
+Codemagic billing showed 33 / 500 free minutes used while this build was still
+running (467 remaining at that observation); current build usage may not yet have
+been reflected. At 6–10 min/build that represented about 46–77 further builds,
+not a fixed build-count allowance. No subscription/billing change was made.
 
 Build `98c7123d4` (app changes `e4b4390b6`) built successfully in Codemagic
 and tvsign reports successful in-place installation at 23:40 on November 13.
@@ -63,6 +88,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 14: Codemagic build `6af7ebda90e83b09c4fa12ba` succeeded for
+  `ae237fb` in 6m 15s; unsigned artifact checks pass. tvsign reports successful
+  in-place installation on Basement at 08:13 with TV inside Settings. Same
+  app entry/account, both active IPA backups preserved, no deletion/uninstall.
+  Owner confirmation of new UI/playback/retained settings is pending.
 - November 14: new build and Unraid staging/install explicitly authorized.
   Source `2d92f1e2f` has the previously recorded full-suite validation for the
   main follow-ups and 52 passing targeted tests after the final tag addition;
@@ -70,8 +100,8 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   runner retry is planned. Codemagic will use the existing M2 workflow.
 - Owner-confirmed playback on installed `98c7123d4`: substantially faster start
   and working physical Home Play. Authenticated rotating diagnostics are
-  readable directly over the LAN. No new build is authorized for the follow-up
-  UI/navigation edits below.
+  readable directly over the LAN. The follow-up UI/navigation edits below were
+  subsequently built and installed in `ae237fb`; owner testing is pending.
 - Owner authorized the next build and installation on November 13. Codemagic
   build `6af771ce90e83b09c4f9f245` started at 23:23 Arabia time for commit
   `98c7123d4b57e0c5b2657c58a03830a7528d190f` (tested app source `e4b4390b6`),
@@ -213,16 +243,19 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Local validation of the November 14 Home/detail follow-ups is complete at
-`0b58063aa`, with genre/age and source-file badge additions validated separately
-below. The owner has now explicitly authorized this build and its Unraid install.
-Installed `98c7123d4`
-has owner-confirmed fast SDR startup and a working Home Play shortcut.
-CI builds, in-place installs and owner device confirmation remain separate
-milestones. For later updates, keep the same tvsign entry/account and have
-the owner remain in Apple TV Settings until installation finishes.
+Owner test of installed `ae237fb`: Home alignment/text-size setting, genres/age,
+source-file tags with audio track 1, Select → details versus Play → playback,
+and focused episode synopsis/gold stars. Check playback still starts promptly
+and existing settings/login remain. The earlier `98c7123d4` build has owner-
+confirmed fast SDR startup and working Home Play; do not transfer that device
+confirmation automatically to this build. CI success, in-place installation
+and owner testing remain separate milestones. Read the protected LAN diagnostics
+when the app is open if needed. Wait for a new explicit “build apple tv” before
+any subsequent build; no further Unraid changes are authorized by this completed
+installation. Keep future updates on the same app entry/account with the TV
+inside Settings and Plezy closed.
 
-## Pending local follow-ups (November 14)
+## Changes installed in ae237fb (November 14)
 - Source-file tags requested from the Matrix reference: a separate compact pill
   row below Home metadata shows resolution (1080p/4K), video codec (H.264/HEVC),
   Dolby Vision/HDR when reported, and exactly one audio codec/layout tag. Per
@@ -240,8 +273,8 @@ the owner remain in Apple TV Settings until installation finishes.
   Validation: targeted analyzer clean, 52 relevant tests pass (first-audio,
   wrong-parent isolation, 150% text, short hero and existing Home behavior),
   formatting and hardcoded-string/raw-error checks pass. The prior full-suite
-  result below predates this small addition. No CI build, installation, device
-  confirmation or Unraid change for these tags; await “build apple tv”.
+  result below predates this small addition. These tags were subsequently built
+  and installed in `ae237fb`; owner confirmation is pending.
 - Final pre-build request: keep the Home line's episode number, scores,
   runtime and air date/year, then append up to two nonempty, distinct genres
   in server order, followed by the age certification (TV-MA, PG, etc.). Moved
@@ -251,8 +284,8 @@ the owner remain in Apple TV Settings until installation finishes.
   Broad Jellyfin listing fields and the playback pipeline are unchanged; this
   lookup is not a prerequisite for playing. Under tight width the existing
   fitted-line policy sheds genres before the core facts. Targeted analysis
-  passes and all 37 existing Home/spotlight/metadata tests pass. No new build,
-  installation, Apple TV confirmation or Unraid change for this addition.
+  passes and all 37 existing Home/spotlight/metadata tests pass. Subsequently
+  built and installed in `ae237fb`; Apple TV owner confirmation is pending.
 - Owner could not find a text-size setting because the installed build only
   nudged fixed sizes. Added Settings → Appearance → Home Screen → Home text
   size (85%, 100%, 115%, 130%, 150%). It updates the Home title, metadata/rating
@@ -281,8 +314,8 @@ the owner remain in Apple TV Settings until installation finishes.
 - Validation: full Flutter suite passes (8,444 tests, 7 skipped), as do
   analyzer, Dart formatting, strict translation hygiene and hardcoded UI/error
   checks. Native code is unchanged. Generated bindings were regenerated; the
-  isolated freshness check passed after source commit `0b58063aa`. No new CI build or install
-  has been started, and no Unraid change was made for these follow-ups.
+  isolated freshness check passed after source commit `0b58063aa`. These changes
+  were subsequently built and installed in `ae237fb` with owner authorization.
 
 ## JellyTV episode-start reference (November 14)
 - Owner supplied `crucifix86/JellyTV` for startup benchmarking only. Reviewed
