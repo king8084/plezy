@@ -201,8 +201,9 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Finish local validation of the November 14 Home/detail follow-ups below, then
-wait for a new explicit “build apple tv” instruction. Installed `98c7123d4`
+Local validation of the November 14 Home/detail follow-ups is complete at
+`0b58063aa`. Wait for a new explicit “build apple tv” instruction before building.
+Installed `98c7123d4`
 has owner-confirmed fast SDR startup and a working Home Play shortcut.
 CI builds, in-place installs and owner device confirmation remain separate
 milestones. For later updates, keep the same tvsign entry/account and have
@@ -237,8 +238,34 @@ the owner remain in Apple TV Settings until installation finishes.
 - Validation: full Flutter suite passes (8,444 tests, 7 skipped), as do
   analyzer, Dart formatting, strict translation hygiene and hardcoded UI/error
   checks. Native code is unchanged. Generated bindings were regenerated; the
-  final freshness check follows the source commit. No new CI build or install
+  isolated freshness check passed after source commit `0b58063aa`. No new CI build or install
   has been started, and no Unraid change was made for these follow-ups.
+
+## JellyTV episode-start reference (November 14)
+- Owner supplied `crucifix86/JellyTV` for startup benchmarking only. Reviewed
+  master at `29149d9a2c3b37e83210e44aed6723a065142e0a`; no code was copied,
+  no UI/engine port was attempted, and no new device build was started.
+- Current source is a .NET 8 / Avalonia Desktop client using its own FFmpeg
+  demux/decode pipeline and OpenAL audio. It is not an Apple TV/QMS benchmark.
+  README player descriptions differ from the checked-in implementation.
+- Selecting an episode constructs `/Items/{id}/Download` locally and opens it
+  without a playback-info request. A series first requests its next episode.
+  The UI passes `StartTime = 0`; this path does not exercise Plezy's resume seek.
+  It still performs FFmpeg input opening and stream-info probing before decoding.
+- Its playback-started / AV-started callbacks fire after worker threads start,
+  without waiting for a first rendered frame. Those events cannot be compared
+  directly with Plezy's first-frame/UI-ready timing. No same-device timing or
+  numerical speed ranking was measured.
+- Transferable lead: keep episode-to-stream resolution short. Plezy already
+  resolves it in 23–61 ms in the saved runs; bypassing that step alone cannot
+  explain the old multi-second delay and could lose source/track/resume handling.
+  Keep the new discovery/file-loaded markers and measure the remaining open-to-
+  first-frame interval before changing buffering, probing or seeking.
+- Primary source at the inspected commit:
+  [stream URL](https://github.com/crucifix86/JellyTV/blob/29149d9a2c3b37e83210e44aed6723a065142e0a/JellyTV/Services/JellyfinClient.cs#L248),
+  [episode selection](https://github.com/crucifix86/JellyTV/blob/29149d9a2c3b37e83210e44aed6723a065142e0a/JellyTV/ViewModels/MainWindowViewModel.cs#L580),
+  [zero-position open](https://github.com/crucifix86/JellyTV/blob/29149d9a2c3b37e83210e44aed6723a065142e0a/JellyTV/Controls/VideoPlayerControl.axaml.cs#L241),
+  [player startup](https://github.com/crucifix86/JellyTV/blob/29149d9a2c3b37e83210e44aed6723a065142e0a/AvaloniaMediaPlayer/AvaloniaMediaPlayer.Core/Core/VideoPlayer.cs#L63).
 
 ## Installed changes in 98c7123d4 (November 13)
 - Remote clarification: playback play/pause already works. The missing action
@@ -281,8 +308,8 @@ the owner remain in Apple TV Settings until installation finishes.
   and key survive relaunch, and Stop Sharing closes the listener. It is
   reachable while Plezy runs on the LAN. The owner must enable it and share
   the displayed URL after installation before the assistant can read it.
-  The installed build has none of this yet. The owner now explicitly asks to
-  keep diagnostics network-readable. This needs no Unraid logging container;
+  The owner explicitly asked to keep diagnostics network-readable. This needs
+  no Unraid logging container;
   after installation, obtain the private LAN link once through View Logs.
   Owner enabled sharing and supplied the private link in a photo. Verified
   HTTP 403 without its key and HTTP 200 with it. Access is retained only in
@@ -295,7 +322,8 @@ the owner remain in Apple TV Settings until installation finishes.
   this Linux host. Translation bindings were regenerated and the isolated
   generated-file freshness checker passed after commit `e4b4390b6`.
   These changes were subsequently built in `98c7123d4` and installed in
-  place at 23:40. Owner playback verification remains pending.
+  place at 23:40. Owner subsequently confirmed much faster SDR startup and
+  working Home Play; HDR/DV and retained settings are not explicitly verified.
 
 ## Earlier built changes / historical investigation
 - Home row ordering is stored on this device and accessible via the Home toolbar;
