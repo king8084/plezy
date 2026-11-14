@@ -4,7 +4,39 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
-November 14 follow-up, local changes only: the owner requested a Wholphin-style
+November 14: owner explicitly requested "build apple tv" for `25eccb283` and
+clarified that the one-time Unraid permission covers ALL steps needed for this
+build, including signing and in-place installation. They confirmed Plezy is
+closed and Apple TV is awake inside Settings. Use the existing app/account,
+preserve current IPAs/backups, and never delete/uninstall. The single authorized
+build and installation completed; owner device testing remains separate.
+Build #9 `6af8372090e83b09c4fa25e9` started at 13:25 Arabia time for
+`25eccb283b8d05f0fae081447783bffc4e562812`, existing M2 unsigned-IPA workflow.
+CI succeeded in 5m 12s. Native archive succeeded; this device workflow does not
+run native policy tests. IPA verification and staging/install passed; owner
+testing remains pending.
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af8372090e83b09c4fa25e9
+Preserved `ipas/1/original-before-25eccb2.ipa` and `signed-before-25eccb2.ipa`
+through Unraid File Manager; both verified at 0600. Older backups, app
+entry/account and signer configuration are preserved.
+Verified `/home/koolo7000/Downloads/Plezy-tvOS (7).ipa`, staged locally as
+`/tmp/Plezy-25eccb2.ipa` (73,200,007 bytes), SHA-256
+`d7409811a7b92cf627e2a033fac43083c924c0231f2ed704a04301f8a6ee62ff`.
+ZIP CRC, AppleTVOS platform, bundle ID, local-network declaration and matching
+main/Top Shelf app-group entitlements pass. Uploaded this artifact into the
+existing `ipas/1` folder, restricted it to 0600, copied it over `original.ipa`,
+and verified the active source's 13:31 timestamp and 0600 permissions. Renew
+requested once at 13:34. tvsign reports successful signing and in-place
+installation on Basement, with the final success log at 13:35 Arabia time.
+Latest installed app source: `25eccb283b8d05f0fae081447783bffc4e562812`.
+No stall, deletion/uninstall, new app entry or signer/container changes.
+Proof: `/tmp/plezy-install-25eccb2.jpg` (Valid card and 13:35 success log).
+The build-only Unraid authorization is fulfilled. Next step: owner opens Plezy
+and checks Continue Watching → S8 E14, the full season-8 episode row, season
+tab switching and the separate library/request shelves. Owner playback and
+retained-settings confirmation remain pending; no real Seerr request submitted.
+
+November 14 follow-up, now built and installed: owner requested a Wholphin-style
 season selector and separate owned/requestable "More Like This" shelves.
 - TV show/season navigation now shows the selected season's FULL horizontal
   episode row, with S1/S2/etc. tabs above it. The owner explicitly clarified
@@ -39,11 +71,11 @@ Whole-project analysis passes (`/tmp/plezy-season-seerr-analyze-final.log`);
 translation generation, string/error guards and diff whitespace checks pass.
 Local layout render inspected at `/tmp/plezy-season-tabs-preview.png` (test font
 and placeholder art; no overlap). Temporary preview test was removed locally.
-Next step: owner review, then explicit "build apple tv" before any CI/build.
-No new build, install, Unraid access or live Seerr request for this follow-up.
-Device visual/remote verification remains pending on a future authorized build.
+The subsequent authorized build #9 and in-place installation completed above.
+Device visual/remote verification remains pending on the installed app.
+Any further build or Unraid change requires a new explicit instruction.
 
-Latest installed app source is `fe216e681d8241f049e880fe34909ff0fbc7dc38`.
+Previous installed app source was `fe216e681d8241f049e880fe34909ff0fbc7dc38`.
 tvsign reports successful signing and in-place installation on Basement at
 12:49 Arabia time, November 14. Existing app entry/account, app data and all
 older backups preserved; no deletion/uninstall, signer/container update or
@@ -254,6 +286,12 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 14, `25eccb2`: Codemagic build #9 `6af8372090e83b09c4fa25e9`
+  passed in 5m 12s; IPA integrity, tvOS identity and app-group checks pass.
+  tvsign reports successful in-place installation on Basement (started 13:34,
+  final success 13:35), with Plezy closed and Apple TV in Settings. Same
+  app/account, backups preserved, no stall/deletion. Owner confirmation of
+  season tabs, full selected-season row, Seerr shelves and playback pending.
 - November 14, `fe216e6`: Codemagic build #8 `6af82cbc90e83b09c4fa22de`
   passed in 5m 14s; IPA integrity, tvOS identity and app-group checks pass.
   tvsign reports successful in-place installation on Basement at 12:49, with
