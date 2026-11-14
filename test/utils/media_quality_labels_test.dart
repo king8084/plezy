@@ -13,6 +13,16 @@ import '../test_helpers/media_items.dart';
 
 void main() {
   group('buildMediaQualityLabels', () {
+    test('cropped 4K dimensions override an old cached 1080 label without promoting real 1080 files', () {
+      for (final (width, height, expected) in [(3832, 1600, '4K'), (3840, 1608, '4K'), (1920, 800, '1080p')]) {
+        final item = _episodeWithVersion(
+          MediaVersion(id: 'file', width: width, height: height, videoResolution: '1080', videoCodec: 'hevc'),
+        );
+        expect(buildMediaTechnicalLabels(item).first, expected);
+        expect(buildMediaQualityLabels(item).first, expected);
+        expect(buildMediaVideoLabels(item).first, expected);
+      }
+    });
     test('formats resolution, Dolby Vision, and Atmos audio', () {
       final item = _episodeWithVersion(
         MediaVersion(

@@ -58,9 +58,9 @@ class TvPlaybackDiagnostics {
       try {
         final saved = jsonDecode(await state.readAsString()) as Map<String, dynamic>;
         final key = saved['key'];
-        if (saved['enabled'] == true && key is String && RegExp(r'^[a-f0-9]{64}$').hasMatch(key)) {
+        if (key is String && RegExp(r'^[a-f0-9]{64}$').hasMatch(key)) {
           _key = key;
-          await _listen();
+          if (saved['enabled'] == true) await _listen();
         }
       } catch (_) {
         // A corrupt setting or unavailable port must never block playback.
@@ -139,7 +139,6 @@ class TvPlaybackDiagnostics {
     await initialize();
     await _saveSharing(false);
     await close();
-    _key = null;
   }
 
   /// Close the listener without changing the owner's saved preference.

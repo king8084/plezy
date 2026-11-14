@@ -395,6 +395,18 @@ void main() {
       expect(chrome.controlsVisible, isFalse);
       expect(focusLabel(), 'PlayerSurface');
     });
+
+    playerTest('center Select opens controls without toggling while hardware Play/Pause still works', (tester) async {
+      await press(tester, LogicalKeyboardKey.select);
+      expect(chrome.controlsVisible, isTrue);
+      expect(focusLabel(), 'PlayPause');
+      expect(toggles, 0);
+      await press(tester, LogicalKeyboardKey.mediaPlayPause);
+      expect(toggles, 1);
+      // Selecting an actual focused Play/Pause control remains an activation.
+      await press(tester, LogicalKeyboardKey.select);
+      expect(toggles, 2);
+    });
   });
 
   // Declining a skip prompt is the mirror of taking it. Back used to fall
@@ -690,7 +702,7 @@ void main() {
     // turns the next Select into a chrome-raise, so pausing takes two presses
     // (#1890).
     playerTest(
-      'Select toggles playback on the first press after skipping the intro',
+      'Select opens controls without pausing after skipping the intro',
       markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
       (tester) async {
         // A remote is non-pointer input, so the app is already in keyboard
@@ -708,7 +720,8 @@ void main() {
 
         await press(tester, LogicalKeyboardKey.select);
 
-        expect(toggles, 1, reason: 'one press must toggle playback, not merely raise the chrome');
+        expect(toggles, 0, reason: 'center Select must not double as hardware Play/Pause');
+        expect(chrome.controlsVisible, isTrue);
       },
     );
   });

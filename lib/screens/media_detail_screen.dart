@@ -420,10 +420,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // move with watch state, and clearing it would blank the badge until the
   // re-probe lands.
   final Map<String, List<MediaRatingSource>> _probedRatings = {};
-  final ValueNotifier<int> _focusedEpisodeRatingsRevision = ValueNotifier(0);
+  final ValueNotifier<int> _focusedEpisodeMetadataRevision = ValueNotifier(0);
   late final Listenable _tvDetailForegroundListenable = Listenable.merge([
     _tvDetailFocusedEpisode,
-    _focusedEpisodeRatingsRevision,
+    _focusedEpisodeMetadataRevision,
   ]);
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
@@ -1138,7 +1138,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
-    _focusedEpisodeRatingsRevision.dispose();
+    _focusedEpisodeMetadataRevision.dispose();
     _playbackProbeTimer?.cancel();
     _playbackStatusRevision.dispose();
     _extrasScrollController.dispose();
@@ -3936,7 +3936,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         var summaryMaxLines = 0;
         var logoHeight = 0.0;
 
-        for (var lines = hasDescription ? 3 : 0; lines >= 0; lines--) {
+        // A focused thumbnail's extra title row must not evict its synopsis.
+        // Keep at least one line when supplied, shrinking the show logo first.
+        final minimumSummaryLines = hasDescription ? 1 : 0;
+        for (var lines = hasDescription ? 3 : 0; lines >= minimumSummaryLines; lines--) {
           final descriptionHeight = lines > 0 ? summaryGap + (summaryLineHeight * lines) : 0.0;
           final reservedHeight =
               logoMetadataGap +
@@ -3946,7 +3949,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               actionGap +
               actionHeight;
           final remainingForLogo = availableHeight - reservedHeight;
-          if (remainingForLogo >= minLogoHeight || lines == 0) {
+          if (remainingForLogo >= minLogoHeight || lines == minimumSummaryLines) {
             summaryMaxLines = lines;
             logoHeight = remainingForLogo <= 0 ? 0 : remainingForLogo.clamp(0, desiredLogoHeight).toDouble();
             break;
@@ -4296,7 +4299,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Spoiler-hidden episodes get no summary; the episode title line in the
   /// hero already names them, so nothing else stands in for the text.
   String? _tvDetailItemDescription(MediaItem item, {required bool hideSpoilers}) {
-    final summary = hideSpoilers && item.shouldHideSpoiler ? null : item.summary;
+    final listedSummary = item.summary;
+    final summary = hideSpoilers && item.shouldHideSpoiler
+        ? null
+        : listedSummary?.trim().isNotEmpty == true
+        ? listedSummary
+        : _probedPlaybackItems[item.globalKey]?.summary;
     return summary != null && summary.isNotEmpty ? summary : null;
   }
 

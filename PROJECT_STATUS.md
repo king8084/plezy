@@ -11,7 +11,11 @@ both the build and Unraid staging/install, and confirmed the TV was awake inside
 Apple TV Settings with Plezy closed. Used the existing app entry/account; no
 app deletion, uninstall, new entry, server configuration change or backup deletion
 occurred. This attempt completed without the prior app-close stall. Owner testing
-of this build's UI, playback and retained settings is pending.
+of this build now confirms the UI is almost perfect, with three reported issues:
+center Select pauses playback, cropped 4K is labeled 1080p, and thumbnail focus
+can leave the episode synopsis missing. Retained settings and new-build startup
+timings have not been separately confirmed. Local corrections are recorded below;
+no subsequent build or Unraid change is authorized for these follow-ups.
 
 Codemagic build `6af7ebda90e83b09c4fa12ba` (index 6), M2 workflow, started at
 08:04 and succeeded in 6m 15s. Artifact:
@@ -243,10 +247,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Owner test of installed `ae237fb`: Home alignment/text-size setting, genres/age,
-source-file tags with audio track 1, Select → details versus Play → playback,
-and focused episode synopsis/gold stars. Check playback still starts promptly
-and existing settings/login remain. The earlier `98c7123d4` build has owner-
+Finish validation of the three owner-reported corrections and stable diagnostics
+key below, then wait for a new explicit “build apple tv”. Owner confirms most UI
+changes on installed `ae237fb` work well; the three corrections remain local.
+Check playback still starts promptly and existing settings/login remain after
+the next authorized update. The earlier `98c7123d4` build has owner-
 confirmed fast SDR startup and working Home Play; do not transfer that device
 confirmation automatically to this build. CI success, in-place installation
 and owner testing remain separate milestones. Read the protected LAN diagnostics
@@ -254,6 +259,38 @@ when the app is open if needed. Wait for a new explicit “build apple tv” bef
 any subsequent build; no further Unraid changes are authorized by this completed
 installation. Keep future updates on the same app entry/account with the TV
 inside Settings and Plezy closed.
+
+## Local corrections after ae237fb (November 14)
+- Center Select on the Apple TV player surface raises controls without toggling
+  playback. Focused controls still activate normally (including an explicit
+  Play/Pause button), Skip Intro remains selectable, and physical Play/Pause
+  remains transport. Desktop Enter behavior is unchanged. Updated the old TV
+  test that explicitly expected Select to pause.
+- Owner's Dexter file is 3832×1600: the exact-3840 width threshold misclassified
+  its cropped 4K raster. Resolution bucketing now tolerates a small horizontal
+  edge crop (up to 16 pixels). Quality labels recompute from known dimensions
+  before using the saved canonical label, correcting already-cached `1080`
+  values too. Real 1920×800 files stay 1080p; first-audio policy is unchanged.
+- Focused-thumbnail synopsis: a regression test reproduces a missing header
+  when the listing has no summary but the existing full-item probe returns it.
+  That probe previously only updated header ratings. It now also supplies the
+  same episode's synopsis and notifies the header when the text arrives, with
+  no extra network request or playback prerequisite. Tight hero layout keeps
+  at least one description line ahead of logo height. Spoiler preferences still
+  apply; cards remain thumbnails/titles with the synopsis in the top panel.
+- Diagnostics: the existing saved private URL returned HTTP 200 immediately
+  after retrying outside the restricted shell. The sandboxed check failed;
+  the installed URL/key had not changed. Saved the current traces locally as
+  `/tmp/plezy-latest-network-diagnostics.log` (0600), with no key in tracked
+  files. Documented this connection check in AGENTS.md. Sharing's private key
+  now survives Stop Sharing, re-enable and service relaunch too, so toggling
+  sharing no longer changes the link. Keep the existing authentication,
+  fixed port 18765, read-only allowlist and 1 MiB rotating file limit. App must
+  be running for the listener to answer; no Unraid service is needed/changed.
+- Validation: project analyzer and hardcoded-string/raw-error guards pass.
+  All 406 player/detail/mapper/quality/diagnostics tests pass, including the
+  formerly failing missing-synopsis regression. Source formatting passes.
+  No new CI build, installation or owner verification of these local fixes.
 
 ## Changes installed in ae237fb (November 14)
 - Source-file tags requested from the Matrix reference: a separate compact pill

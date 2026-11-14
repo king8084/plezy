@@ -96,11 +96,13 @@ MediaVersion? _selectedVersion(List<MediaVersion>? versions, int versionIndex) {
 }
 
 String? _formatResolution(MediaVersion version) {
+  // Re-evaluate dimensions even for cached Jellyfin rows whose old canonical
+  // label was computed before cropped 4K widths were recognized.
+  final dimensions = resolutionLabelFromDimensions(version.width, version.height);
+  if (dimensions != null) return resolutionDisplayLabel(dimensions);
   final raw = version.videoResolution?.trim();
   if (raw != null && raw.isNotEmpty) return resolutionDisplayLabel(raw);
-
-  final fallback = resolutionLabelFromDimensions(version.width, version.height);
-  return fallback == null ? null : resolutionDisplayLabel(fallback);
+  return null;
 }
 
 MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind, {int? partIndex}) {

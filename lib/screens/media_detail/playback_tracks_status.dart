@@ -93,8 +93,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
           serverId: target.serverId ?? fetched.serverId,
           serverName: target.serverName ?? fetched.serverName,
         );
-        _probedPlaybackItems[key] = item;
-        _recordProbedRatings(key, item.ratings);
+        _recordProbedMetadata(key, item);
         final selection = await resolveSavedMediaVersionFor(item);
         if (!current()) return;
         source = await client!.fetchCachedMediaSourceInfo(
@@ -118,13 +117,17 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     }
   }
 
-  /// Repaints the TV hero only when the scores are new for the episode it
-  /// shows; a re-probe after a refresh returns the same scores.
-  void _recordProbedRatings(String key, List<MediaRatingSource>? ratings) {
-    if (ratings == null || ratings.isEmpty) return;
-    final isNew = !_probedRatings.containsKey(key);
-    _probedRatings[key] = ratings;
-    if (isNew && _tvDetailFocusedEpisode.value?.globalKey == key) _focusedEpisodeRatingsRevision.value++;
+  /// Full records can supply a synopsis absent from the thumbnail listing.
+  /// Repaint the focused hero when that arrives, even without any new scores.
+  void _recordProbedMetadata(String key, MediaItem item) {
+    final previous = _probedPlaybackItems[key];
+    _probedPlaybackItems[key] = item;
+    final ratings = item.ratings;
+    final hasNewRatings = ratings != null && ratings.isNotEmpty && !_probedRatings.containsKey(key);
+    if (ratings != null && ratings.isNotEmpty) _probedRatings[key] = ratings;
+    if (_tvDetailFocusedEpisode.value?.globalKey == key && (hasNewRatings || previous?.summary != item.summary)) {
+      _focusedEpisodeMetadataRevision.value++;
+    }
   }
 
   /// The listener stays mounted while a source is resolving, without adding

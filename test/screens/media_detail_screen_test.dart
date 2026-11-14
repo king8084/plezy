@@ -1039,7 +1039,8 @@ void main() {
 
   testWidgets('TV detail hero, rail cards, and Play all follow the focused episode', (tester) async {
     final semantics = tester.ensureSemantics();
-    await SettingsService.getInstance();
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.libraryDensity, 7);
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -1065,6 +1066,7 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
+    final season2 = season.copyWith(id: 'season_2', index: 2);
     final episode = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
@@ -1099,8 +1101,17 @@ void main() {
     final client = _FakeMediaServerClient(
       show: show,
       childrenByParent: {
-        show.id: [season],
+        show.id: [season, season2],
         season.id: [episode, episode2],
+        season2.id: [
+          episode.copyWith(
+            id: 'later_episode',
+            parentId: season2.id,
+            parentIndex: 2,
+            title: 'Later episode',
+            summary: 'Later summary.',
+          ),
+        ],
       },
     );
     final provider = testMultiServer(clients: [client]).provider;
@@ -1237,6 +1248,7 @@ void main() {
           'ratingKey': 'ep1',
           'type': 'episode',
           'title': 'Episode 1',
+          'summary': 'The episode synopsis from full metadata.',
           'parentRatingKey': season.id,
           'grandparentRatingKey': show.id,
           'parentIndex': 1,
@@ -1285,6 +1297,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
     expect(announced(), contains('TMDB 77%, IMDb 7.8'));
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_summary'))).data,
+      'The episode synopsis from full metadata.',
+    );
     expect(
       find.descendant(of: find.byKey(const ValueKey('tv_detail_information_semantics')), matching: find.text('7.8')),
       findsOneWidget,

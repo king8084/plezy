@@ -22,3 +22,8 @@ The private Apple TV diagnostics URL is saved locally in
 troubleshooting while Plezy is running; never copy its key into tracked files,
 commits, public links or build logs. No manual log upload is needed while
 that protected LAN endpoint is reachable.
+
+Before reporting that LAN diagnostics are unreachable, retry a failed sandboxed
+connection with network permission. On November 14 the sandboxed request failed
+but the same saved URL returned HTTP 200 immediately outside the sandbox. Do
+not ask for a new link or blame an app update without checking the actual failure.

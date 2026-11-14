@@ -81,6 +81,8 @@ void main() {
     final stopped = TvPlaybackDiagnostics(directory: directory);
     await stopped.initialize();
     expect(stopped.sharing, isFalse);
+    await stopped.enableSharing();
+    expect(stopped.urlFor('127.0.0.1'), privateUrl, reason: 'stopping sharing must not invalidate the saved link');
     await stopped.close();
   });
 }

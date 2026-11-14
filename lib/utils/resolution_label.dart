@@ -15,12 +15,15 @@ String? resolutionLabelFromHeight(int? height) {
 }
 
 /// Convenience overload that takes width + height. Width is considered first
-/// for scope-cropped files, e.g. `3840x1608` should still be labeled `4k`.
+/// for scope-cropped files, e.g. `3832x1600` should still be labeled `4k`.
+/// Allow a small edge crop of up to 16 horizontal pixels from the nominal
+/// raster; requiring the full width misclassifies these files as 1080p.
 String? resolutionLabelFromDimensions(int? width, int? height) {
-  if ((width != null && width >= 3840) || (height != null && height >= 2160)) return '4k';
-  if ((width != null && width >= 1920) || (height != null && height >= 1080)) return '1080';
-  if ((width != null && width >= 1280) || (height != null && height >= 720)) return '720';
-  if ((width != null && width >= 854) || (height != null && height >= 480)) return '480';
+  bool nearWidth(int nominal) => width != null && width >= nominal - 16;
+  if (nearWidth(3840) || (height != null && height >= 2160)) return '4k';
+  if (nearWidth(1920) || (height != null && height >= 1080)) return '1080';
+  if (nearWidth(1280) || (height != null && height >= 720)) return '720';
+  if (nearWidth(854) || (height != null && height >= 480)) return '480';
   return resolutionLabelFromHeight(height);
 }
 
