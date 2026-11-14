@@ -51,6 +51,8 @@ import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
 import '../services/plex_client.dart';
+import '../services/jellyfin_media_info_mapper.dart';
+import '../media/media_backend.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
@@ -2276,6 +2278,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void _syncSelectedSeasonEpisodes(int seasonIndex, String seasonId) {
     if (_isSelectedSeason(seasonIndex, seasonId)) {
       _episodes = List.of(_seasonEpisodePager.stateFor(seasonId).items);
+      _warmListedEpisodeTracks();
     }
   }
 
@@ -3146,6 +3149,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _episodes = _allEpisodes.items;
         _hasLoadedEpisodes = true;
       });
+      _warmListedEpisodeTracks();
     } catch (e, st) {
       appLogger.w('Failed to load episodes for all seasons', error: e, stackTrace: st);
       if (!_canUseDetail || generation != _episodesLoadGeneration) return;
@@ -3277,6 +3281,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
         _episodes = _allEpisodes.items;
       });
+      _warmListedEpisodeTracks();
     } catch (e, st) {
       appLogger.w('Failed to load more episodes', error: e, stackTrace: st);
       if (mounted && generation == _episodesLoadGeneration) {
@@ -3844,16 +3849,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ? 20.0
         : _tvDetailActionRailGap;
     final compactForegroundBottom = (railHeight - railTopPadding) + actionRailGap * detailScale;
-    // Episode metadata needs its own badge row and four synopsis lines, even
-    // with large poster settings or a tall recommendation row. Move the rail
-    // down as needed; keep the configured cards and focus selection intact.
+    // Extra reading space may move the unfocused rail down while Show Info is
+    // open. When browsing (including initial focus), anchor the complete rail
+    // inside the viewport and let the foreground fit the remaining space.
     final availableInfoHeight = size.height - spotlightTop - compactForegroundBottom;
     final needsEpisodeBand = metadata.isShow || metadata.isSeason || metadata.isEpisode;
-    final minimumInfoHeight = needsEpisodeBand
-        ? (expandShowInfo ? 400 : 360) * detailScale
-        : expandShowInfo
-        ? 320 * detailScale
-        : 0.0;
+    final minimumInfoHeight = expandShowInfo ? (needsEpisodeBand ? 400 : 320) * detailScale : 0.0;
     final railShift = (minimumInfoHeight - availableInfoHeight).clamp(0.0, railHeight);
     final foregroundBottom = compactForegroundBottom - railShift;
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();

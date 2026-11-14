@@ -4,6 +4,36 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up after installed `ee3166cce`: owner photos show the initial
+episode rail and lower recommendation rows clipped by the viewport. The new
+minimum description band was shifting the entire rail downward even while
+browsing. Restricted that shift to Show Info/action focus; initial episode
+focus and lower rows now anchor the complete rail inside the screen, fitting
+the foreground into the remaining space. Card sizes and selection stay intact.
+Owner also reported delayed video/audio tags. Jellyfin episode pages already
+include MediaSources/MediaStreams; prepare their saved-version track previews
+locally as selected-season pages arrive instead of the 350 ms focus debounce
+and redundant item fetch. Rich rows also resolve immediately on first focus;
+other backends/incomplete rows retain the existing fallback. Saved versions,
+audio/subtitle preferences, refresh cancellation and offline behavior remain.
+Owner also had to reduce Home posters from size 6 to 5 to read the synopsis.
+Home now shrinks the logo before dropping synopsis lines when its header band
+is tight, rather than prioritizing a 32-scaled-pixel minimum logo. Existing
+poster sizes, title/metadata/tag lines and text sizes are preserved. Tests
+exercise series posters at sizes 6 and 7 on 720p/1080p and a tight 200-pixel
+episode header that retains three synopsis lines and a visible smaller logo.
+Validation: all 92 combined detail/spotlight/scaffold tests pass, plus all 18
+spotlight tests after the final tight-header regression. Includes 720p/1080p initial rail,
+return from Show Info and lower recommendation-card bounds at maximum poster
+size. The new initial rail bounds assertion reproduced the failure before the
+fix (720p rail bottom 865.85). New Jellyfin regression verifies tags immediately
+after moving to another episode, with zero per-item/source reads. Five-file
+analysis and diff checks pass. Logs: `/tmp/plezy-row-clipping-tests.log`,
+`/tmp/plezy-home-large-poster-tests.log` and
+`/tmp/plezy-row-clipping-analyze.log`. No new build/install requested or started;
+latest installed remains `ee3166cce`. Next: explicit owner build request, then
+device layout/tag confirmation and playback as separate milestones.
+
 November 14: owner explicitly requested an Apple TV build and authorized Unraid,
 confirming Plezy closed / Apple TV awake in Settings. Pushed
 `ee3166cce40e3e51fc0d3e6a7744d4282d466662` to the existing branch. Codemagic

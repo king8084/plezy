@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
@@ -12,6 +13,8 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
+import 'package:plezy/widgets/tv_spotlight_scaffold.dart';
+import 'package:plezy/widgets/tv_browse_rail.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -75,6 +78,80 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  testWidgets('tight Home header shrinks the logo before dropping synopsis lines', (tester) async {
+    final episode = MediaItem.jellyfin(
+      id: 'episode',
+      kind: MediaKind.episode,
+      title: 'Basketball',
+      grandparentTitle: 'Modern Family',
+      parentIndex: 8,
+      index: 16,
+      summary: List.filled(20, 'Phil trains for a charity basketball game.').join(' '),
+    );
+    await _pumpSpotlight(tester, episode, contentBottom: 800);
+    final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
+    expect(tester.widget<Text>(summary).maxLines, 3);
+    expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(280));
+    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, greaterThan(0));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
+    for (final density in [6, 7]) {
+      testWidgets('Home keeps three synopsis lines with poster size $density at $canvas', (tester) async {
+        final settings = await SettingsService.getInstance();
+        await settings.write(SettingsService.libraryDensity, density);
+        await settings.write(SettingsService.episodePosterMode, EpisodePosterMode.seriesPoster);
+        tester.view.physicalSize = canvas;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final episode = MediaItem.jellyfin(
+          id: 'episode',
+          kind: MediaKind.episode,
+          title: 'Basketball',
+          grandparentTitle: 'Modern Family',
+          parentIndex: 8,
+          index: 16,
+          summary: List.filled(20, 'Phil trains for a charity basketball game.').join(' '),
+        );
+        final hubs = [
+          MediaHub(id: 'continue', title: 'Continue Watching', type: 'show', items: [episode]),
+        ];
+        final railHeight = TvBrowseRailLayout.estimateHeight(
+          size: canvas,
+          hubs: hubs,
+          density: density,
+          episodePosterMode: settings.read(SettingsService.episodePosterMode),
+          tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+          widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+        );
+        final spotlight = ValueNotifier<MediaItem?>(episode);
+        addTearDown(spotlight.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: TvSpotlightScaffold(
+              hubs: hubs,
+              spotlightListenable: spotlight,
+              resolveSpotlight: () => episode,
+              resolveClient: (_) => null,
+              foreground: Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(key: const ValueKey('home_rail_bounds'), height: railHeight, width: double.infinity),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
+        expect(tester.widget<Text>(summary).maxLines, 3);
+        final rail = find.byKey(const ValueKey('home_rail_bounds'));
+        expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(rail).dy));
+        expect(tester.getBottomRight(rail).dy, lessThanOrEqualTo(canvas.height));
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
     testWidgets('episode title has its own line above number and long titles ellipsize at $canvas', (tester) async {

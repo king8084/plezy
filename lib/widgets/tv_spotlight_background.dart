@@ -238,7 +238,9 @@ class TvSpotlightBackground extends StatelessWidget {
               (showBadgeRow ? badgeGap + badgeHeight : 0) -
               2 * gap -
               summaryFontSize * lineHeight * summaryLines;
-    while (summaryLines > 1 && remainingLogoHeight() < 32 * scale) {
+    // Large posters reduce the header band. Give up logo height before
+    // synopsis lines; keeping a minimum logo used to collapse the text early.
+    while (summaryLines > 1 && remainingLogoHeight() < 0) {
       summaryLines--;
     }
     final logoHeight = remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();

@@ -717,11 +717,12 @@ void main() {
       final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
       final actions = find.byKey(const ValueKey('tv_detail_actions'));
       final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
-      expect(tester.widget<Text>(summary).maxLines, 4);
+      expect(tester.widget<Text>(summary).maxLines, inInclusiveRange(1, 4));
       expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
       expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
       final firstCard = find.byType(MediaCard).first;
       expect(tester.getBottomRight(firstCard).dy, lessThanOrEqualTo(canvas.height));
+      expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
       final originalRailTop = tester.getTopLeft(find.byType(TvBrowseRail)).dy;
       for (var i = 0; i < 2; i++) {
         await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
@@ -742,6 +743,26 @@ void main() {
         await tester.pumpAndSettle();
       }
       expect(tester.getTopLeft(find.byType(TvBrowseRail)).dy, originalRailTop);
+      // The taller cast/recommendation rows must fit too, not just the first
+      // wide episode card inside the rail's larger viewport.
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+        expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+        expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
+        if (i == 1) {
+          final activeCard = find
+              .byWidgetPredicate(
+                (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).id == show.id,
+              )
+              .first;
+          expect(
+            tester.getTopLeft(activeCard).dy,
+            greaterThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),
+          );
+          expect(tester.getBottomRight(activeCard).dy, lessThanOrEqualTo(canvas.height));
+        }
+      }
       expect(tester.takeException(), isNull);
     });
   }
@@ -1674,6 +1695,81 @@ void main() {
     expect(announced(), contains('TMDB 71%'));
     expect(announced(), isNot(contains('IMDb')));
     semantics.dispose();
+  });
+
+  testWidgets('Jellyfin season track previews are ready before episode focus without item fetches', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final show = testMediaItem(
+      id: 'show',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'Show',
+      serverId: 'server_1',
+    );
+    final season = testMediaItem(
+      id: 'season',
+      backend: show.backend,
+      kind: MediaKind.season,
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+    );
+    final episodes = [
+      for (var i = 1; i <= 2; i++)
+        testMediaItem(
+          id: 'ep$i',
+          backend: show.backend,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          index: i,
+          parentIndex: 1,
+          parentId: season.id,
+          grandparentId: show.id,
+          serverId: show.serverId,
+          mediaVersions: [MediaVersion(id: 'source$i', videoResolution: '1080', videoCodec: 'hevc')],
+          raw: {
+            'MediaSources': [
+              {
+                'Id': 'source$i',
+                'DefaultAudioStreamIndex': 1,
+                'MediaStreams': [
+                  {'Type': 'Video', 'Index': 0, 'Codec': 'hevc', 'Width': 1920, 'Height': 1080},
+                  {'Type': 'Audio', 'Index': 1, 'Codec': i == 1 ? 'eac3' : 'aac', 'Language': 'eng', 'Channels': 2},
+                ],
+              },
+            ],
+          },
+        ),
+    ];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: episodes,
+      },
+    );
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: testMultiServer(clients: [client]).provider,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(client.itemReads, 0);
+    expect(client.sourceReads, 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    final status = find.byKey(const ValueKey('detail_playback_tracks'));
+    expect(tester.widget<Semantics>(status).properties.label, contains('AAC'));
+    expect(client.itemReads, 0);
+    expect(client.sourceReads, 0);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('TV episode tracks sit above the synopsis, off the focus path', (tester) async {
