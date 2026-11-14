@@ -62,6 +62,8 @@ import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/layout_constants.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/seerr_account_provider.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -108,6 +110,7 @@ import '../utils/error_message_utils.dart';
 
 part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
+part 'media_detail/seerr_recommendations.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -432,6 +435,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // costs a provider call. Multiple candidates → the toggle opens a chooser.
   List<WatchlistCandidate> _watchlistCandidates = const [];
   List<CatalogSource> _watchlistListenedSources = const [];
+  SeerrCatalogSource? _seerrRecommendationsSource;
+  int? _seerrRecommendationsPermissions;
+  int _seerrRecommendationsGeneration = 0;
+  MediaHub? _seerrRecommendationsHub;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
 
@@ -963,6 +970,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncSeerrRecommendationsSource();
     final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
     _trackTvDetailRouteSettled(route);
@@ -1008,6 +1016,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   @override
   void didPopNext() {
     _invalidatePlaybackProbes(refreshItems: true);
+    unawaited(_loadSeerrRecommendations());
     setStateIfMounted(() {});
     _suppressBackAfterPop = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1094,6 +1103,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_canUseDetail) return;
+        if (_hasTvSeasonTabs) _scrollSeasonTabIntoView(_selectedSeasonIndex);
         if (focusPrimaryAction) {
           _playButtonFocusNode.requestFocus();
         } else {
@@ -1684,6 +1694,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<void> _loadFullMetadata() async {
     if (!_canUseDetail) return;
     _invalidatePlaybackProbes(refreshItems: true);
+    _seerrRecommendationsGeneration++;
+    _seerrRecommendationsHub = null;
     setState(() {
       _isLoadingMetadata = true;
       _hasLoadedExtras = false;
@@ -1802,6 +1814,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // backends; safe to call unconditionally.
       unawaited(_loadExtras());
       unawaited(_loadRelatedHubs());
+      unawaited(_loadSeerrRecommendations());
     } catch (e) {
       // Fallback to passed metadata on error
       if (!_canUseDetail) return;
@@ -2517,7 +2530,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
-      _tvDetailRailKey.currentState?.requestFocus();
+      if (_hasTvSeasonTabs) {
+        _focusTvSeasonTabs();
+      } else {
+        _tvDetailRailKey.currentState?.requestFocus();
+      }
       return;
     }
 
@@ -2590,7 +2607,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     scrollContextToCenter(_seasonTabFocusNodes[index].context);
   }
 
-  /// Build inline season tab chips with LEFT/RIGHT/DOWN focus navigation
+  /// Multi-season TV shows keep the selected season's full episode row beneath the tabs.
+  bool get _hasTvSeasonTabs => _metadata.isShow && !_showEpisodesDirectly && _seasons.length > 1;
+
+  void _focusTvSeasonTabs() {
+    _tvDetailActionRowHasFocus = false;
+    _clearTvDetailFocusedEpisode();
+    _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
+    _scrollSeasonTabIntoView(_selectedSeasonIndex);
+  }
+
+  /// Build inline season tab chips with LEFT/RIGHT/DOWN focus navigation.
   Widget _buildSeasonTabs() {
     return SettingValueBuilder<bool>(
       pref: SettingsService.showSeasonPostersOnTabs,
@@ -2688,18 +2715,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTapDown: (details) => tapPosition = details.globalPosition,
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
-                    label: season.title!,
+                    label: PlatformDetector.isTV() && season.index != null && season.index! > 0
+                        ? 'S${season.index}'
+                        : season.displayTitle,
                     isSelected: index == _selectedSeasonIndex,
                     topImage: topImage,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
-                      if (index == _selectedSeasonIndex) return;
-                      _selectSeason(index);
+                      if (index != _selectedSeasonIndex) _selectSeason(index);
+                      if (PlatformDetector.isTV()) {
+                        _clearTvDetailFocusedEpisode();
+                        _tvDetailActionRowHasFocus = false;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_canUseDetail) _tvDetailRailKey.currentState?.requestFocus();
+                        });
+                      }
                     },
                     onNavigateLeft: index > 0
                         ? () {
                             final newIndex = index - 1;
-                            _selectSeason(newIndex);
+                            if (!PlatformDetector.isTV()) _selectSeason(newIndex);
                             _seasonTabFocusNodes[newIndex].requestFocus();
                             _scrollSeasonTabIntoView(newIndex);
                           }
@@ -2707,7 +2742,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     onNavigateRight: index < _seasons.length - 1
                         ? () {
                             final newIndex = index + 1;
-                            _selectSeason(newIndex);
+                            if (!PlatformDetector.isTV()) _selectSeason(newIndex);
                             _seasonTabFocusNodes[newIndex].requestFocus();
                             _scrollSeasonTabIntoView(newIndex);
                           }
@@ -2719,6 +2754,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       }
                       _firstEpisodeFocusNode.requestFocus();
                     },
+                    onNavigateUp: PlatformDetector.isTV() ? _focusTvDetailActionRow : null,
                     onLongPress: () => _showSeasonTabContextMenu(index),
                     onBack: () {
                       Navigator.of(context).maybePop();
@@ -3778,7 +3814,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final stableRailHeight = _tvDetailStableRailHeight;
     final railHeight = stableRailHeight == null || rawRailHeight > stableRailHeight ? rawRailHeight : stableRailHeight;
     final railTopPadding = 12 * detailScale;
-    final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale);
+    final seasonTabsHeight = _hasTvSeasonTabs ? 48.0 : 0.0;
+    final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale) + seasonTabsHeight;
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
     // See _tvDetailRouteSettled. The children stay in place (only their
     // content is withheld) so the Stack keeps its elements across the swap.
@@ -3835,6 +3872,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             context: context,
           )!,
         ),
+        if (buildHiddenContent && _hasTvSeasonTabs)
+          Positioned(
+            left: spotlightLeft,
+            right: spotlightLeft,
+            bottom: railHeight - railTopPadding,
+            height: seasonTabsHeight,
+            child: Align(alignment: Alignment.centerLeft, child: _buildSeasonTabs()),
+          ),
         if (buildHiddenContent && detailHubs.isNotEmpty)
           Positioned(
             left: 0,
@@ -3852,7 +3897,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               trailingForHub: _tvDetailTrailingState,
               leadingItemForHub: _tvDetailLeadingItemForHub,
               onRetryHub: _retryTvDetailHub,
-              onNavigateUp: _focusTvDetailActionRow,
+              onNavigateUp: _hasTvSeasonTabs ? _focusTvSeasonTabs : _focusTvDetailActionRow,
               onBack: _popMediaDetailIfBackNotSuppressed,
               tallPosterScale: _tvDetailTallPosterScale,
               widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
@@ -4396,24 +4441,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ),
       );
     } else if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
-      // Emit a hub for every season so TV users can choose a season before its
-      // episodes are fetched. Extra pages load in-place when focus reaches the
-      // last loaded episode; the trailing slot is reserved for loading/retry.
-      for (var i = 0; i < _seasons.length; i++) {
-        final season = _seasons[i];
-        final state = _seasonEpisodePager.stateFor(season.id);
-        final episodes = i == _selectedSeasonIndex ? _episodes : state.items;
-        final total = state.totalCount > episodes.length ? state.totalCount : (season.leafCount ?? episodes.length);
-        hubs.add(
-          MediaHub(
-            id: '$_tvDetailSeasonHubIdPrefix$i',
-            title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
-            type: 'episode',
-            items: episodes,
-            size: total,
-          ),
-        );
-      }
+      // Tabs select one season; cast and related titles follow its single row.
+      // Keep the season-keyed pager, focus memory and options item intact.
+      final season = _seasons[_selectedSeasonIndex];
+      final state = _seasonEpisodePager.stateFor(season.id);
+      final total = state.totalCount > _episodes.length ? state.totalCount : (season.leafCount ?? _episodes.length);
+      hubs.add(
+        MediaHub(
+          id: '$_tvDetailSeasonHubIdPrefix$_selectedSeasonIndex',
+          title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
+          type: 'episode',
+          items: _episodes,
+          size: total,
+        ),
+      );
     } else if (_episodes.isNotEmpty) {
       final total = _allEpisodesTotal > _episodes.length ? _allEpisodesTotal : _episodes.length;
       hubs.add(
@@ -4455,7 +4496,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ),
       );
     }
-    hubs.addAll(_relatedHubs.where((hub) => hub.items.isNotEmpty));
+    hubs.addAll(
+      _relatedHubs
+          .where((hub) => hub.items.isNotEmpty)
+          .map((hub) => hub.title == t.discover.moreLikeThis ? hub.copyWith(title: t.discover.moreLikeThisOwned) : hub),
+    );
+    final requestHub = _seerrRecommendationsHub;
+    if (requestHub != null && _seerrRecommendationsSource?.canRequest(metadata.kind) == true) hubs.add(requestHub);
     return hubs;
   }
 

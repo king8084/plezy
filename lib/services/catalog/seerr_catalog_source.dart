@@ -89,6 +89,35 @@ class SeerrCatalogSource implements CatalogSource {
     return _toPage(await results, await origin).items;
   }
 
+  /// A library detail's separate request shelf. Use Seerr's similar endpoint
+  /// (as Wholphin does) and retain only titles absent from its linked server
+  /// with no active request. Selecting a card still opens the existing detail
+  /// and explicit Request flow; fetching this shelf never submits a request.
+  Future<List<CatalogItem>> fetchRequestableSimilar(MediaKind kind, int tmdbId) async {
+    if ((kind != MediaKind.movie && kind != MediaKind.show) || !canRequest(kind)) return const [];
+    final pageFuture = kind == MediaKind.movie ? client.getSimilarMovies(tmdbId) : client.getSimilarTv(tmdbId);
+    final originFuture = _tmdbImageOrigin();
+    final page = await pageFuture;
+    final origin = await originFuture;
+    final seen = <int>{tmdbId};
+    return [
+      for (final media in page.items)
+        if (media.displayTitle.isNotEmpty && seen.add(media.id) && _canOfferRequest(media.mediaInfo))
+          _toCatalogItem(media, origin),
+    ];
+  }
+
+  bool _canOfferRequest(SeerrMediaInfo? info) {
+    if (info == null) return true;
+    final product = client.session.product;
+    bool missing(SeerrMediaStatus status) => status == SeerrMediaStatus.unknown || status == SeerrMediaStatus.deleted;
+    if (!missing(info.status(product)) || !missing(info.status4k(product))) return false;
+    return info.requests?.any(
+          (request) => request.status == SeerrRequestStatus.pending || request.status == SeerrRequestStatus.approved,
+        ) !=
+        true;
+  }
+
   @override
   Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
     final tmdbId = item.ids.tmdb;

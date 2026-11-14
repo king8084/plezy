@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/catalog_item_ref.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
@@ -93,6 +94,68 @@ MockClient _matrixRow() => MockClient(
 
 void main() {
   group('SeerrCatalogSource', () {
+    for (final kind in [MediaKind.movie, MediaKind.show]) {
+      test('request shelf uses ${kind.name} similar titles and excludes owned, active and blocked items', () async {
+        final paths = <String>[];
+        final source = _source(
+          MockClient((request) async {
+            paths.add(request.url.path);
+            expect(request.method, 'GET');
+            return jsonResponse({
+              'page': 1,
+              'totalPages': 1,
+              'results': [
+                {'id': 1, 'title': 'Current movie', 'name': 'Current show'},
+                {'id': 2, 'title': 'Missing movie', 'name': 'Missing show'},
+                {'id': 2, 'title': 'Duplicate', 'name': 'Duplicate'},
+                for (final status in [2, 3, 4, 5, 6])
+                  {
+                    'id': status + 10,
+                    'title': 'Skip',
+                    'name': 'Skip',
+                    'mediaInfo': {'status': status},
+                  },
+                {
+                  'id': 30,
+                  'title': 'Owned 4K',
+                  'name': 'Owned 4K',
+                  'mediaInfo': {'status4k': 5},
+                },
+                {
+                  'id': 31,
+                  'title': 'Requested',
+                  'name': 'Requested',
+                  'mediaInfo': {
+                    'status': 1,
+                    'requests': [
+                      {'id': 99, 'status': 1},
+                    ],
+                  },
+                },
+                {
+                  'id': 32,
+                  'title': 'Deleted',
+                  'name': 'Deleted',
+                  'mediaInfo': {'status': 7},
+                },
+              ],
+            });
+          }),
+          product: SeerrProduct.jellyseerr,
+        );
+        final items = await source.fetchRequestableSimilar(kind, 1);
+        expect(paths, [kind == MediaKind.movie ? '/api/v1/movie/1/similar' : '/api/v1/tv/1/similar']);
+        expect(items.map((item) => item.ids.tmdb), [2, 32]);
+        expect(items.every((item) => item.source == CatalogSourceId.seerr && item.kind == kind), isTrue);
+        expect(items.first.toMediaItem().catalogItem?.ids.tmdb, 2);
+      });
+    }
+
+    test('request shelf makes no calls when the user cannot request', () async {
+      final source = _source(MockClient((_) async => throw StateError('must not request')), permissions: 0);
+      expect(await source.fetchRequestableSimilar(MediaKind.movie, 1), isEmpty);
+    });
+
     test('trending maps row metadata, total results, and the responsive TMDB image ladders', () async {
       final source = _source(
         MockClient((request) async {

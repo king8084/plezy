@@ -3388,6 +3388,12 @@ class Translations$discover$en {
 	/// en: 'More Like This'
 	String get moreLikeThis => 'More Like This';
 
+	/// en: 'More Like This — In Your Library'
+	String get moreLikeThisOwned => 'More Like This — In Your Library';
+
+	/// en: 'More Like This — Request'
+	String get moreLikeThisRequest => 'More Like This — Request';
+
 	/// en: '(one) {${n} title} (other) {${n} titles}'
 	String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
 		one: '${n} title',
@@ -9330,6 +9336,8 @@ extension on Translations {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
+			'discover.moreLikeThisOwned' => 'More Like This — In Your Library',
+			'discover.moreLikeThisRequest' => 'More Like This — Request',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title', other: '${n} titles', ), 
 			'discover.person.born' => 'Born',
 			'discover.person.died' => 'Died',
@@ -9729,10 +9737,10 @@ extension on Translations {
 			'liveTv.recordings' => 'Recordings',
 			'liveTv.scheduledRecordings' => 'Scheduled',
 			'liveTv.recordingRules' => 'Recording Rules',
-			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
-			'liveTv.manageRecording' => 'Manage recording',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
+			'liveTv.manageRecording' => 'Manage recording',
 			'liveTv.cancelRecording' => 'Cancel recording',
 			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
@@ -10243,10 +10251,10 @@ extension on Translations {
 			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
 			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',
 			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
-			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
-			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
+			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',

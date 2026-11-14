@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 
@@ -16,8 +18,16 @@ import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/catalog_item_ref.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -62,6 +72,7 @@ import 'package:provider/provider.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
@@ -111,6 +122,103 @@ void main() {
     expect(titleText.style?.fontSize, isNotNull);
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
+
+  for (final outcome in ['success', 'disconnect', 'failure']) {
+    final disconnectWhileLoading = outcome == 'disconnect';
+    testWidgets('Seerr request shelf stays separate and does not block local detail: $outcome', (tester) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final movie = testMediaItem(
+        id: 'movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final owned = movie.copyWith(id: 'owned', title: 'Already in library');
+      final server = _FakeMediaServerClient(
+        show: movie,
+        childrenByParent: {},
+        externalIds: const ExternalIds(tmdb: 1),
+        relatedHubs: [
+          MediaHub(id: 'local-similar', title: t.discover.moreLikeThis, type: 'movie', items: [owned]),
+        ],
+      );
+      final multiServer = testMultiServer(clients: [server]).provider;
+      final response = Completer<http.Response>();
+      final httpClient = MockClient((request) async {
+        expect(request.method, 'GET');
+        if (request.url.path.endsWith('/settings/public')) return jsonResponse({}, status: 404);
+        expect(request.url.path, '/api/v1/movie/1/similar');
+        return response.future;
+      });
+      final seerrClient = SeerrClient(
+        const SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'owner',
+          userId: 1,
+          displayName: 'Owner',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+          secret: 'test',
+          cookie: 'test',
+          permissions: SeerrPermission.admin,
+          product: SeerrProduct.jellyseerr,
+        ),
+        httpClient: httpClient,
+        onSessionInvalidated: () {},
+      );
+      final source = SeerrCatalogSource(seerrClient);
+      final sources = _DetailSeerrSources(source);
+      addTearDown(() {
+        sources.dispose();
+        source.dispose();
+        seerrClient.dispose();
+      });
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(find.byKey(tvDetailRevealGateKey)).opacity, 1);
+      expect(tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs.single.title, t.discover.moreLikeThisOwned);
+      if (disconnectWhileLoading) sources.disconnect();
+      response.complete(
+        jsonResponse({
+          'page': 1,
+          'totalPages': 1,
+          'results': [
+            {'id': 2, 'title': 'A title to request'},
+          ],
+        }, status: outcome == 'failure' ? 500 : 200),
+      );
+      await tester.pumpAndSettle();
+      var hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      if (outcome == 'success') {
+        expect(hubs.map((hub) => hub.title), [t.discover.moreLikeThisOwned, t.discover.moreLikeThisRequest]);
+        expect(hubs.last.items.single.catalogItem?.ids.tmdb, 2);
+        expect(hubs.last.items.single.catalogItem?.source.name, 'seerr');
+        sources.disconnect();
+        await tester.pumpAndSettle();
+        hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      }
+      expect(hubs, hasLength(1));
+      expect(hubs.single.items.single.id, owned.id);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('TV detail exposes hero information as one semantic node', (tester) async {
     final semantics = tester.ensureSemantics();
@@ -525,11 +633,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Specials'), findsNothing);
+    expect(find.text('Specials'), findsOneWidget); // Available as a tab, not an episode row.
+    final seasonHubs = tester
+        .widget<TvBrowseRail>(find.byType(TvBrowseRail))
+        .hubs
+        .where((hub) => hub.id.startsWith('detail_season_'));
+    expect(seasonHubs.single.items.map((item) => item.id), [episode1.id]);
     expect(find.text('S1E1'), findsOneWidget);
   });
 
-  testWidgets('TV detail exposes each season as its episode hub leading options item', (tester) async {
+  testWidgets('TV detail keeps one season row with options and switches it from tabs', (tester) async {
     await SettingsService.getInstance();
 
     final show = testMediaItem(
@@ -614,19 +727,132 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Every season hub surfaces its own season as the leading options item —
-    // the D-pad path to mark a whole season watched/unwatched (#2156).
-    final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    // Only the selected season occupies the rail; its whole-season options
+    // remain available before the first episode.
+    var rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(rail.leadingItemForHub, isNotNull);
-    final seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
-    expect(seasonHubs, hasLength(2));
+    var seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
     expect(rail.leadingItemForHub!(seasonHubs[0])?.id, season1.id);
-    expect(rail.leadingItemForHub!(seasonHubs[1])?.id, season2.id);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
+    await tester.tap(find.text('S2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
+    expect(rail.leadingItemForHub!(seasonHubs.single)?.id, season2.id);
+    expect(seasonHubs.single.items.map((item) => item.id), [episode2.id]);
+    expect(tester.takeException(), isNull);
 
     // Non-season hubs (flatten episodes, actors, extras, related) get none.
     const flattenHub = MediaHub(id: 'detail_episodes', title: 'Episodes', type: 'episode', items: <MediaItem>[]);
     expect(rail.leadingItemForHub!(flattenHub), isNull);
   });
+  testWidgets('Continue Watching enters season 8 episode 14 with just that season in the rail', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final show =
+        testMediaItem(
+          id: 'modern-family',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.show,
+          title: 'Modern Family',
+          serverId: 'server_1',
+          serverName: 'Server',
+        ).copyWith(
+          roles: const [MediaRole(id: 'actor', tag: 'Cast Member')],
+        );
+    final seasons = [
+      for (var i = 1; i <= 11; i++)
+        testMediaItem(
+          id: 'season_$i',
+          backend: show.backend,
+          kind: MediaKind.season,
+          title: 'Season $i',
+          index: i,
+          parentId: show.id,
+          serverId: show.serverId,
+        ),
+    ];
+    final episodes = [
+      for (var i = 1; i <= 11; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: show.backend,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          index: i == 8 ? 14 : 1,
+          parentIndex: i,
+          parentId: seasons[i - 1].id,
+          grandparentId: show.id,
+          serverId: show.serverId,
+        ),
+    ];
+    final season8Episodes = [
+      for (var number = 1; number <= 22; number++)
+        episodes[7].copyWith(id: 's8e$number', index: number, title: 'Season 8 episode $number'),
+    ];
+    final enteredEpisode = season8Episodes[13];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: seasons,
+        for (var i = 0; i < seasons.length; i++) seasons[i].id: i == 7 ? season8Episodes : [episodes[i]],
+      },
+    )..onDeckEpisode = episodes[2]; // Explicit entry beats a different on-deck season.
+    final provider = testMultiServer(clients: [client]).provider;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(
+            child: MediaDetailScreen(
+              metadata: show,
+              initialSeasonIndex: 8,
+              initialSeasonId: seasons[7].id,
+              initialEpisodeId: enteredEpisode.id,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    final seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
+    expect(seasonHubs.single.items.map((item) => item.id), season8Episodes.map((item) => item.id));
+    expect(seasonHubs.single.items, hasLength(22));
+    expect(rail.initialItemId, enteredEpisode.id);
+    final selectedTab = find.byWidgetPredicate((widget) => widget is FocusableTabChip && widget.isSelected);
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    expect(tester.getRect(selectedTab).left, greaterThanOrEqualTo(0));
+    expect(tester.getRect(selectedTab).right, lessThanOrEqualTo(1280));
+    expect(rail.hubs[1].id, 'detail_actors');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_7');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_8');
+    // Moving across tabs does not switch until Select.
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S9');
+    final switchedRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(
+      switchedRail.hubs.where((hub) => hub.id.startsWith('detail_season_')).single.items.single.id,
+      episodes[8].id,
+    );
+    expect(switchedRail.hubs[1].id, 'detail_actors');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('TV detail reveal still waits for the supplemental sections', (tester) async {
     // Counterpart to the test above: the early paint does NOT move the TV
     // reveal. `_isTvDetailReadyToReveal` additionally requires extras, related
@@ -841,8 +1067,8 @@ void main() {
     // Every season tab is derived from the season list, so both appear
     // immediately. TV warms only the selected first page plus the adjacent first
     // page; it still does not walk the whole show or load page 2+.
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
     expect(client.childrenPageCalls.map((call) => call.parentId), containsAll([season1.id, season2.id]));
     expect(client.childrenPageCalls.every((call) => call.start == 0 && call.size == 200), isTrue);
   });
@@ -933,8 +1159,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
   });
 
   testWidgets('TV detail completes adjacent prefetch after focus moves to that season', (tester) async {
@@ -1024,9 +1250,7 @@ void main() {
     tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
     await tester.pump();
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.tap(find.text('S2'));
     await tester.pump();
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsNothing);
 
@@ -3405,6 +3629,17 @@ Map<String, dynamic> _previewItem(
   };
 }
 
+class _DetailSeerrSources extends CatalogSourcesProvider {
+  _DetailSeerrSources(this.source);
+  SeerrCatalogSource? source;
+  @override
+  SeerrCatalogSource? get seerrSource => source;
+  void disconnect() {
+    source = null;
+    notifyListeners();
+  }
+}
+
 class _FakeMediaServerClient implements MediaServerClient {
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
@@ -3418,6 +3653,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
   final Map<String, Map<String, dynamic>> rawItems;
+  final List<MediaHub> relatedHubs;
+  final ExternalIds externalIds;
   Completer<void>? sourceGate;
   int itemReads = 0;
   int sourceReads = 0;
@@ -3447,6 +3684,8 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
+    this.relatedHubs = const [],
+    this.externalIds = const ExternalIds(),
     Map<String, Map<String, dynamic>>? rawItems,
   }) : rawItems = rawItems ?? {},
        childrenPageFuturesByStart = childrenPageFuturesByStart ?? {};
@@ -3557,7 +3796,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
-  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
+  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => relatedHubs;
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async => externalIds;
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {

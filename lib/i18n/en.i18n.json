@@ -1227,6 +1227,8 @@
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
     "moreLikeThis": "More Like This",
+    "moreLikeThisOwned": "More Like This — In Your Library",
+    "moreLikeThisRequest": "More Like This — Request",
     "titleCount": {
       "one": "${n} title",
       "other": "${n} titles"

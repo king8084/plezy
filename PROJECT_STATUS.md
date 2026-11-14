@@ -4,6 +4,45 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up, local changes only: the owner requested a Wholphin-style
+season selector and separate owned/requestable "More Like This" shelves.
+- TV show/season navigation now shows the selected season's FULL horizontal
+  episode row, with S1/S2/etc. tabs above it. The owner explicitly clarified
+  "one season row", not one episode. Continue Watching preserves its entry
+  season/episode (regression: S8 E14 with all 22 season-8 episodes, even when
+  server on-deck points to another season). The selected tab scrolls into view.
+  Left/Right moves tab focus; Select switches the season and enters its episode
+  row; Up returns to tabs, then to the existing action row. Single-season shows
+  retain their current layout. Cast follows the one season row immediately.
+  Existing season options, paging, adjacent first-page prefetch and focus memory
+  remain in use. Non-TV season layouts keep their current navigation.
+- The existing Jellyfin similar shelf is labelled "More Like This — In Your
+  Library". A second TV shelf, "More Like This — Request", uses the connected
+  Seerr account's `/movie/{tmdbId}/similar` or `/tv/{tmdbId}/similar` endpoint.
+  It excludes self/duplicate, available/partly available, pending/processing,
+  active-request and blocklisted entries using Seerr's linked-server status.
+  Cards enter the existing catalog detail / explicit Request flow. No real
+  request was submitted while developing or testing this change.
+- Seerr loads asynchronously outside the detail reveal/Play gate. Missing TMDB
+  mappings, permission loss, disconnect, failures and stale responses cannot
+  block the local page; empty/unavailable request shelves stay hidden. Returning
+  from catalog details refreshes the shelf's current request/availability state.
+Research: Wholphin's `SeerrService.similar` uses separate Seerr similar endpoints,
+and its movie/series view models keep those results separate from Jellyfin
+similar items. Primary sources:
+https://github.com/damontecres/Wholphin/blob/main/app/src/main/java/com/github/damontecres/wholphin/services/SeerrService.kt#L105
+https://docs.seerr.dev/api/get-similar-movies/
+https://docs.seerr.dev/api/get-similar-tv-series/
+Validation: all 312 affected detail, catalog, Seerr client/request, TV rail,
+navigation and MediaHub tests pass (`/tmp/plezy-season-seerr-tests-final.log`).
+Whole-project analysis passes (`/tmp/plezy-season-seerr-analyze-final.log`);
+translation generation, string/error guards and diff whitespace checks pass.
+Local layout render inspected at `/tmp/plezy-season-tabs-preview.png` (test font
+and placeholder art; no overlap). Temporary preview test was removed locally.
+Next step: owner review, then explicit "build apple tv" before any CI/build.
+No new build, install, Unraid access or live Seerr request for this follow-up.
+Device visual/remote verification remains pending on a future authorized build.
+
 Latest installed app source is `fe216e681d8241f049e880fe34909ff0fbc7dc38`.
 tvsign reports successful signing and in-place installation on Basement at
 12:49 Arabia time, November 14. Existing app entry/account, app data and all
