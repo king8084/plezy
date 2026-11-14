@@ -4,6 +4,31 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14: owner explicitly requested an Apple TV build, authorized Unraid,
+and confirmed Plezy closed / TV in Settings. Codemagic build #14
+`6af893fb90e83b09c4fa44ee` started at 20:02 Arabia time for pushed source
+`02c56ee201d5b558a3ff109b215132b9667122a1`, unchanged M2 unsigned-IPA workflow.
+Preserved and verified 0600 Unraid File Manager backups
+`original-before-02c56ee.ipa` (source 19:42) and `signed-before-02c56ee.ipa`
+(19:43). CI succeeded in 5m 31s; native archive 2m 35s (this device workflow
+does not run native policy tests). Verified downloaded
+`/home/koolo7000/Downloads/Plezy-tvOS (12).ipa`, staged as
+`/tmp/Plezy-02c56ee.ipa` (73,242,271 bytes), SHA-256
+`bdc9cf78d614d43d437b2b62501e11178e48ef7bed4fcdf8e4f655e3ec518b83`.
+ZIP CRC, AppleTVOS platform, bundle identity, local-network declaration and
+matching main/Top Shelf app-group entitlements pass. Uploaded at 20:08,
+restricted to 0600, copied over active `original.ipa`, and verified its source
+timestamp/permissions. Renew requested once at 20:09; tvsign reports successful
+signing and in-place installation on Basement at 20:09, with a Valid card and
+new manual renewal success log. Latest installed source is
+`02c56ee201d5b558a3ff109b215132b9667122a1`. Same app/account, no stall,
+deletion/uninstall or signer/container changes; all older IPAs/backups retained.
+Proof: `/tmp/plezy-install-02c56ee.jpg`. This build's Unraid authorization is
+fulfilled. Next: owner confirms normal logo, wide outlined text, full episode
+synopsis/rows, lower Home posters and response speed, retained settings and
+playback; owner visual/playback testing stays separate and pending.
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af893fb90e83b09c4fa44ee
+
 November 14 follow-up after installed `24959a1ed`: owner rejects the tiny Home
 logo and missing episode synopsis, asks to use more horizontal text space,
 improve bright-artwork contrast, and move posters down into the next-row
@@ -26,10 +51,9 @@ synopsis lines, and 80 ms title settling. Static analysis and diff checks pass
 `/tmp/plezy-home-reading-1280.png`, `/tmp/plezy-home-reading-1920.png`,
 `/tmp/plezy-season-reading-1280.png`, `/tmp/plezy-season-reading-1920.png`;
 these use placeholder art and some fallback font/icon glyphs, not device
-visual proof. Temporary capture fixtures removed. Owner requested pushing the
-fixes; no new build/install is authorized yet. Latest installed remains
-`24959a1ed`. Next: explicit Apple TV build request and build-scoped Unraid
-permission, then owner visual/tag/response/playback confirmation separately.
+visual proof. Temporary capture fixtures removed. Fixes pushed and included
+in the authorized build above, now installed as `02c56ee20`; owner
+visual/tag/response/playback confirmation stays separate and pending.
 
 November 14: owner explicitly requested another Apple TV build, authorized
 Unraid and confirmed Plezy closed / TV in Settings. Pushed
@@ -47,7 +71,7 @@ active files as `original-before-24959a1.ipa` (source timestamp 19:15) and
 to 0600, copied over active `original.ipa` and verified its timestamp and
 permissions. Renew requested once at 19:43; tvsign reports successful signing
 and in-place installation on Basement at 19:43, with a Valid card and new
-manual renewal success log. Latest installed source is
+manual renewal success log. Previous installed source was
 `24959a1edb2e215fe79cdce48c0ea30929548463`. Same app/account, no stall,
 deletion/uninstall or signer/container changes; all older IPAs/backups retained.
 Proof: `/tmp/plezy-install-24959a1.jpg`. This build's Unraid authorization is
@@ -603,6 +627,12 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 14, `02c56ee`: Codemagic build #14 `6af893fb90e83b09c4fa44ee`
+  passed in 5m 31s; native archive succeeded (2m 35s), IPA integrity/tvOS/app-group
+  checks pass. tvsign reports successful in-place installation on Basement at
+  20:09, Plezy closed / TV in Settings. Same app/account, no stall or deletion,
+  all backups retained. Owner logo, outlined text, episode synopsis/rows,
+  Home row spacing, response speed, playback and retained-settings checks pending.
 - November 14, `24959a1`: Codemagic build #13 `6af88df290e83b09c4fa428f`
   passed in 4m 54s; native archive succeeded (2m 41s), IPA integrity/tvOS/app-group
   checks pass. tvsign reports successful in-place installation on Basement at
@@ -797,7 +827,9 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Owner test of installed `24959a1ed`: initial episode row and lower detail rows
+Owner test of installed `02c56ee20`: normal-sized Home logo, wider outlined
+synopsis, posters lowered into the old next-row preview space, restored
+episode synopsis and prompt spotlight changes. Initial episode row and lower detail rows
 fit completely, tags appear promptly when browsing episodes, and size 6 Home
 posters leave a readable synopsis. Retain recent regression checks:
 IMDb appears once and first; Seerr card
