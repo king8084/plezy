@@ -13,8 +13,20 @@ import '../test_helpers/media_items.dart';
 
 void main() {
   group('buildMediaQualityLabels', () {
-    test('cropped 4K dimensions override an old cached 1080 label without promoting real 1080 files', () {
-      for (final (width, height, expected) in [(3832, 1600, '4K'), (3840, 1608, '4K'), (1920, 800, '1080p')]) {
+    test('cropped resolution tiers override stale cached labels on either dimension', () {
+      for (final (width, height, expected) in <(int?, int, String)>[
+        (3832, 1600, '4K'),
+        (3840, 1608, '4K'),
+        (3820, 2150, '4K'),
+        (1920, 800, '1080p'),
+        (1912, 800, '1080p'),
+        (1880, 1072, '1080p'),
+        (null, 1072, '1080p'),
+        (1280, 720, '720p'),
+        (1272, 536, '720p'),
+        (1240, 712, '720p'),
+        (null, 712, '720p'),
+      ]) {
         final item = _episodeWithVersion(
           MediaVersion(id: 'file', width: width, height: height, videoResolution: '1080', videoCodec: 'hevc'),
         );

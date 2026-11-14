@@ -1,3 +1,8 @@
+// Allow a small edge crop without dropping a file into the next lower tier.
+const _resolutionCropTolerance = 16;
+
+bool _nearResolutionDimension(int? value, int nominal) => value != null && value >= nominal - _resolutionCropTolerance;
+
 /// Map a video stream height (pixels) onto the canonical resolution label
 /// the rest of the app uses (`'4k'`, `'1080'`, `'720'`, `'480'`, or the raw
 /// height for non-standard sizes). Returns `null` when [height] is null.
@@ -7,23 +12,22 @@
 /// through [resolutionLabelFromDimensions] to produce the same shape.
 String? resolutionLabelFromHeight(int? height) {
   if (height == null) return null;
-  if (height >= 2160) return '4k';
-  if (height >= 1080) return '1080';
-  if (height >= 720) return '720';
-  if (height >= 480) return '480';
+  if (_nearResolutionDimension(height, 2160)) return '4k';
+  if (_nearResolutionDimension(height, 1080)) return '1080';
+  if (_nearResolutionDimension(height, 720)) return '720';
+  if (_nearResolutionDimension(height, 480)) return '480';
   return height.toString();
 }
 
 /// Convenience overload that takes width + height. Width is considered first
 /// for scope-cropped files, e.g. `3832x1600` should still be labeled `4k`.
-/// Allow a small edge crop of up to 16 horizontal pixels from the nominal
-/// raster; requiring the full width misclassifies these files as 1080p.
+/// Allow a small edge crop of up to 16 pixels on either dimension from the
+/// nominal raster. This applies equally to 4K, 1080p, 720p and 480p tiers.
 String? resolutionLabelFromDimensions(int? width, int? height) {
-  bool nearWidth(int nominal) => width != null && width >= nominal - 16;
-  if (nearWidth(3840) || (height != null && height >= 2160)) return '4k';
-  if (nearWidth(1920) || (height != null && height >= 1080)) return '1080';
-  if (nearWidth(1280) || (height != null && height >= 720)) return '720';
-  if (nearWidth(854) || (height != null && height >= 480)) return '480';
+  if (_nearResolutionDimension(width, 3840) || _nearResolutionDimension(height, 2160)) return '4k';
+  if (_nearResolutionDimension(width, 1920) || _nearResolutionDimension(height, 1080)) return '1080';
+  if (_nearResolutionDimension(width, 1280) || _nearResolutionDimension(height, 720)) return '720';
+  if (_nearResolutionDimension(width, 854) || _nearResolutionDimension(height, 480)) return '480';
   return resolutionLabelFromHeight(height);
 }
 

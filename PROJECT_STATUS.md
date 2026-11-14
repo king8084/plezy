@@ -4,6 +4,17 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+Owner authorized a new Apple TV build and Unraid staging/install for this build
+only on November 14, confirming Plezy closed and Apple TV inside Settings.
+Paused before starting at the owner's “stop”; at that point only `7e8974054`
+had been pushed, with no Codemagic build or Unraid change. Owner then requested
+continuation once cropped 1080p/720p are covered too. The small edge-crop
+tolerance now applies to both width and height at every tier; cases including
+3832×1600 → 4K, 1880×1072 → 1080p and 1240×712 → 720p pass, including stale
+cached labels. All 63 affected resolution/mapper/spotlight tests and targeted
+analysis pass, in addition to the earlier 406 tests for the three fixes.
+Preparing this single authorized build; CI, installation and owner test pending.
+
 Latest build `ae237fb423cd5a086da92f233d09d1d6d3dcac33` (tested app source
 `2d92f1e2f`) built successfully and tvsign reports successful in-place installation
 on Basement at 08:13 Arabia time on November 14. The owner explicitly authorized
@@ -15,7 +26,7 @@ of this build now confirms the UI is almost perfect, with three reported issues:
 center Select pauses playback, cropped 4K is labeled 1080p, and thumbnail focus
 can leave the episode synopsis missing. Retained settings and new-build startup
 timings have not been separately confirmed. Local corrections are recorded below;
-no subsequent build or Unraid change is authorized for these follow-ups.
+the subsequent build/install has now been authorized for this build only above.
 
 Codemagic build `6af7ebda90e83b09c4fa12ba` (index 6), M2 workflow, started at
 08:04 and succeeded in 6m 15s. Artifact:
@@ -247,8 +258,9 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Finish validation of the three owner-reported corrections and stable diagnostics
-key below, then wait for a new explicit “build apple tv”. Owner confirms most UI
+Build and install the validated three corrections, stable diagnostics key and
+cropped-resolution tiers under the owner's current single-build authorization.
+Owner confirms most UI
 changes on installed `ae237fb` work well; the three corrections remain local.
 Check playback still starts promptly and existing settings/login remain after
 the next authorized update. The earlier `98c7123d4` build has owner-
@@ -267,8 +279,10 @@ inside Settings and Plezy closed.
   remains transport. Desktop Enter behavior is unchanged. Updated the old TV
   test that explicitly expected Select to pause.
 - Owner's Dexter file is 3832×1600: the exact-3840 width threshold misclassified
-  its cropped 4K raster. Resolution bucketing now tolerates a small horizontal
-  edge crop (up to 16 pixels). Quality labels recompute from known dimensions
+  its cropped 4K raster. Resolution bucketing now tolerates a small edge crop
+  (up to 16 pixels on either width or height) at 4K, 1080p, 720p and 480p tiers.
+  The owner explicitly confirmed the same issue below 1080/720 boundaries;
+  all 63 resolution-related tests pass after this extension. Quality labels recompute from known dimensions
   before using the saved canonical label, correcting already-cached `1080`
   values too. Real 1920×800 files stay 1080p; first-audio policy is unchanged.
 - Focused-thumbnail synopsis: a regression test reproduces a missing header
