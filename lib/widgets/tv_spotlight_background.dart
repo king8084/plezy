@@ -24,6 +24,8 @@ import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
   final MediaItem? item;
+
+  /// Full item or parent-series metadata for missing scores, genres and age rating.
   final MediaItem? ratingsFallback;
   final MediaServerClient? client;
   final bool hideSpoilers;
@@ -373,9 +375,6 @@ class TvSpotlightBackground extends StatelessWidget {
       );
     }
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: -1));
-    if (media.contentRating != null) {
-      parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
-    }
     if (media.durationMs != null) {
       parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
     }
@@ -383,6 +382,16 @@ class TvSpotlightBackground extends StatelessWidget {
       parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));
     } else if (media.year != null) {
       parts.add(MetadataLineText(media.year.toString(), dropPriority: 0));
+    }
+    final itemGenres = media.genres?.where((genre) => genre.trim().isNotEmpty).toList();
+    final genres = itemGenres?.isNotEmpty == true ? itemGenres! : ratingsFallback?.genres ?? const <String>[];
+    for (final genre in genres.map((genre) => genre.trim()).where((genre) => genre.isNotEmpty).toSet().take(2)) {
+      parts.add(MetadataLineText(genre, dropPriority: 3));
+    }
+    final itemAgeRating = media.contentRating?.trim();
+    final ageRating = itemAgeRating?.isNotEmpty == true ? itemAgeRating : ratingsFallback?.contentRating?.trim();
+    if (ageRating != null && ageRating.isNotEmpty) {
+      parts.add(MetadataLineText(formatContentRating(ageRating), dropPriority: 2));
     }
 
     final line = parts.isEmpty

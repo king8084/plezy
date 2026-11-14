@@ -202,7 +202,8 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
 
 ## Next milestone
 Local validation of the November 14 Home/detail follow-ups is complete at
-`0b58063aa`. Wait for a new explicit “build apple tv” instruction before building.
+`0b58063aa`, with the final genre/age metadata addition validated separately
+below. Wait for a new explicit “build apple tv” instruction before building.
 Installed `98c7123d4`
 has owner-confirmed fast SDR startup and a working Home Play shortcut.
 CI builds, in-place installs and owner device confirmation remain separate
@@ -210,6 +211,17 @@ milestones. For later updates, keep the same tvsign entry/account and have
 the owner remain in Apple TV Settings until installation finishes.
 
 ## Pending local follow-ups (November 14)
+- Final pre-build request: keep the Home line's episode number, scores,
+  runtime and air date/year, then append up to two nonempty, distinct genres
+  in server order, followed by the age certification (TV-MA, PG, etc.). Moved
+  the existing certification to the end rather than duplicating it. Missing
+  genres/certification use full item or parent-series metadata through the
+  existing cached background rating probe, including when RT is already present.
+  Broad Jellyfin listing fields and the playback pipeline are unchanged; this
+  lookup is not a prerequisite for playing. Under tight width the existing
+  fitted-line policy sheds genres before the core facts. Targeted analysis
+  passes and all 37 existing Home/spotlight/metadata tests pass. No new build,
+  installation, Apple TV confirmation or Unraid change for this addition.
 - Owner could not find a text-size setting because the installed build only
   nudged fixed sizes. Added Settings → Appearance → Home Screen → Home text
   size (85%, 100%, 115%, 130%, 150%). It updates the Home title, metadata/rating

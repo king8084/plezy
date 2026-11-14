@@ -184,15 +184,15 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
   CatalogItem? _catalogItem;
   MediaItem? _renderItem;
   Color? _accentColor;
-  MediaItem? _ratingsParent;
-  final Map<String, MediaItem> _parentCache = {};
-  int _parentRequest = 0;
+  MediaItem? _metadataFallback;
+  final Map<String, MediaItem> _metadataCache = {};
+  int _metadataRequest = 0;
 
   @override
   void initState() {
     super.initState();
     _rehydrateCatalogItem();
-    _loadRatingsParent();
+    _loadMetadataFallback();
   }
 
   @override
@@ -200,38 +200,43 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     super.didUpdateWidget(oldWidget);
     if (!identical(widget.item, oldWidget.item)) {
       _rehydrateCatalogItem();
-      _loadRatingsParent();
+      _loadMetadataFallback();
     } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
       _projectArtwork();
     }
-    if (widget.client != oldWidget.client) _loadRatingsParent();
+    if (widget.client != oldWidget.client) _loadMetadataFallback();
   }
 
-  void _loadRatingsParent() {
-    final request = ++_parentRequest;
-    _ratingsParent = null;
+  // Share the existing cached rating probe with missing descriptive fields.
+  // Episode genres and certification can live on the series rather than its row.
+  // This is background spotlight enrichment, never a playback prerequisite.
+  void _loadMetadataFallback() {
+    final request = ++_metadataRequest;
+    _metadataFallback = null;
     final item = widget.item;
     final client = widget.client;
     if (item == null ||
         client == null ||
         item.catalogItem != null ||
-        mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) {
+        (mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes')) &&
+            item.genres?.any((genre) => genre.trim().isNotEmpty) == true &&
+            item.contentRating?.trim().isNotEmpty == true)) {
       return;
     }
     final id = item.isEpisode ? item.grandparentId : item.id;
     if (id == null || id.isEmpty) return;
     final key = '${client.serverId.value}:$id';
-    final cached = _parentCache[key];
+    final cached = _metadataCache[key];
     if (cached != null) {
-      _ratingsParent = cached;
+      _metadataFallback = cached;
       return;
     }
     unawaited(() async {
       try {
         final parent = await client.fetchItem(id);
-        if (parent == null || !mounted || request != _parentRequest) return;
-        _parentCache[key] = parent;
-        setState(() => _ratingsParent = parent);
+        if (parent == null || !mounted || request != _metadataRequest) return;
+        _metadataCache[key] = parent;
+        setState(() => _metadataFallback = parent);
       } catch (_) {
         // The episode remains usable if its parent metadata is unavailable.
       }
@@ -299,7 +304,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final accentColor = _accentColor;
     final background = TvSpotlightBackground(
       item: _renderItem,
-      ratingsFallback: _ratingsParent,
+      ratingsFallback: _metadataFallback,
       client: widget.client,
       hideSpoilers: widget.hideSpoilers,
       contentTop: widget.contentTop,
