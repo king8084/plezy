@@ -15,6 +15,13 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         player: widget.player,
         volumeController: widget.volumeController,
         metadata: widget.metadata,
+        onTogglePerformanceOverlay: PlatformDetector.isAppleTV()
+            ? () {
+                _restartHideTimerForCurrentPlaybackState();
+                unawaited(_settings.write(SettingsService.showPerformanceOverlay, !_showPerformanceOverlay));
+              }
+            : null,
+        showPerformanceOverlay: _showPerformanceOverlay,
         onNext: _abandoningBurst(widget.onNext),
         onPrevious: _abandoningBurst(widget.onPrevious),
         onPlayPause: () => unawaited(_playOrPause()),

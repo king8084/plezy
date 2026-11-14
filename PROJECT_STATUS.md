@@ -4,6 +4,34 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 14 follow-up: implemented the owner's four small UI changes locally.
+No new CI build, Apple TV install or Unraid access was started for this task.
+- Apple TV Now Playing uses the episode's existing series clear logo instead
+  of the show-name text, with the existing text fallback when artwork is absent
+  or fails. Other platform headers keep their existing presentation.
+- Beside S/E numbers, show one gold-star score for the playing episode only.
+  Prefer attributed IMDb; the owner explicitly chose "Use the same episode
+  score as Home" for Jellyfin's unattributed community score. No series-score
+  substitution, critic badge or extra provider ratings are added to the player.
+- A graph icon at the end of the existing player controls toggles the existing
+  Performance Overlay (Stats for Nerds), using its existing settings and polling
+  lifecycle. Remote focus/Select toggles it without changing playback state.
+- The final Home technical pill follows audio and combines first-file size and
+  overall bitrate, e.g. `4.90GB | 12.0Mbps` or `830MB | 5.0Mbps`. Existing binary
+  file-size units match File Info; sizes below 1 GB use MB. Unknown values are
+  omitted. Cached partial file metadata is enriched through the existing
+  background fetch/cache for that exact episode/movie, outside the Play path.
+Validation: all 184 affected header, Home, file-label, remote Select, controls,
+auto-hide and stats lifecycle tests pass (`/tmp/plezy-now-playing-tests-final.log`).
+Whole-project analysis passes (`/tmp/plezy-now-playing-analyze-final.log`);
+hardcoded-string guard, user-facing-error guard and `git diff --check` pass.
+Next step: await an explicit "build apple tv" instruction before CI; no build
+or Unraid permission carries over from the already-completed previous install.
+Visual verification on Apple TV and owner confirmation of these new additions
+remain pending. Owner's attached Home photos show the installed cropped-file
+4K/1080p labels correctly, and they describe the current player positively;
+Select and focused-thumbnail synopsis have not been separately reconfirmed.
+
 Latest installed build is `6d2df7a869985c055fc57afff0ef3f7018534ed7`:
 Codemagic succeeded and tvsign reports successful in-place installation on
 Basement at 08:49 Arabia time, November 14. The existing app entry/account were

@@ -24,6 +24,8 @@ class TrackChapterControls extends StatelessWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final TrackControlsState trackControlsState;
+  final VoidCallback? onTogglePerformanceOverlay;
+  final bool showPerformanceOverlay;
   final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
 
@@ -50,6 +52,8 @@ class TrackChapterControls extends StatelessWidget {
     required this.chapters,
     required this.chaptersLoaded,
     required this.trackControlsState,
+    this.onTogglePerformanceOverlay,
+    this.showPerformanceOverlay = false,
     this.onSeekRequested,
     this.onSeekCompleted,
     this.focusNodes,
@@ -365,6 +369,22 @@ class TrackChapterControls extends StatelessWidget {
               checked: state.isFullscreen,
               buttons: buttons,
               onPressed: state.onToggleFullscreen,
+            ),
+          );
+          buttonIndex++;
+        }
+
+        if (onTogglePerformanceOverlay != null) {
+          buttons.add(
+            _buildTrackButton(
+              buttonIndex: buttonIndex,
+              icon: Symbols.monitoring_rounded,
+              semanticLabel: t.videoSettings.performanceOverlay,
+              tooltip: t.videoSettings.performanceOverlay,
+              isActive: showPerformanceOverlay,
+              checked: showPerformanceOverlay,
+              buttons: buttons,
+              onPressed: onTogglePerformanceOverlay,
             ),
           );
         }

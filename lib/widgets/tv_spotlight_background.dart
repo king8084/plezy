@@ -211,10 +211,10 @@ class TvSpotlightBackground extends StatelessWidget {
     final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
     final badgeHeight = MediaTechnicalBadges.rowHeight(scale, textScale);
     final badgeGap = 6 * scale;
-    final fileItem = media.mediaVersions?.isNotEmpty == true
-        ? media
-        : technicalItem?.globalKey == media.globalKey
+    final fileItem = technicalItem?.globalKey == media.globalKey && technicalItem?.mediaVersions?.isNotEmpty == true
         ? technicalItem
+        : media.mediaVersions?.isNotEmpty == true
+        ? media
         : null;
     final technicalLabels = fileItem == null ? const <String>[] : buildMediaTechnicalLabels(fileItem);
     final summaryFontSize = _summaryFontSize(scale) * textScale;

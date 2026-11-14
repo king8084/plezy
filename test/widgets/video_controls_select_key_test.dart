@@ -25,6 +25,8 @@ import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
+import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_overlay.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 
 import '../test_helpers/media_items.dart';
@@ -406,6 +408,28 @@ void main() {
       // Selecting an actual focused Play/Pause control remains an activation.
       await press(tester, LogicalKeyboardKey.select);
       expect(toggles, 2);
+    });
+
+    playerTest('stats icon is reachable with the remote and toggles the existing overlay', (tester) async {
+      await press(tester, LogicalKeyboardKey.select);
+      final stats = find.byWidgetPredicate(
+        (widget) => widget is VideoControlButton && widget.semanticLabel == t.videoSettings.performanceOverlay,
+      );
+      expect(stats, findsOneWidget);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isFalse);
+      // From transport controls, move through settings and tracks to stats.
+      for (var i = 0; i < 7 && focusLabel() != 'TrackControl2'; i++) {
+        await press(tester, LogicalKeyboardKey.arrowRight);
+      }
+      expect(focusLabel(), 'TrackControl2');
+      await press(tester, LogicalKeyboardKey.select);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isTrue);
+      expect(find.byType(PlayerPerformanceOverlay), findsOneWidget);
+      expect(toggles, 0);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isFalse);
+      expect(find.byType(PlayerPerformanceOverlay), findsNothing);
+      expect(toggles, 0);
     });
   });
 

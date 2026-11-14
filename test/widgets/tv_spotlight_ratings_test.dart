@@ -106,11 +106,13 @@ void main() {
       mediaVersions: [
         MediaVersion(
           id: '4k',
+          bitrate: 12000,
           videoResolution: '4k',
           videoCodec: 'hevc',
           parts: [
             MediaPart(
               id: 'part',
+              sizeBytes: 5261334938,
               streams: [
                 MediaStream(id: 'video', kind: MediaStreamKind.video, dolbyVision: true),
                 MediaStream(id: 'audio1', kind: MediaStreamKind.audio, codec: 'aac', channels: 2),
@@ -130,7 +132,32 @@ void main() {
     expect(find.text('HEVC'), findsOneWidget);
     expect(find.text('Dolby Vision'), findsOneWidget);
     expect(find.text('AAC Stereo'), findsOneWidget);
+    expect(find.text('4.90GB | 12.0Mbps'), findsOneWidget);
     expect(find.text('EAC3 5.1'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('full focused-file metadata supplies size and bitrate missing from a cached row', (tester) async {
+    const episode = MediaItem.jellyfin(
+      id: 'cached-episode',
+      kind: MediaKind.episode,
+      title: 'Episode',
+      mediaVersions: [MediaVersion(id: 'file', videoResolution: '1080', videoCodec: 'hevc')],
+    );
+    final detail = episode.copyWith(
+      mediaVersions: [
+        const MediaVersion(
+          id: 'file',
+          videoResolution: '1080',
+          videoCodec: 'hevc',
+          bitrate: 5000,
+          parts: [MediaPart(id: 'part', sizeBytes: 830 * 1024 * 1024)],
+        ),
+      ],
+    );
+    await _pumpSpotlight(tester, episode, technicalItem: detail);
+    expect(find.text('830MB | 5.0Mbps'), findsOneWidget);
+    expect(find.text('1080p'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

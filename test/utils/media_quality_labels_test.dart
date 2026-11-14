@@ -239,6 +239,51 @@ void main() {
       expect(buildMediaQualityLabels(_episodeWithVersion(null)), isEmpty);
     });
   });
+  group('Home file summary', () {
+    test('appends first-version size and overall bitrate after audio', () {
+      final item = _episodeWithVersion(
+        const MediaVersion(
+          id: 'file',
+          bitrate: 12000,
+          parts: [
+            MediaPart(
+              id: 'part',
+              sizeBytes: 5261334938,
+              streams: [MediaStream(id: 'audio', kind: MediaStreamKind.audio, codec: 'eac3', channels: 6)],
+            ),
+          ],
+        ),
+      );
+      expect(buildMediaTechnicalLabels(item), ['EAC3 5.1', '4.90GB | 12.0Mbps']);
+    });
+
+    test('uses MB below one GB and never takes bitrate from another version', () {
+      final item =
+          _episodeWithVersion(
+            const MediaVersion(
+              id: 'small',
+              parts: [MediaPart(id: 'part', sizeBytes: 830 * 1024 * 1024)],
+            ),
+          ).copyWith(
+            mediaVersions: [
+              const MediaVersion(
+                id: 'small',
+                parts: [MediaPart(id: 'part', sizeBytes: 830 * 1024 * 1024)],
+              ),
+              const MediaVersion(id: 'other', bitrate: 12000),
+            ],
+          );
+      expect(buildMediaTechnicalLabels(item), ['830MB']);
+    });
+
+    test('omits unknown or invalid file facts', () {
+      expect(buildMediaTechnicalLabels(_episodeWithVersion(const MediaVersion(id: 'empty', bitrate: 0))), isEmpty);
+      expect(buildMediaTechnicalLabels(_episodeWithVersion(const MediaVersion(id: 'rate-only', bitrate: 12000))), [
+        '12.0Mbps',
+      ]);
+    });
+  });
+
   group('buildMediaSizeLabel', () {
     test('formats the complete size of a multi-part version', () {
       final item = _episodeWithVersion(

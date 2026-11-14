@@ -47,7 +47,18 @@ List<String> buildMediaTechnicalLabels(MediaItem item) {
   return [
     ..._videoLabels(version, fullDolbyVisionName: true),
     ?_formatAudio(_firstStreamOfKind(version, MediaStreamKind.audio)),
+    ?_fileSummaryLabel(item, version),
   ];
+}
+
+String? _fileSummaryLabel(MediaItem item, MediaVersion version) {
+  final size = buildMediaSizeLabel(item);
+  final bitrate = version.bitrate;
+  final labels = [
+    if (size != null) size.replaceFirst('.0 MB', ' MB').replaceAll(' ', ''),
+    if (bitrate != null && bitrate > 0) ByteFormatter.formatBitrate(bitrate).replaceAll(' ', ''),
+  ];
+  return labels.isEmpty ? null : labels.join(' | ');
 }
 
 List<String> _videoLabels(MediaVersion version, {int? partIndex, bool fullDolbyVisionName = false}) {

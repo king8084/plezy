@@ -38,6 +38,8 @@ class DesktopVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
   final MediaItem metadata;
+  final VoidCallback? onTogglePerformanceOverlay;
+  final bool showPerformanceOverlay;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
   final VoidCallback onPlayPause;
@@ -117,6 +119,8 @@ class DesktopVideoControls extends StatefulWidget {
     required this.player,
     required this.volumeController,
     required this.metadata,
+    this.onTogglePerformanceOverlay,
+    this.showPerformanceOverlay = false,
     this.onNext,
     this.onPrevious,
     required this.onPlayPause,
@@ -697,6 +701,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
           Expanded(
             child: VideoControlsHeader(
               metadata: widget.metadata,
+              useTvArtwork: PlatformDetector.isAppleTV(),
               style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
               onBack: widget.onBack,
               onCancelAutoHide: widget.onCancelAutoHide,
@@ -929,6 +934,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Audio track, subtitle, and chapter controls
                 TrackChapterControls(
                   player: widget.player,
+                  onTogglePerformanceOverlay: widget.onTogglePerformanceOverlay,
+                  showPerformanceOverlay: widget.showPerformanceOverlay,
                   chapters: widget.chapters,
                   chaptersLoaded: widget.chaptersLoaded,
                   trackControlsState: _trackControlsState,

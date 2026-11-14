@@ -222,7 +222,14 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
         !mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes')) ||
         item.genres?.any((genre) => genre.trim().isNotEmpty) != true ||
         item.contentRating?.trim().isNotEmpty != true;
-    final needsTechnical = (item.isMovie || item.isEpisode) && item.mediaVersions?.isNotEmpty != true;
+    final version = item.mediaVersions?.firstOrNull;
+    final needsTechnical =
+        (item.isMovie || item.isEpisode) &&
+        (version == null ||
+            version.bitrate == null ||
+            version.bitrate! <= 0 ||
+            version.parts.isEmpty ||
+            version.parts.any((part) => part.sizeBytes == null || part.sizeBytes! <= 0));
     final descriptionId = item.isEpisode ? item.grandparentId : item.id;
     final ids = <String>{
       if (needsDescription && descriptionId != null && descriptionId.isNotEmpty) descriptionId,

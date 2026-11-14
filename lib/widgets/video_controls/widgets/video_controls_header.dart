@@ -3,6 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:plezy/utils/formatters.dart';
 
 import '../../../media/media_item.dart';
+import '../../../media/media_item_types.dart';
+import '../../../media/ids.dart';
+import '../../../media/media_rating.dart';
+import '../../../utils/provider_extensions.dart';
+import '../../optimized_media_image.dart';
+import '../../media_rating_badge.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
@@ -38,6 +44,7 @@ class VideoControlsHeader extends StatelessWidget {
   /// header is too narrow to fit the clock beside the title and trailing
   /// controls.
   final bool showClock;
+  final bool useTvArtwork;
 
   const VideoControlsHeader({
     super.key,
@@ -48,6 +55,7 @@ class VideoControlsHeader extends StatelessWidget {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.showClock = true,
+    this.useTvArtwork = false,
   });
 
   @override
@@ -60,7 +68,7 @@ class VideoControlsHeader extends StatelessWidget {
         Expanded(
           child: style == VideoHeaderStyle.singleLine
               ? _buildSingleLineTitle(itemTitle)
-              : _buildMultiLineTitle(itemTitle),
+              : _buildMultiLineTitle(context, itemTitle),
         ),
         Selector<WatchTogetherProvider, bool>(
           selector: (_, p) => p.isInSession,
@@ -106,7 +114,7 @@ class VideoControlsHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildMultiLineTitle(String itemTitle) {
+  Widget _buildMultiLineTitle(BuildContext context, String itemTitle) {
     final List<String> secondLineParts = [];
 
     if (metadata.parentIndex != null && metadata.index != null) {
@@ -119,22 +127,64 @@ class VideoControlsHeader extends StatelessWidget {
       secondLineParts.add(formatDurationTextual(metadata.durationMs!));
     }
 
+    final title = Text(
+      metadata.grandparentTitle ?? itemTitle,
+      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: .bold),
+      maxLines: 1,
+      overflow: .ellipsis,
+    );
+    final ratings = useTvArtwork && metadata.isEpisode ? mediaRatingsFor(metadata) : const <MediaRatingSource>[];
+    // Prefer attributed IMDb. Jellyfin exposes its episode headline score as
+    // audience; retain that same score used on Home without borrowing a series
+    // rating or adding critic/other provider scores.
+    final rating =
+        ratings.where((r) => r.source == 'imdb').firstOrNull ??
+        ratings.where((r) => r.source == 'audience' || r.source.isEmpty).firstOrNull;
+    final episodeNumbers = metadata.parentIndex != null && metadata.index != null;
     return Column(
       crossAxisAlignment: .start,
       children: [
-        Text(
-          metadata.grandparentTitle ?? itemTitle,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: .bold),
-          maxLines: 1,
-          overflow: .ellipsis,
-        ),
+        if (useTvArtwork && metadata.isEpisode && metadata.clearLogoPath?.isNotEmpty == true)
+          ClearLogoImage(
+            client: context.tryGetMediaClientForServer(metadata.serverId == null ? null : ServerId(metadata.serverId!)),
+            logoPath: metadata.clearLogoPath,
+            width: 180,
+            height: 36,
+            fallbackWidth: 360,
+            fallbackBuilder: (_) => title,
+          )
+        else
+          title,
         if (secondLineParts.isNotEmpty)
-          Text(
-            toBulletedString(secondLineParts),
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
-            maxLines: 1,
-            overflow: .ellipsis,
-          ),
+          if (rating != null && episodeNumbers)
+            Row(
+              children: [
+                Text(
+                  '${toBulletedString(secondLineParts.take(2).toList())} · ',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                InlineRatingBadges(
+                  ratings: [rating],
+                  goldStars: true,
+                  textStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                Flexible(
+                  child: Text(
+                    ' · ${toBulletedString(secondLineParts.skip(2).toList())}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    maxLines: 1,
+                    overflow: .ellipsis,
+                  ),
+                ),
+              ],
+            )
+          else
+            Text(
+              toBulletedString(secondLineParts),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              maxLines: 1,
+              overflow: .ellipsis,
+            ),
       ],
     );
   }
