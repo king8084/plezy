@@ -4,6 +4,15 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+Latest installed build is `6d2df7a869985c055fc57afff0ef3f7018534ed7`:
+Codemagic succeeded and tvsign reports successful in-place installation on
+Basement at 08:49 Arabia time, November 14. The existing app entry/account were
+used, Plezy was closed and the owner kept Apple TV inside Settings. No deletion,
+uninstall, new app entry, signer/container change or stall occurred. Owner test
+of Select, cropped resolution tags and focused-thumbnail synopsis is pending.
+This completes the owner's build-only Unraid authorization; no further Unraid
+change or new Apple TV build is authorized without a new instruction.
+
 Owner authorized a new Apple TV build and Unraid staging/install for this build
 only on November 14, confirming Plezy closed and Apple TV inside Settings.
 Paused before starting at the owner's “stop”; at that point only `7e8974054`
@@ -15,9 +24,29 @@ cached labels. All 63 affected resolution/mapper/spotlight tests and targeted
 analysis pass, in addition to the earlier 406 tests for the three fixes.
 Owner clarified the actual 1080p file is 1912×1072. Added that exact case to
 the regression table; all 12 quality-label tests pass, classifying it as 1080p.
-Preparing this single authorized build; CI, installation and owner test pending.
+Codemagic build `6af7f46a90e83b09c4fa14a1` started at 08:41 Arabia time for
+`6d2df7a869985c055fc57afff0ef3f7018534ed7` (index 7, M2). This is the single
+authorized resumed build. CI succeeded in 6m 15s; in-place installation succeeded
+at 08:49. Owner testing remains pending.
+Preserved the existing unsigned IPA as `ipas/1/original-before-6d2df7a.ipa`
+(0600). Signed IPA backup `signed-before-6d2df7a.ipa` is also verified at 0600
+through Unraid's file manager. All earlier backups remain untouched.
+Verified artifact `/home/koolo7000/Downloads/Plezy-tvOS (5).ipa`, local copy
+`/tmp/Plezy-6d2df7a.ipa` (73,193,889 bytes), SHA-256
+`01d79291d108500a4c89ac159a0d872308db4f66f0c6c826c71ae0cdb8166051`.
+ZIP CRC, tvOS platform, bundle ID, local-network description and both embedded
+app-group entitlements pass. Native archive succeeded; device workflow does not
+run native policy tests. Upload to the existing `ipas/1` folder completed at
+08:48. Restricted `Plezy-6d2df7a.ipa` to 0600, copied it over the existing
+`original.ipa`, and verified the active source's new timestamp and 0600 mode.
+Renew requested once at 08:49. Signing and installation succeeded within that
+minute; tvsign shows Valid and a new 08:49 successful manual-renewal entry.
+Proof screenshot: `/tmp/plezy-install-6d2df7a.jpg`. Both current-build backups
+and all older backups remain intact. No Unraid deletions or other changes.
+Build URL:
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af7f46a90e83b09c4fa14a1
 
-Latest build `ae237fb423cd5a086da92f233d09d1d6d3dcac33` (tested app source
+Previous build `ae237fb423cd5a086da92f233d09d1d6d3dcac33` (tested app source
 `2d92f1e2f`) built successfully and tvsign reports successful in-place installation
 on Basement at 08:13 Arabia time on November 14. The owner explicitly authorized
 both the build and Unraid staging/install, and confirmed the TV was awake inside
@@ -105,6 +134,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 14, `6d2df7a`: Codemagic run `6af7f46a90e83b09c4fa14a1` passed in
+  6m 15s; artifact checks pass. tvsign reports successful in-place installation
+  on Basement at 08:49, same app/account, no stall or deletion. Both active IPA
+  backups and all older files preserved. Owner testing of the fixes pending.
 - November 14: Codemagic build `6af7ebda90e83b09c4fa12ba` succeeded for
   `ae237fb` in 6m 15s; unsigned artifact checks pass. tvsign reports successful
   in-place installation on Basement at 08:13 with TV inside Settings. Same
@@ -260,21 +293,20 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Build and install the validated three corrections, stable diagnostics key and
-cropped-resolution tiers under the owner's current single-build authorization.
-Owner confirms most UI
-changes on installed `ae237fb` work well; the three corrections remain local.
-Check playback still starts promptly and existing settings/login remain after
-the next authorized update. The earlier `98c7123d4` build has owner-
-confirmed fast SDR startup and working Home Play; do not transfer that device
-confirmation automatically to this build. CI success, in-place installation
-and owner testing remain separate milestones. Read the protected LAN diagnostics
-when the app is open if needed. Wait for a new explicit “build apple tv” before
-any subsequent build; no further Unraid changes are authorized by this completed
-installation. Keep future updates on the same app entry/account with the TV
-inside Settings and Plezy closed.
+Owner test of installed `6d2df7a`: center Select raises controls without pausing,
+physical Play/Pause still controls playback, 1912×1072 now shows 1080p,
+3832×1600 shows 4K, and focused episode thumbnails show their synopsis at top.
+Check playback still starts promptly and existing settings/login remain.
+The old private diagnostics URL is retained in `.git/plezy-diagnostics.json`
+(0600) with the installed commit updated; read it when Plezy runs if needed.
+Previous owner-confirmed fast SDR startup belongs to the earlier build and must
+not be reported as new-build confirmation. CI success, in-place installation
+and owner testing remain separate milestones. The current install completes
+the build-specific Unraid permission. Wait for a new explicit “build apple tv”
+and new Unraid authorization before any further build/install. Keep future
+updates on the same app entry/account, TV inside Settings and Plezy closed.
 
-## Local corrections after ae237fb (November 14)
+## Corrections installed in 6d2df7a (November 14)
 - Center Select on the Apple TV player surface raises controls without toggling
   playback. Focused controls still activate normally (including an explicit
   Play/Pause button), Skip Intro remains selectable, and physical Play/Pause
@@ -306,7 +338,8 @@ inside Settings and Plezy closed.
 - Validation: project analyzer and hardcoded-string/raw-error guards pass.
   All 406 player/detail/mapper/quality/diagnostics tests pass, including the
   formerly failing missing-synopsis regression. Source formatting passes.
-  No new CI build, installation or owner verification of these local fixes.
+  Subsequently built and installed in `6d2df7a` at 08:49; owner verification
+  of these fixes is pending.
 
 ## Changes installed in ae237fb (November 14)
 - Source-file tags requested from the Matrix reference: a separate compact pill
