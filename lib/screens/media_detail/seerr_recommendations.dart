@@ -12,7 +12,10 @@ extension _MediaDetailSeerrRecommendations on _MediaDetailScreenState {
     _seerrRecommendationsHub = null;
     // Full library metadata and on-deck keep their existing priority. Seerr
     // is supplemental and never gates the show's reveal or the Play action.
-    if (!_isLoadingMetadata) unawaited(_loadSeerrRecommendations());
+    if (!_isLoadingMetadata) {
+      unawaited(_loadSeerrRecommendations());
+      unawaited(_loadSimklRecommendations());
+    }
   }
 
   Future<void> _loadSeerrRecommendations() async {

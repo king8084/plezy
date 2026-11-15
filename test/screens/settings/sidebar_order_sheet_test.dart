@@ -20,7 +20,27 @@ void main() {
     );
   });
 
-  testWidgets('remote moves Favorites to the top, confirms it, and cancels an uncommitted move', (tester) async {
+  test('flat library order survives the legacy Libraries position', () {
+    expect(
+      resolveSidebarOrder(
+        ['home', 'libraries', 'settings', 'library:movies'],
+        ['home', 'library:movies', 'library:tv', 'settings'],
+      ),
+      ['home', 'library:tv', 'settings', 'library:movies'],
+    );
+    final saved = mergeSidebarOrder(
+      ['home', 'libraries', 'favorites', 'library:offline'],
+      ['favorites', 'home', 'library:movies'],
+    );
+    expect(saved, contains('library:offline'));
+    expect(resolveSidebarOrder(saved, ['home', 'favorites', 'library:movies']), [
+      'favorites',
+      'home',
+      'library:movies',
+    ]);
+  });
+
+  testWidgets('remote arrows move Favorites immediately and Pin toggles visibility', (tester) async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     TvDetectionService.debugSetAppleTVOverride(true);
@@ -38,23 +58,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // Home, Now Playing, Libraries, Favorites.
-    for (var i = 0; i < 3; i++) {
-      await press(LogicalKeyboardKey.arrowDown);
-    }
-    await press(LogicalKeyboardKey.select);
-    for (var i = 0; i < 3; i++) {
-      await press(LogicalKeyboardKey.arrowUp);
-    }
+    // Home, Favorites. Inactive services are omitted, as in the actual rail.
+    await press(LogicalKeyboardKey.arrowDown);
     await press(LogicalKeyboardKey.select);
     expect(settings.read(SettingsService.sidebarOrder).first, 'favorites');
-    final saved = List.of(settings.read(SettingsService.sidebarOrder));
+    await press(LogicalKeyboardKey.arrowLeft);
     await press(LogicalKeyboardKey.select);
-    await press(LogicalKeyboardKey.arrowDown);
-    await press(LogicalKeyboardKey.escape);
-    expect(settings.read(SettingsService.sidebarOrder), saved);
+    expect(settings.read(SettingsService.pinFavoritesToSidebar), isFalse);
+    await press(LogicalKeyboardKey.select);
+    expect(settings.read(SettingsService.pinFavoritesToSidebar), isTrue);
     final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
     expect((tiles.first.title! as Text).data, 'Favorites');
+    expect(find.text('Libraries'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

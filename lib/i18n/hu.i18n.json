@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Mindig jelenjen meg a szerver neve a blokkok címében.",
     "groupLibrariesByServer": "Könyvtárak csoportosítása szerver szerint",
     "groupLibrariesByServerDescription": "Az oldalsáv könyvtárainak csoportosítása a médiaszerverek alatt.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Oldalsáv mindig nyitva",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy-beállítások exportálása",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Beépített",
@@ -1251,7 +1255,9 @@
       "birthplace": "Születési hely",
       "dateWithAge": "${date} (${age} éves)",
       "dateWithAgeAtDeath": "${date} (${age} évesen)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Keresés sikertelen: ${error}",

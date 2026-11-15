@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Sempre mostrar nomes dos servidores nos títulos dos hubs.",
     "groupLibrariesByServer": "Agrupar Bibliotecas por Servidor",
     "groupLibrariesByServerDescription": "Agrupar bibliotecas da barra lateral por servidor de mídia.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Manter Barra Lateral Sempre Aberta",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Exportar configurações do Plezy",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -1251,7 +1255,9 @@
       "birthplace": "Local de nascimento",
       "dateWithAge": "${date} (${age} anos)",
       "dateWithAgeAtDeath": "${date} (aos ${age} anos)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Falha na busca: ${error}",

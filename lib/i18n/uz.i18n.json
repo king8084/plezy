@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Boʻlim sarlavhalarida har doim server nomini koʻrsatish.",
     "groupLibrariesByServer": "Kutubxonalarni server boʻyicha guruhlash",
     "groupLibrariesByServerDescription": "Yon menyudagi kutubxonalarni serverlar boʻyicha guruhlash.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yon menyuni har doim ochiq saqlash",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy sozlamalarini eksport qilish",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Oʻrnatilgan",
@@ -1251,7 +1255,9 @@
       "birthplace": "Tugʻilgan joyi",
       "dateWithAge": "${date} (${age} yosh)",
       "dateWithAgeAtDeath": "${date} (${age} yoshda)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Qidiruv xatoligi: ${error}",

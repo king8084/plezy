@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "一律在推薦區標題中顯示伺服器名稱。",
     "groupLibrariesByServer": "依伺服器將媒體庫分組",
     "groupLibrariesByServerDescription": "將側邊欄中的媒體庫依伺服器進行分組。",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "一律保持側邊欄展開",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "匯出 Plezy 設定",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "內建",
@@ -1246,7 +1250,9 @@
       "birthplace": "出生地",
       "dateWithAge": "${date}（${age} 歲）",
       "dateWithAgeAtDeath": "${date}（享年 ${age} 歲）"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "搜尋失敗：${error}",

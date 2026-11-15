@@ -177,23 +177,26 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.alwaysKeepSidebarOpenDescription,
               ),
             if (PlatformDetector.shouldUseSideNavigation(context)) ...[
-              SettingSwitchTile(
-                pref: SettingsService.pinFavoritesToSidebar,
-                icon: Symbols.favorite_rounded,
-                title: t.settings.pinFavoritesToSidebar,
-              ),
-              SettingSwitchTile(
-                pref: SettingsService.pinCollectionsToSidebar,
-                icon: Symbols.collections_rounded,
-                title: t.settings.pinCollectionsToSidebar,
-              ),
+              if (!PlatformDetector.isTV()) ...[
+                SettingSwitchTile(
+                  pref: SettingsService.pinFavoritesToSidebar,
+                  icon: Symbols.favorite_rounded,
+                  title: t.settings.pinFavoritesToSidebar,
+                ),
+                SettingSwitchTile(
+                  pref: SettingsService.pinCollectionsToSidebar,
+                  icon: Symbols.collections_rounded,
+                  title: t.settings.pinCollectionsToSidebar,
+                ),
+              ],
               SettingNavigationTile(
-                icon: Symbols.swap_vert_rounded,
-                title: t.settings.sidebarOrder,
+                icon: Symbols.tune_rounded,
+                title: t.settings.customizeSidebar,
+                subtitle: t.settings.customizeSidebarDescription,
                 onTap: () => OverlaySheetController.showAdaptive(context, builder: (_) => const SidebarOrderSheet()),
               ),
             ],
-            if (PlatformDetector.shouldUseSideNavigation(context))
+            if (PlatformDetector.shouldUseSideNavigation(context) && !PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.groupLibrariesByServer,
                 icon: Symbols.dns_rounded,

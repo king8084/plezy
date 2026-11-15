@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Servernamen immer in Hub-Titeln anzeigen.",
     "groupLibrariesByServer": "Mediatheken nach Server gruppieren",
     "groupLibrariesByServerDescription": "Sidebar-Bibliotheken nach Medienserver gruppieren.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Seitenleiste immer geöffnet halten",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy-Einstellungen exportieren",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Integriert",
@@ -1251,7 +1255,9 @@
       "birthplace": "Geburtsort",
       "dateWithAge": "${date} (${age} Jahre)",
       "dateWithAgeAtDeath": "${date} (im Alter von ${age} Jahren)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Suche fehlgeschlagen: ${error}",

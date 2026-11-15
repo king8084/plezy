@@ -44,6 +44,8 @@ import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
 import 'optimized_media_image.dart';
 import 'favorite_poster_border.dart';
+import '../services/catalog/detail_recommendations.dart';
+import 'recommendation_card_caption.dart';
 
 const _failedPosterUrlCacheLimit = 512;
 final _failedPosterUrls = <String>{};
@@ -679,7 +681,33 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       knownHeight: knownHeight,
       artworkDim: widget.artworkDim,
     );
+    final recommendation = item is MediaItem ? RecommendationCardData.fromItem(item) : null;
+    final banner = switch (recommendation?.availability) {
+      RecommendationAvailability.missing => t.discover.needRequest,
+      RecommendationAvailability.requested => t.explore.badge.requested,
+      _ => null,
+    };
     final overlays = <Widget>[
+      if (banner != null)
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: DecoratedBox(
+            key: const ValueKey('recommendation_request_banner'),
+            decoration: const BoxDecoration(color: Color(0xE6232934)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+              child: Text(
+                banner,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFFE6B95B), fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
       if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
       if (item is MediaItem && item.isEpisode && item.index != null)
@@ -1340,6 +1368,8 @@ class _MediaCardHelpers {
     bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
+    final recommendation = RecommendationCardData.fromItem(mi);
+    if (recommendation != null) return RecommendationCardCaption(item: recommendation.ratingItem);
     if (catalogItem?.source == CatalogSourceId.seerr) {
       return _SeerrCardMetadata(
         item: mi,

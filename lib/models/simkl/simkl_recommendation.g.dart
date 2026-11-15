@@ -17,4 +17,7 @@ SimklRecommendation _$SimklRecommendationFromJson(Map<String, dynamic> json) =>
       usersCount: flexibleInt(json['users_count']),
       usersPercent: json['users_percent'] as String?,
       ids: SimklIds.fromJson(json['ids'] as Map<String, dynamic>),
+      ratings: json['ratings'] == null
+          ? null
+          : SimklRatings.fromJson(json['ratings'] as Map<String, dynamic>),
     );

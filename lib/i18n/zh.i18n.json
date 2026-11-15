@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。",
     "groupLibrariesByServer": "按服务器分组媒体库",
     "groupLibrariesByServerDescription": "在侧边栏中按媒体服务器分组媒体库。",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "始终保持侧边栏展开",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "导出 Plezy 设置",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "内置",
@@ -1246,7 +1250,9 @@
       "birthplace": "出生地",
       "dateWithAge": "${date}（${age} 岁）",
       "dateWithAgeAtDeath": "${date}（享年 ${age} 岁）"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "搜索失败：${error}",

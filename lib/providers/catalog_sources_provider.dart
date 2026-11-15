@@ -154,6 +154,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   /// Request action and sheet) that need Seerr's client beyond the
   /// [CatalogSource] interface.
   SeerrCatalogSource? get seerrSource => _seerr.source;
+  SimklCatalogSource? get simklSource => _simkl.source;
 
   /// The source whose rows the Explore tab shows: the user's persisted pick
   /// when it is still connected, otherwise the first connected source.

@@ -659,12 +659,6 @@ class Translations$settings$en {
 	/// en: 'Group sidebar libraries under each media server.'
 	String get groupLibrariesByServerDescription => 'Group sidebar libraries under each media server.';
 
-	/// en: 'Sidebar Order'
-	String get sidebarOrder => 'Sidebar Order';
-
-	/// en: 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.'
-	String get sidebarOrderDescription => 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.';
-
 	/// en: 'Pin Favorites to Sidebar'
 	String get pinFavoritesToSidebar => 'Pin Favorites to Sidebar';
 
@@ -1540,6 +1534,24 @@ class Translations$settings$en {
 
 	/// en: 'Collection unavailable'
 	String get pinnedCollectionUnavailable => 'Collection unavailable';
+
+	/// en: 'Customize sidebar'
+	String get customizeSidebar => 'Customize sidebar';
+
+	/// en: 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.'
+	String get customizeSidebarDescription => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.';
+
+	/// en: 'Pin to sidebar'
+	String get pinToSidebar => 'Pin to sidebar';
+
+	/// en: 'Unpin from sidebar'
+	String get unpinFromSidebar => 'Unpin from sidebar';
+
+	/// en: 'Move up'
+	String get sidebarMoveUp => 'Move up';
+
+	/// en: 'Move down'
+	String get sidebarMoveDown => 'Move down';
 }
 
 // Path: themeEditor
@@ -3440,6 +3452,12 @@ class Translations$discover$en {
 	);
 
 	late final Translations$discover$person$en person = Translations$discover$person$en.internal(_root);
+
+	/// en: 'More Like This — Simkl'
+	String get moreLikeThisSimkl => 'More Like This — Simkl';
+
+	/// en: 'Need request'
+	String get needRequest => 'Need request';
 }
 
 // Path: errors
@@ -8451,8 +8469,6 @@ extension on Translations {
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
-			'settings.sidebarOrder' => 'Sidebar Order',
-			'settings.sidebarOrderDescription' => 'Select an entry, move it with Up/Down, then Select to save. Back cancels the move. You can also drag entries.',
 			'settings.pinFavoritesToSidebar' => 'Pin Favorites to Sidebar',
 			'settings.pinCollectionsToSidebar' => 'Pin Collections to Sidebar',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
@@ -8745,11 +8761,17 @@ extension on Translations {
 			'settings.pinnedHomeCollections' => 'Pinned Home collections',
 			'settings.pinnedHomeCollectionsDescription' => 'Manage saved rows, including collections that are no longer available',
 			'settings.pinnedCollectionUnavailable' => 'Collection unavailable',
+			'settings.customizeSidebar' => 'Customize sidebar',
+			'settings.customizeSidebarDescription' => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.',
+			'settings.pinToSidebar' => 'Pin to sidebar',
+			'settings.unpinFromSidebar' => 'Unpin from sidebar',
+			'settings.sidebarMoveUp' => 'Move up',
+			_ => null,
+		} ?? switch (path) {
+			'settings.sidebarMoveDown' => 'Move down',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
@@ -9258,12 +9280,12 @@ extension on Translations {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
 			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
 			'profiles.profileRenamed' => 'Profile renamed.',
@@ -9396,6 +9418,8 @@ extension on Translations {
 			'discover.person.birthplace' => 'Birthplace',
 			'discover.person.dateWithAge' => ({required Object date, required Object age}) => '${date} (age ${age})',
 			'discover.person.dateWithAgeAtDeath' => ({required Object date, required Object age}) => '${date} (aged ${age})',
+			'discover.moreLikeThisSimkl' => 'More Like This — Simkl',
+			'discover.needRequest' => 'Need request',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
@@ -9770,14 +9794,14 @@ extension on Translations {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
 			'liveTv.noFavoriteChannels' => 'No favorite channels',
 			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
 			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
@@ -10284,14 +10308,14 @@ extension on Translations {
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',

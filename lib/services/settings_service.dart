@@ -900,6 +900,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const pinFavoritesToSidebar = BoolPref('pin_favorites_to_sidebar');
   static const pinCollectionsToSidebar = BoolPref('pin_collections_to_sidebar');
   static const sidebarOrder = StringListPref('sidebar_order');
+  static const sidebarPinnedLibraries = StringListPref('sidebar_pinned_libraries');
+  static const sidebarLibrariesConfigured = BoolPref('sidebar_libraries_configured');
 
   /// Sidebar Libraries section expansion. Persisted so a collapsed section
   /// stays collapsed across launches instead of springing back open (#1896).
@@ -1575,6 +1577,8 @@ class SettingsService extends BaseSharedPreferencesService {
     pinFavoritesToSidebar,
     pinCollectionsToSidebar,
     sidebarOrder,
+    sidebarPinnedLibraries,
+    sidebarLibrariesConfigured,
     librariesSectionExpanded,
     showUnwatchedCount,
     showWatchedIndicators,

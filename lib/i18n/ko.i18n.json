@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다.",
     "groupLibrariesByServer": "서버별로 라이브러리 그룹화",
     "groupLibrariesByServerDescription": "사이드바 라이브러리를 미디어 서버별로 그룹화합니다.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "사이드바 항상 열어두기",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy 설정 내보내기",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "기본 제공",
@@ -1246,7 +1250,9 @@
       "birthplace": "출생지",
       "dateWithAge": "${date} (${age}세)",
       "dateWithAgeAtDeath": "${date} (향년 ${age}세)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "검색 실패: ${error}",

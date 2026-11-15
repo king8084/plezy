@@ -21,6 +21,7 @@ import '../services/sidebar_library_items.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
 import '../navigation/sidebar_order.dart';
+import '../navigation/sidebar_destinations.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -175,6 +176,7 @@ class NavigationRailItem extends StatelessWidget {
     // The collapsed TV rail is a transparent overlay strip; a persistent
     // active pill over artwork is noise there, so it shows focus only.
     final showSelected = isSelected && !suppressSelectedBackground && !(collapsedLayout && PlatformDetector.isTV());
+    if (focused && PlatformDetector.isTV()) return t.text;
     if (focused) return t.text.withValues(alpha: showSelected ? selectedFocusAlpha : focusAlpha);
     if (showSelected) return t.text.withValues(alpha: 0.1);
     return null;
@@ -188,14 +190,27 @@ class NavigationRailItem extends StatelessWidget {
     );
   }
 
-  Widget _leadingIcon(MonoTokens t) =>
-      iconWidget ??
-      AppIcon(
-        isSelected && selectedIcon != null ? selectedIcon! : icon,
-        fill: 1,
-        size: iconSize,
-        color: isSelected ? t.accent : t.textMuted,
-      );
+  Widget _leadingIcon(MonoTokens t, {bool focused = false}) {
+    final custom = iconWidget;
+    if (custom != null) {
+      return focused && PlatformDetector.isTV()
+          ? ColorFiltered(colorFilter: ColorFilter.mode(t.surface, BlendMode.srcIn), child: custom)
+          : custom;
+    }
+    return AppIcon(
+      isSelected && selectedIcon != null ? selectedIcon! : icon,
+      fill: PlatformDetector.isTV() ? 0 : 1,
+      weight: PlatformDetector.isTV() ? 400 : null,
+      size: iconSize,
+      color: focused && PlatformDetector.isTV()
+          ? t.surface
+          : isSelected
+          ? PlatformDetector.isTV()
+                ? t.text
+                : t.accent
+          : t.textMuted,
+    );
+  }
 
   static double _collapsedItemWidth(BuildContext context) =>
       SideNavigationRailState.collapsedWidthForContext(context) -
@@ -216,9 +231,9 @@ class NavigationRailItem extends StatelessWidget {
             alignment: .center,
             decoration: BoxDecoration(
               color: _indicatorColor(t, focused: focused, expansion: 0),
-              borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+              borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
             ),
-            child: _leadingIcon(t),
+            child: _leadingIcon(t, focused: focused),
           ),
         ),
       ),
@@ -226,15 +241,24 @@ class NavigationRailItem extends StatelessWidget {
   }
 
   /// M3E expanded destination: full-width stadium indicator behind the row.
-  Widget _labelAtOpacity(BuildContext context, double opacity) {
+  Widget _labelAtOpacity(BuildContext context, double opacity, {bool focused = false}) {
     final builder = labelBuilder;
-    if (builder != null) return builder(opacity);
+    if (builder != null) {
+      final label = builder(opacity);
+      return focused && PlatformDetector.isTV()
+          ? ColorFiltered(colorFilter: ColorFilter.mode(tokens(context).surface, BlendMode.srcIn), child: label)
+          : label;
+    }
 
     final textStyle = label is Text ? (label as Text).style : null;
     final inheritsTextColor =
         label is Text &&
         (textStyle == null || (textStyle.inherit && textStyle.color == null && textStyle.foreground == null));
-    final color = inheritsTextColor ? labelColor ?? DefaultTextStyle.of(context).style.color : null;
+    final color = inheritsTextColor
+        ? focused && PlatformDetector.isTV()
+              ? tokens(context).surface
+              : labelColor ?? DefaultTextStyle.of(context).style.color
+        : null;
     if (color != null) {
       return DefaultTextStyle.merge(
         style: TextStyle(color: color.withValues(alpha: color.a * opacity)),
@@ -259,12 +283,13 @@ class NavigationRailItem extends StatelessWidget {
     MonoTokens t, {
     required double labelOpacity,
     required bool showLeading,
+    required bool focused,
   }) {
     return Row(
       children: [
-        if (showLeading) _leadingIcon(t) else SizedBox(width: iconSize, height: iconSize),
+        if (showLeading) _leadingIcon(t, focused: focused) else SizedBox(width: iconSize, height: iconSize),
         const SizedBox(width: 11),
-        Expanded(child: _labelAtOpacity(context, labelOpacity)),
+        Expanded(child: _labelAtOpacity(context, labelOpacity, focused: focused)),
         ?_trailingAtOpacity(labelOpacity),
       ],
     );
@@ -277,9 +302,9 @@ class NavigationRailItem extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: fixedHeight ? 0 : 8),
       decoration: BoxDecoration(
         color: _indicatorColor(t, focused: focused, expansion: 1),
-        borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+        borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
       ),
-      child: _buildExpandedContent(context, t, labelOpacity: 1, showLeading: true),
+      child: _buildExpandedContent(context, t, labelOpacity: 1, showLeading: true, focused: focused),
     );
   }
 
@@ -317,7 +342,7 @@ class NavigationRailItem extends StatelessWidget {
               height: lerpDouble(collapsedIndicatorHeight, expandedHeight, expansion),
               decoration: BoxDecoration(
                 color: _indicatorColor(t, focused: focused, expansion: expansion),
-                borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+                borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
               ),
             ),
           ),
@@ -329,7 +354,7 @@ class NavigationRailItem extends StatelessWidget {
               height: expandedHeight,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: _buildExpandedContent(context, t, labelOpacity: expansion, showLeading: false),
+                child: _buildExpandedContent(context, t, labelOpacity: expansion, showLeading: false, focused: focused),
               ),
             ),
           ),
@@ -376,7 +401,7 @@ class NavigationRailItem extends StatelessWidget {
             child: InkWell(
               canRequestFocus: false,
               onTap: onTap,
-              borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+              borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
               child: UnconstrainedBox(
                 alignment: .centerLeft,
                 constrainedAxis: Axis.vertical,
@@ -670,6 +695,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _kExplore;
       case NavigationTabId.libraries:
         final libKey = widget.selectedLibraryKey;
+        if (PlatformDetector.isTV()) return libKey == null ? _kHome : '$sidebarLibraryPrefix$libKey';
         if (libKey != null && _librariesExpanded) {
           final visibleKey = '$_kLibraryItemPrefix:${_LibraryNavSection.visible.name}:$libKey';
           if (_mountedFocusNodeFor(visibleKey) != null) return visibleKey;
@@ -951,6 +977,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         SettingsService.instance.listenable(SettingsService.pinFavoritesToSidebar),
         SettingsService.instance.listenable(SettingsService.pinCollectionsToSidebar),
         SettingsService.instance.listenable(SettingsService.sidebarOrder),
+        SettingsService.instance.listenable(SettingsService.sidebarPinnedLibraries),
+        SettingsService.instance.listenable(SettingsService.sidebarLibrariesConfigured),
       ]),
       builder: (context, _) {
         final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
@@ -970,8 +998,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           section: _LibraryNavSection.hidden,
           showServerHeaders: showServerHeaders,
         );
-        _focusTracker.pruneExcept(
-          _buildValidFocusKeys(
+        final flatLibraries = PlatformDetector.isTV();
+        final pins = pinnedSidebarLibraries(SettingsService.instance, visibleLibraries);
+        final pinnedLibraries = visibleLibraries.where((library) => pins.contains(library.globalKey)).toList();
+        _focusTracker.pruneExcept({
+          ..._buildValidFocusKeys(
             visibleRows: visibleRows,
             hiddenRows: hiddenRows,
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
@@ -979,7 +1010,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasNowPlaying: nowPlayingTrack != null,
             hasExplore: hasExplore,
           ),
-        );
+          if (flatLibraries) ...pinnedLibraries.map(sidebarLibraryKey),
+        });
         final primaryRows = <String, Widget>{
           if (widget.isOfflineMode && widget.onReconnect != null)
             _kReconnect: _buildReconnectItem(isCollapsed: isCollapsed),
@@ -995,13 +1027,29 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             ),
             if (nowPlayingTrack != null && musicService != null)
               'nowPlaying': _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
-            'libraries': _buildLibrariesSection(
-              visibleRows,
-              hiddenRows,
-              hiddenLibraries.length,
-              t,
-              isCollapsed: isCollapsed,
-            ),
+            if (flatLibraries)
+              for (final library in pinnedLibraries)
+                sidebarLibraryKey(library): _buildNavItem(
+                  icon: sidebarLibraryIcon(library),
+                  selectedIcon: sidebarLibraryIcon(library),
+                  label:
+                      _getNonUniqueLibraryNames(pinnedLibraries).contains(library.title) && library.serverName != null
+                      ? '${library.title} · ${library.serverName}'
+                      : library.title,
+                  isSelected:
+                      widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey,
+                  onTap: () => widget.onLibrarySelected(library.globalKey),
+                  focusNode: _focusTracker.get(sidebarLibraryKey(library)),
+                  isCollapsed: isCollapsed,
+                ),
+            if (!flatLibraries)
+              'libraries': _buildLibrariesSection(
+                visibleRows,
+                hiddenRows,
+                hiddenLibraries.length,
+                t,
+                isCollapsed: isCollapsed,
+              ),
             if (_showFavorites)
               'favorites': _buildNavItem(
                 selectedIcon: Symbols.favorite_rounded,
@@ -1014,8 +1062,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               ),
             if (_showCollections)
               'collections': _buildNavItem(
-                selectedIcon: Symbols.collections_rounded,
-                icon: Symbols.collections_rounded,
+                selectedIcon: Symbols.stacks_rounded,
+                icon: Symbols.stacks_rounded,
                 label: Translations.of(context).collections.title,
                 isSelected: false,
                 onTap: () => _openLibraryShortcut(favorites: false),
@@ -1076,15 +1124,17 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           if (primaryRows.containsKey(_kReconnect)) _kReconnect,
           ...resolveSidebarOrder(SettingsService.instance.read(SettingsService.sidebarOrder), primaryRows.keys),
         ];
-        final focusOrder = _buildFocusOrder(
-          visibleRows,
-          hiddenRows,
-          hasHiddenLibraries: hiddenLibraries.isNotEmpty,
-          hasLiveTv: hasLiveTv,
-          hasNowPlaying: nowPlayingTrack != null,
-          hasExplore: hasExplore,
-          isCollapsed: isCollapsed,
-        );
+        final focusOrder = flatLibraries
+            ? orderedKeys
+            : _buildFocusOrder(
+                visibleRows,
+                hiddenRows,
+                hasHiddenLibraries: hiddenLibraries.isNotEmpty,
+                hasLiveTv: hasLiveTv,
+                hasNowPlaying: nowPlayingTrack != null,
+                hasExplore: hasExplore,
+                isCollapsed: isCollapsed,
+              );
         _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(
           onTapOutside: (_) {
@@ -1108,14 +1158,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 decoration: const BoxDecoration(),
                 child: Stack(
                   children: [
-                    // Rail surface. A docked rail is transparent on TV so the
-                    // full-bleed backdrop continues behind it; content is
-                    // pushed clear of it, never covered. A floating panel
-                    // covers content, so it paints its surface on every
-                    // platform (#2079).
+                    // Keep the collapsed TV strip transparent over artwork.
+                    // Expansion paints a quiet panel for legible labels;
+                    // the shell retains its existing width and content offset.
                     Positioned.fill(
                       child: AnimatedOpacity(
-                        opacity: PlatformDetector.isTV() && !_isFloatingPanel ? 0.0 : 1.0,
+                        opacity: PlatformDetector.isTV() && isCollapsed && !_isFloatingPanel ? 0.0 : 1.0,
                         // Shares the width morph's duration/curve: a shorter
                         // fade strands a fully grown, fully transparent panel
                         // over the content part-way through the collapse.
@@ -1125,7 +1173,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                           duration: expandDuration,
                           curve: expandCurve,
                           decoration: BoxDecoration(
-                            color: t.surface,
+                            color: PlatformDetector.isTV() ? null : t.surface,
+                            gradient: PlatformDetector.isTV()
+                                ? LinearGradient(
+                                    colors: [t.surface.withValues(alpha: 0.98), t.surface.withValues(alpha: 0.85)],
+                                  )
+                                : null,
                             // Open rails read as an M3E panel: rounded
                             // trailing corners, extra-rounded plus an edge
                             // shadow while floating over content (modal)
@@ -1211,7 +1264,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       selectedIcon: selectedIcon,
       label: Text(
         label,
-        style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400),
+        style: TextStyle(
+          fontSize: PlatformDetector.isTV() ? 15 : 14,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
         overflow: .ellipsis,
         maxLines: 1,
       ),

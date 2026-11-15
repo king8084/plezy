@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Винаги показвай имената на сървърите в заглавията на хъбовете.",
     "groupLibrariesByServer": "Групирай библиотеките по сървър",
     "groupLibrariesByServerDescription": "Групирай библиотеките в страничната лента под всеки медиен сървър.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Винаги дръж страничната лента отворена",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Експортиране на настройките на Plezy",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Вградени",
@@ -1251,7 +1255,9 @@
       "birthplace": "Място на раждане",
       "dateWithAge": "${date} (на ${age} г.)",
       "dateWithAgeAtDeath": "${date} (на ${age} г.)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Търсенето е неуспешно: ${error}",

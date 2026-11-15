@@ -22,6 +22,11 @@ import 'package:plezy/media/catalog_item_ref.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/catalog/simkl_catalog_source.dart';
+import 'package:plezy/services/catalog/catalog_library_matcher.dart';
+import 'package:plezy/services/catalog/detail_recommendations.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/utils/external_ids.dart';
@@ -217,6 +222,119 @@ void main() {
       }
       expect(hubs, hasLength(1));
       expect(hubs.single.items.single.id, owned.id);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final disconnect in [false, true]) {
+    testWidgets('Simkl title shelf loads independently between owned and Seerr, disconnect=$disconnect', (
+      tester,
+    ) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final show = testMediaItem(
+        id: 'show',
+        kind: MediaKind.show,
+        title: 'Modern Family',
+        backend: MediaBackend.jellyfin,
+        serverId: 'server_1',
+      );
+      final local = testMediaItem(
+        id: 'owned',
+        kind: MediaKind.show,
+        title: 'Library show',
+        backend: MediaBackend.jellyfin,
+        serverId: 'server_1',
+        thumbPath: '/own-poster',
+      );
+      final server = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {},
+        externalIds: const ExternalIds(tmdb: 1),
+        relatedHubs: [
+          MediaHub(id: 'local-related', title: t.discover.moreLikeThis, type: 'show', items: [local]),
+        ],
+      );
+      final multiServer = testMultiServer(clients: [server]).provider;
+      final seerrClient = SeerrClient(
+        const SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'owner',
+          userId: 1,
+          displayName: 'Owner',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+          secret: 'test',
+          cookie: 'test',
+          permissions: SeerrPermission.admin,
+          product: SeerrProduct.jellyseerr,
+        ),
+        httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('/settings/public')) return jsonResponse({}, status: 404);
+          return jsonResponse({
+            'page': 1,
+            'totalPages': 1,
+            'results': [
+              {'id': 100, 'name': 'Seerr recommendation'},
+            ],
+          });
+        }),
+        onSessionInvalidated: () {},
+      );
+      final seerr = SeerrCatalogSource(seerrClient);
+      final gate = Completer<List<CatalogItem>>();
+      final simkl = _GatedSimklRecommendations(gate.future);
+      final sources = _DetailRecommendationSources(seerr, simkl);
+      addTearDown(() {
+        sources.dispose();
+        seerr.dispose();
+        seerrClient.dispose();
+      });
+      final matcher = _RecommendationMatcher(local);
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+            Provider<CatalogLibraryMatcher>.value(value: matcher),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(find.byKey(tvDetailRevealGateKey)).opacity, 1);
+      expect(tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs.map((hub) => hub.title), [
+        t.discover.moreLikeThisOwned,
+        t.discover.moreLikeThisRequest,
+      ]);
+      if (disconnect) sources.disconnectSimkl();
+      gate.complete([
+        const CatalogItem(
+          source: CatalogSourceId.simkl,
+          kind: MediaKind.show,
+          title: 'Recommended',
+          ids: CatalogItemIds(simkl: 2, tmdb: 2),
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      final hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      expect(hubs.map((hub) => hub.title), [
+        t.discover.moreLikeThisOwned,
+        if (!disconnect) t.discover.moreLikeThisSimkl,
+        t.discover.moreLikeThisRequest,
+      ]);
+      if (!disconnect) {
+        final recommended = hubs[1].items.single;
+        expect(recommended.id, local.id);
+        expect(recommended.thumbPath, local.thumbPath);
+        expect(RecommendationCardData.fromItem(recommended)!.availability, RecommendationAvailability.owned);
+      }
       expect(tester.takeException(), isNull);
     });
   }
@@ -3875,6 +3993,38 @@ Map<String, dynamic> _previewItem(
     },
     'Media': reverseVersions ? versions.reversed.toList() : versions,
   };
+}
+
+class _GatedSimklRecommendations extends Fake implements SimklCatalogSource {
+  _GatedSimklRecommendations(this.result);
+  final Future<List<CatalogItem>> result;
+  @override
+  Future<List<CatalogItem>> fetchTitleRecommendations(MediaKind kind, ExternalIds external) => result;
+}
+
+class _RecommendationMatcher extends Fake implements CatalogLibraryMatcher {
+  _RecommendationMatcher(this.owned);
+  final MediaItem owned;
+  @override
+  Future<LibraryLookupResult> match(CatalogItem item) async => (
+    items: [owned],
+    succeededServerIds: {'server_1'},
+    failedServerIds: <String>{},
+    cancelledServerIds: <String>{},
+    unqueriedServerIds: <String>{},
+  );
+}
+
+class _DetailRecommendationSources extends CatalogSourcesProvider {
+  _DetailRecommendationSources(this.seerrSource, this.simklSource);
+  @override
+  final SeerrCatalogSource seerrSource;
+  @override
+  SimklCatalogSource? simklSource;
+  void disconnectSimkl() {
+    simklSource = null;
+    notifyListeners();
+  }
 }
 
 class _DetailSeerrSources extends CatalogSourcesProvider {

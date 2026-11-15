@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Всегда показывать имена серверов в заголовках разделов.",
     "groupLibrariesByServer": "Группировать библиотеки по серверам",
     "groupLibrariesByServerDescription": "Группировать библиотеки боковой панели по медиасерверам.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Всегда держать боковую панель открытой",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Экспорт настроек Plezy",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Встроенные",
@@ -1261,7 +1265,9 @@
       "birthplace": "Место рождения",
       "dateWithAge": "${date} (возраст: ${age})",
       "dateWithAgeAtDeath": "${date} (в возрасте ${age})"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",

@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Bölüm başlıklarında her zaman sunucu adlarını göster.",
     "groupLibrariesByServer": "Kitaplıkları Sunucuya Göre Grupla",
     "groupLibrariesByServerDescription": "Yan menü kitaplıklarını her medya sunucusunun altında grupla.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yan Menüyü Her Zaman Açık Tut",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy ayarlarını dışa aktar",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Yerleşik",
@@ -1251,7 +1255,9 @@
       "birthplace": "Doğum yeri",
       "dateWithAge": "${date} (${age} yaşında)",
       "dateWithAgeAtDeath": "${date} (${age} yaşında)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Arama başarısız: ${error}",

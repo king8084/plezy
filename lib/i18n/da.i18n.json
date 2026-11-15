@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Vis altid servernavne i titler på hubber.",
     "groupLibrariesByServer": "Grupper biblioteker efter server",
     "groupLibrariesByServerDescription": "Gruppér bibliotekerne i sidepanelet under hver medieserver.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Hold altid sidepanelet åbent",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Eksportér Plezy-indstillinger",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Indbygget",
@@ -1251,7 +1255,9 @@
       "birthplace": "Fødested",
       "dateWithAge": "${date} (${age} år)",
       "dateWithAgeAtDeath": "${date} (${age} år)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Søgning mislykkedes: ${error}",

@@ -2,42 +2,55 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Validated app source: `db99359cbc5fbed709fa7104014fe798ed6fff40`.
-- Build candidate: `d627ca4c7d422e9ea83198c1f889a8399143f9a4` (script-only fix).
-- All 15 sanity CI jobs passed on the original app-source checkpoint:
-  https://github.com/king8084/plezy/actions/runs/43691531120.
+- Installed app source: `73439a2268b7426b47ea71c552c19e6954e183c4` (build 21).
+- Current candidate: Simkl recommendation row and redesigned TV sidebar.
+  Local release gate passed; cloud/native CI pending. Not archived or installed.
 - Draft release PR into the owner's fork: https://github.com/king8084/plezy/pull/1.
   Both branches belong to `king8084/plezy`; upstream is untouched.
-- Last installed source: `d627ca4c7d422e9ea83198c1f889a8399143f9a4` (build 20).
-- Previous installed source `22f5fc8bb` and its IPA backups are preserved.
-- Owner approved the existing Home / Continue Watching and season layouts.
-- Build 20 signed and installed in place successfully; no deletion/uninstall.
-  Candidate appearance, retained settings and playback await owner confirmation.
-- Owner authorized build/install on November 15, with build-scoped Unraid
-  permission; Plezy is closed and Apple TV is in Settings.
-- Build 19 setup failure and the d627ca4 dependency fix are preserved privately.
-- Build 20 succeeded on d627ca4 in 22m 59s (native archive 5m 15s):
-  https://codemagic.io/app/6af73c658b158cee7474719c/build/6af99fcc90e83b09c4fa8c1a.
+- Previous installed sources `d627ca4c7` (build 20) and `22f5fc8bb`, with
+  their IPA backups, are preserved. Owner approved the earlier layouts.
+- Build 21 signed and installed in place successfully; no deletion/uninstall.
+  Current appearance, retained settings and playback await owner confirmation.
 - Full historical handoff, verified Git bundle, pinned engine and installed IPA are retained privately
   in `.git/plezy-private/release-2026-11-15/`. Keep that archive out of commits.
 
-## Pending after build 20
+## Remaining-time update / build 21
 - Episode/movie TV header runtime now shows remaining time for active progress,
   e.g. `14 min left`; unstarted/completed items and series keep total runtime.
 - Shared by Home/spotlights and detail pages; no new fetch, geometry or file-info
   duration change. Remaining minutes round up, including sub-minute progress.
-- 190 formatter/spotlight/detail/real-font layout regressions, full analysis and
-  strict translation checks pass. Bindings regenerated; source-only, not installed.
+- Required analysis/unit/tvOS native CI passes on 73439a2 (run 43719430628).
+- Cloud gate passed: 8,622 Flutter tests, 7 skipped, plus analysis/codegen/guards.
+- Archive, IPA checks and in-place installation passed. Receipts and backups
+  remain private. Build-scoped Unraid authorization is fulfilled.
 
-## Current release work (November 15)
+## Simkl and sidebar enhancement (November 15)
+- TV show/movie detail order: owned related titles, Simkl, Seerr request row.
+  Simkl reads `users_recommendations`, never the genre-based `similar` field;
+  deduplicates by native entry identity, caches/coalesces and allows up to 60.
+- Verified library copies keep their artwork, favorite state, menus and routes.
+  Missing titles open Seerr where a TMDB ID is known; show Need request or
+  Requested. Failed/offline library checks never imply absence. Loading is
+  supplemental, bounded to four availability probes, and navigation-safe.
+- IMDb-only score and compact boxed votes reuse cached community enrichment,
+  including MDBList. No substitution of TMDB/Simkl scores or recommendation votes.
+- TV sidebar uses outlined icons and a legible focused panel. Libraries are
+  independent top-level pins; the old Libraries folder is gone on TV.
+- Appearance > Customize sidebar has explicit Pin / Up / Down controls,
+  immediate saving, no move mode, and no inactive service entries. Existing
+  order/pins survive; unavailable pins remain saved. Desktop grouping remains.
+- Full local gate: 8,645 passed, 7 skipped; strict translations, isolated codegen,
+  formatting, analyzer, icon/string/error/CI guards pass. Real-font Home tests
+  cover all seven poster sizes; sidebar and pin persistence render tests pass.
+- No Apple TV build or Unraid access authorized/used for this enhancement.
+
+## Prior audit hardening
 Owner authorizes audit fixes, bug regression work and a subtle metallic gold
 border on favorite show posters. Preserve approved typography, synopsis slots,
 poster geometry and navigation. Do not add the proposed feature backlog.
 
 Implemented and source/native CI validated:
-- Full sanity CI now covers the working branch. The unsigned archive workflow
-  runs translation, codegen, format, analysis and full Flutter checks first.
-- Translation keys normalized and generated bindings regenerated.
+- Sanity CI covers the branch; every archive runs the complete release gate.
 - Removed the household server address from the connection form.
 - Read more keeps its large complete text and scrolls with remote arrows;
   episode titles include series, season/episode number and episode title.
@@ -54,23 +67,14 @@ Implemented and source/native CI validated:
   updates pass local relay race/build/scans and website tests/build/audit; no
   running service, website deployment or server container was changed.
 
-## Validation
-- Build 20 release gate passed: 8,610 Flutter tests, 7 skipped; isolated codegen,
-  strict translations, formatting, full analysis, icons and repository guards pass.
-- Vendored settings-storage and wakelock suites: 60 tests pass. Unused code/files
-  checks pass. Favorite/menu connection-recovery follow-up: 84 tests pass.
-- Final sanity CI on `db99359cb`: all 15 jobs pass, including full unit/package
-  tests, Code Analysis, tvOS/iOS/macOS native, Android, both Windows architectures,
-  both Linux native runs, native format, Linux packaging, server and website.
-- Build 20 archive, IPA CRC/identity/app-group checks and in-place installation
-  pass. Signer checksum matched the documented patch; its binary is unchanged.
-- Corrected-source PR CI 43694202831 passes all 14 enabled jobs. Branch CI
-  43694199314 passes the other 14 jobs but iOS audio 2x-speed tests failed; an
-  isolated retry still failed one. These unchanged upstream tests need separate
-  diagnosis. Do not conceal failures or relax playback/test policy to obtain green.
-- Record Apple native CI and formatting results separately from Dart validation.
-- Installation is complete. Candidate appearance, retained settings and playback
-  remain unverified by the owner; do not infer those from installation success.
+## Prior native CI / unresolved issues
+- Build 21 branch CI 43719426061 passes 14 jobs; iOS fails the paused
+  audio 2x-speed test. The required analysis/unit/tvOS checks pass on both runs.
+  The parallel PR run 43719430628 passed all 14 enabled jobs, including both iOS
+  speed tests, on identical source. Duplicate push/PR triggers explain repeated
+  emails. Root cause of inconsistent iOS results remains unresolved; preserve
+  both logs. Do not hide failures or weaken assertions to obtain green.
+- Track native CI, archive, installation and owner playback separately.
 
 ## Deferred until device evidence / release checks
 - Duplicate display-criteria watchdog hypothesis: saved traces do not establish
@@ -91,8 +95,6 @@ Implemented and source/native CI validated:
   authorization; app closed, Apple TV awake in Settings before installation.
 - Keep environment addresses, household device names and install receipts private.
 - After strings change: clean translations, regenerate, commit generated outputs.
-- Source changes, regenerated bindings and this handoff are committed on the
-  working branch. Build 20 receipts and recovery bundles remain private.
-- Build-scoped Unraid authorization is fulfilled. Next: owner visual/settings/
-  playback checks and separate iOS test diagnosis. PR #1/main approval remains
-  pending; the build request does not authorize merging it.
+- Next: current-candidate cloud CI; archive/install only after a new explicit
+  build request. Diagnose inconsistent iOS speed results separately.
+  PR #1/main approval remains pending. Recovery receipts/bundles remain private.

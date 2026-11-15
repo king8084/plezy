@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Toon servernamen altijd in hubtitels.",
     "groupLibrariesByServer": "Bibliotheken groeperen per server",
     "groupLibrariesByServerDescription": "Groepeer zijbalkbibliotheken onder elke mediaserver.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy-instellingen exporteren",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Ingebouwd",
@@ -1251,7 +1255,9 @@
       "birthplace": "Geboorteplaats",
       "dateWithAge": "${date} (${age} jaar)",
       "dateWithAgeAtDeath": "${date} (op ${age}-jarige leeftijd)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",

@@ -497,6 +497,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       posterVariants: simklPosterVariants(item.poster),
       altTitles: _alternateTitles(title, null, extra: item.englishTitle) ?? const [],
       format: _formatFor(type, item.animeType),
+      ratings: _ratingsFor(item.ratings),
       recommendationCount: item.usersCount != null && item.usersCount! >= 0 ? item.usersCount : null,
       recommendationPercent: _percentFraction(item.usersPercent),
     );
@@ -548,6 +549,42 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       budget: detail.budget,
       revenue: detail.revenue,
     );
+  }
+
+  final _recommendationCache = <String, ({DateTime at, List<CatalogItem> items})>{};
+  final _recommendationLoads = KeyedFutureCoalescer<String, List<CatalogItem>>();
+
+  /// Recommendations chosen for viewers of this title. Never substitutes the
+  /// separate genre-based `similar` field, including when recommendations are empty.
+  Future<List<CatalogItem>> fetchTitleRecommendations(MediaKind kind, ExternalIds external) {
+    if (kind != MediaKind.movie && kind != MediaKind.show) return Future.value(const []);
+    final ids = CatalogItemIds.fromExternal(external);
+    if (!ids.hasAny) return Future.value(const []);
+    final key = ids.identityKeyFor(kind);
+    final cached = _recommendationCache[key];
+    if (cached != null && DateTime.now().difference(cached.at) < _rowCacheTtl) return Future.value(cached.items);
+    return _recommendationLoads.run(key, () async {
+      final location = await _client.getRedirectLocation({
+        'imdb': ?external.imdb,
+        if (external.tmdb case final id?) ...{'tmdb': '$id', 'type': kind == MediaKind.movie ? 'movie' : 'tv'},
+        'tvdb': ?external.tvdb?.toString(),
+      });
+      final page = location == null ? null : _pageFor(location);
+      if (page == null) return const [];
+      final detail = await _client.getDetail(page.type, page.id);
+      final seen = <String>{};
+      final items = <CatalogItem>[
+        for (final recommendation in detail?.recommendations ?? const <SimklRecommendation>[])
+          if (recommendation.ids.hasAny && recommendation.ids.simkl != page.id)
+            _catalogItemFromRecommendation(recommendation),
+      ].where((item) => seen.add(item.entryIdentityKey)).take(60).toList();
+      _recommendationCache.remove(key);
+      _recommendationCache[key] = (at: DateTime.now(), items: items);
+      while (_recommendationCache.length > 64) {
+        _recommendationCache.remove(_recommendationCache.keys.first);
+      }
+      return items;
+    });
   }
 
   @override

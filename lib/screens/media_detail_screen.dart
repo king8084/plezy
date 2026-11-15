@@ -68,6 +68,9 @@ import '../utils/layout_constants.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/seerr_catalog_source.dart';
+import '../services/catalog/simkl_catalog_source.dart';
+import '../services/catalog/catalog_library_matcher.dart';
+import '../services/catalog/detail_recommendations.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -115,6 +118,7 @@ import '../utils/error_message_utils.dart';
 part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
 part 'media_detail/seerr_recommendations.dart';
+part 'media_detail/simkl_recommendations.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -450,6 +454,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   int? _seerrRecommendationsPermissions;
   int _seerrRecommendationsGeneration = 0;
   MediaHub? _seerrRecommendationsHub;
+  SimklCatalogSource? _simklRecommendationsSource;
+  int _simklRecommendationsGeneration = 0;
+  MediaHub? _simklRecommendationsHub;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
 
@@ -983,6 +990,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncSeerrRecommendationsSource();
+    _syncSimklRecommendationsSource();
     final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
     _trackTvDetailRouteSettled(route);
@@ -1029,6 +1037,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void didPopNext() {
     _invalidatePlaybackProbes(refreshItems: true);
     unawaited(_loadSeerrRecommendations());
+    unawaited(_loadSimklRecommendations());
     setStateIfMounted(() {});
     _suppressBackAfterPop = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1709,6 +1718,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _invalidatePlaybackProbes(refreshItems: true);
     _seerrRecommendationsGeneration++;
     _seerrRecommendationsHub = null;
+    _simklRecommendationsGeneration++;
+    _simklRecommendationsHub = null;
     setState(() {
       _isLoadingMetadata = true;
       _hasLoadedExtras = false;
@@ -1828,6 +1839,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       unawaited(_loadExtras());
       unawaited(_loadRelatedHubs());
       unawaited(_loadSeerrRecommendations());
+      unawaited(_loadSimklRecommendations());
     } catch (e) {
       // Fallback to passed metadata on error
       if (!_canUseDetail) return;
@@ -4645,6 +4657,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           .where((hub) => hub.items.isNotEmpty)
           .map((hub) => hub.title == t.discover.moreLikeThis ? hub.copyWith(title: t.discover.moreLikeThisOwned) : hub),
     );
+    final simklHub = _simklRecommendationsHub;
+    if (simklHub != null && _simklRecommendationsSource != null) hubs.add(simklHub);
     final requestHub = _seerrRecommendationsHub;
     if (requestHub != null && _seerrRecommendationsSource?.canRequest(metadata.kind) == true) hubs.add(requestHub);
     return hubs;

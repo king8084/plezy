@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Бөлім тақырыптарында әрдайым сервер атын көрсету.",
     "groupLibrariesByServer": "Кітапханаларды сервер бойынша топтау",
     "groupLibrariesByServerDescription": "Мүйістік мәзірдегі кітапханаларды серверлер бойынша топтау.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Сүйістік мәзірді әрдайым ашық ұстау",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Plezy параметрлерін экспорттау",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Кірістірілген",
@@ -1251,7 +1255,9 @@
       "birthplace": "Туған жері",
       "dateWithAge": "${date} (${age} жаста)",
       "dateWithAgeAtDeath": "${date} (${age} жасында)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Іздеу қатесі: ${error}",

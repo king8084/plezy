@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i innehållssektionernas rubriker.",
     "groupLibrariesByServer": "Gruppera bibliotek efter server",
     "groupLibrariesByServerDescription": "Gruppera biblioteken i sidofältet under respektive medieserver.",
-    "sidebarOrder": "",
-    "sidebarOrderDescription": "",
     "pinFavoritesToSidebar": "",
     "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Håll alltid sidofältet öppet",
@@ -530,7 +528,13 @@
     "exportDialogTitle": "Exportera Plezy-inställningar",
     "pinnedHomeCollections": "",
     "pinnedHomeCollectionsDescription": "",
-    "pinnedCollectionUnavailable": ""
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": ""
   },
   "themeEditor": {
     "builtIn": "Inbyggda",
@@ -1251,7 +1255,9 @@
       "birthplace": "Födelseort",
       "dateWithAge": "${date} (${age} år)",
       "dateWithAgeAtDeath": "${date} (blev ${age} år)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Sökningen misslyckades: ${error}",
