@@ -719,10 +719,7 @@ void main() {
       final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
       final scale = TvLayoutConstants.scaleForSize(canvas);
       expect(tester.widget<Text>(summary).style!.fontSize, 14 * scale);
-      expect(
-        tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_title'))).style!.fontSize,
-        24 * scale,
-      );
+      expect(tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_title'))).style!.fontSize, 24 * scale);
       expect(tester.widget<Text>(summary).maxLines, 4);
       expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
       expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
@@ -764,6 +761,18 @@ void main() {
                 (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).id == show.id,
               )
               .first;
+          final homeRailHeight = TvBrowseRailLayout.estimateHeight(
+            size: canvas,
+            hubs: [
+              MediaHub(id: 'related', title: 'Related', type: 'show', items: [show]),
+            ],
+            density: LibraryDensity.max,
+            episodePosterMode: EpisodePosterMode.episodeThumbnail,
+            tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+            showNextHubPeek: false,
+            maxHeight: TvSpotlightLayout.maxRailHeight(canvas, textScale: 1),
+          );
+          expect(tester.getSize(find.byType(TvBrowseRail)).height, closeTo(homeRailHeight, 0.01));
           expect(
             tester.getTopLeft(activeCard).dy,
             greaterThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),

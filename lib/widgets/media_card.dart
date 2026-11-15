@@ -129,13 +129,13 @@ String _buildMediaMetadataLine(
     final isSeerr = catalogItem?.source == CatalogSourceId.seerr;
     final imdb = isSeerr ? seerrRating ?? catalogImdbRating(catalogItem!, const []) : null;
     if ((isSeerr ? imdb?.value : item.rating) case final rating?) {
-      final votes = compact
-          ? null
-          : isSeerr
+      final votes = isSeerr
           ? imdb?.votes
+          : compact
+          ? null
           : catalogItem?.votes;
       final voteSuffix = votes != null && votes > 0 ? ' (${_formatCompactCatalogNumber(votes)})' : '';
-      return '${formatRating(rating)}★$voteSuffix';
+      return isSeerr ? '★ ${formatRating(rating)}$voteSuffix' : '${formatRating(rating)}★$voteSuffix';
     }
     return null;
   }

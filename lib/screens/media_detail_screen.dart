@@ -141,7 +141,7 @@ const double _heroSideInset = 16;
 /// beside the year, certification, runtime and quality labels (#2569).
 bool _isCompactHero(double contentWidth) => contentWidth < ScreenBreakpoints.mobile;
 
-const double _tvDetailTallPosterScale = 0.72;
+const double _tvDetailTallPosterScale = TvBrowseRailLayout.compactTallPosterScale;
 const double _tvDetailEpisodeThumbnailScale = 0.66;
 const double _tvDetailExtrasThumbnailScale = 0.72;
 const double _tvDetailActionSize = 46;
@@ -4021,7 +4021,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final episodeTitleLineHeight = 30 * scale;
         final episodeTitleGap = 4 * scale;
         final metadataLineHeight = 22 * scale;
-        final inlineTracks = metadata.isShow || metadata.isSeason || metadata.isEpisode;
+        final activeHub = _tvDetailActiveHubId.value;
+        final browsingLowerRow =
+            !expandShowInfo &&
+            activeHub != null &&
+            activeHub != 'detail_episodes' &&
+            !activeHub.startsWith(_tvDetailSeasonHubIdPrefix) &&
+            (metadata.isShow || metadata.isSeason || metadata.isEpisode);
+        final inlineTracks = !browsingLowerRow && (metadata.isShow || metadata.isSeason || metadata.isEpisode);
         final tracksGap = 8 * scale;
         final tracksHeight = inlineTracks ? MediaTechnicalBadges.rowHeight(scale, 1) + tracksGap : 0.0;
         final logoMetadataGap = 14 * scale;
@@ -4036,7 +4043,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final summaryLineHeight = summaryFontSize * 1.35;
         final actionHeight = _tvDetailActionSize * scale;
         final actionGap = (expandShowInfo ? 24 : 16) * scale;
-        final hasDescription = description != null && description.isNotEmpty;
+        final hasDescription = !browsingLowerRow && description != null && description.isNotEmpty;
         final hasEpisodeTitle = episodeTitle != null && episodeTitle.isNotEmpty;
         final episodeTitleBlockHeight = hasEpisodeTitle ? episodeTitleLineHeight + episodeTitleGap : 0.0;
         // Genres belong to the show, not the focused episode, and do not change
@@ -4481,7 +4488,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final activeId = _tvDetailActiveHubId.value ?? _tvDetailInitialHubId(_metadata);
     final activeHub = hubs.where((hub) => hub.id == activeId).firstOrNull ?? hubs.firstOrNull;
     if (activeHub == null || !(_metadata.isShow || _metadata.isSeason || _metadata.isEpisode)) return null;
-    final episodeTitleHeight = _isTvDetailEpisodeHub(activeHub) ? 34.0 : 0.0;
+    if (!_isTvDetailEpisodeHub(activeHub)) {
+      return TvSpotlightLayout.maxRailHeight(
+        size,
+        textScale: SettingsService.instance.read(SettingsService.homeTextSize) / 100,
+      );
+    }
+    const episodeTitleHeight = 34.0;
     final scale = TvLayoutConstants.scaleForSize(size);
     final top = _hasTvSeasonTabs
         ? MediaQuery.paddingOf(context).top + 64 + 48 + 16 * scale

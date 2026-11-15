@@ -777,6 +777,8 @@
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
+    "addToFavorites": "Add to favorites",
+    "unfavorite": "Unfavorite",
     "playFromBeginning": "Play from Beginning",
     "playVersion": "Play Version..."
   },

@@ -4,6 +4,32 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 owner confirms Home / Continue Watching is finally correct and the
+episode/season page is fine. New source changes requested afterwards:
+- Long-press menus offer “Add to favorites” / “Unfavorite” on servers supporting
+  user favorites, with offline gating. Episodes always resolve grandparent show,
+  seasons resolve parent show, regardless of entry surface; movies target the
+  movie. Parent-show state is read for the menu, writes use that same identity,
+  successful writes refresh the caller, and failed writes do not flip the label.
+  Own-item menu state updates locally without adding a blocking metadata read.
+- Lower season-detail rows now use Home's 0.8 poster target and the exact same
+  available-height cap (shared helper), rather than the episode-reading cap and
+  0.72 target. While browsing these rows the description/file-tag band is omitted
+  to prioritize the cards; Up to Show Info/actions restores the reading view.
+  The smaller episode thumbnails and approved Home layout remain intact.
+- Compact Seerr card captions now include IMDb vote count beside the gold star
+  and score, e.g. `★ 5.6 (1.99K)`, without IMDb/votes labels. Count and score use
+  the same existing MDBList cache as title details, with no TMDB vote fallback.
+All 428 affected menu/card/catalog-detail/season-detail/Home/rail/Explore/Favorites
+tests pass (`/tmp/plezy-favorites-rows-tests.log`); eight-file analysis and diff
+checks pass (`/tmp/plezy-favorites-rows-analyze.log`). New checks cover favorite
+add/remove/reopen/failure/offline states, canonical show writes from episode and
+season surfaces, compact/list score/count cache consistency, and exact Home-size
+recommendation rails at 960x540, 1280x720 and 1920x1080. An existing menu tap test
+now scrolls Add to into view after adding the favorite row. No new build/install
+or Unraid access; installed remains `4838fc2ac`. Next: explicit owner build
+request and build-scoped Unraid permission, then native checks and playback.
+
 November 15 owner-authorized build #16 completed: owner requested Apple TV
 build, granted build-scoped Unraid permission and confirmed Plezy closed / TV
 in Settings. Codemagic build `6af90c5d90e83b09c4fa6969` started at 04:35 Arabia
@@ -753,6 +779,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 15, installed `4838fc2`: owner confirms Home / Continue Watching is
+  nailed and episode/season layout is fine. Lower supplementary cards were too
+  small, prompting the new source correction above. Playback/settings retention
+  have not been newly confirmed; do not infer them from visual approval.
 - November 15, `4838fc2`: Codemagic build #16 `6af90c5d90e83b09c4fa6969`
   passed in 5m 17s, native archive 2m 54s, IPA integrity/tvOS/app-group checks
   pass. tvsign reports successful in-place installation on Basement at 04:43.
@@ -964,6 +994,13 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
+Build the new favorite/lower-row/vote-caption source changes only after an
+explicit owner Apple TV build request and build-scoped Unraid permission.
+After installation, owner checks favorite toggling from all show surfaces,
+Home-size lower rows, compact IMDb counts and retained approved Home layout.
+Owner has confirmed installed `4838fc2ac` Home and episode/season visuals;
+new-build playback and settings retention remain separate checks.
+
 Owner test of installed `4838fc2ac`: restored normal Home header/logo/tag sizes,
 smaller independent Home and season synopses, four browsing episode lines,
 five Show Info lines, slightly smaller episode thumbnails and adaptive bounds.

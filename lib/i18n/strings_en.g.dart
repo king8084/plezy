@@ -2150,6 +2150,12 @@ class Translations$mediaMenu$en {
 	/// en: 'Rate'
 	String get rate => 'Rate';
 
+	/// en: 'Add to favorites'
+	String get addToFavorites => 'Add to favorites';
+
+	/// en: 'Unfavorite'
+	String get unfavorite => 'Unfavorite';
+
 	/// en: 'Play from Beginning'
 	String get playFromBeginning => 'Play from Beginning';
 
@@ -8950,6 +8956,8 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
+			'mediaMenu.addToFavorites' => 'Add to favorites',
+			'mediaMenu.unfavorite' => 'Unfavorite',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
 			'rateSheet.title' => 'Rate',
@@ -9242,10 +9250,10 @@ extension on Translations {
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
 			'profiles.profileRenamed' => 'Profile renamed.',
-			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
-			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
+			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
 			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
@@ -9756,10 +9764,10 @@ extension on Translations {
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
-			'liveTv.goToLive' => 'Go to Live',
-			'liveTv.record' => 'Record',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.goToLive' => 'Go to Live',
+			'liveTv.record' => 'Record',
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
@@ -10270,10 +10278,10 @@ extension on Translations {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',
-			'performanceOverlay.passthrough' => 'Passthrough',
-			'performanceOverlay.aspect' => 'Aspect',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.passthrough' => 'Passthrough',
+			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',
 			'performanceOverlay.dvPath' => 'DV Path',

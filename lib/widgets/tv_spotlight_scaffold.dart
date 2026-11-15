@@ -102,18 +102,12 @@ class TvSpotlightScaffold extends StatelessWidget {
     // Reserve the complete episode header, including three smaller synopsis
     // lines, independently of the selected title and poster-size preference.
     // The rail uses this same limit when rendering; estimates cannot diverge.
-    final maxRailHeight =
-        (size.height -
-                spotlightTop -
-                readingGap -
-                TvSpotlightLayout.infoHeight(
-                  scale: TvLayoutConstants.scaleForSize(size),
-                  textScale: textScale,
-                  episodeTitle: hasEpisodes,
-                  technicalRow: hasFiles,
-                ))
-            .clamp(0.0, size.height)
-            .toDouble();
+    final maxRailHeight = TvSpotlightLayout.maxRailHeight(
+      size,
+      textScale: textScale,
+      episodeTitle: hasEpisodes,
+      technicalRow: hasFiles,
+    );
     final railHeight = hubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(

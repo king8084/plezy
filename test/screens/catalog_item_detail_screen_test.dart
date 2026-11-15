@@ -1106,7 +1106,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(hasText('5.6'), isTrue);
+      expect(hasText('★ 5.6 (1.99K)'), isTrue);
+      expect(hasText('IMDb'), isFalse);
+      expect(hasText('votes'), isFalse);
+      expect(hasText('(999)'), isFalse);
       expect(hasText('6.6'), isFalse);
       // Opening the title uses the same cached response as the card.
       final ratings = await sources.communityRatingsForCatalogItem(item).last;
@@ -1114,7 +1117,10 @@ void main() {
       expect(calls, 1);
       // Same identity/item refresh retains the subscription and cached score.
       await pumpCard(item);
-      expect(hasText('5.6'), isTrue);
+      expect(hasText('★ 5.6 (1.99K)'), isTrue);
+      expect(hasText('IMDb'), isFalse);
+      expect(hasText('votes'), isFalse);
+      expect(hasText('(999)'), isFalse);
       expect(calls, 1);
       expect(tester.takeException(), isNull);
     });

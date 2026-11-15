@@ -94,6 +94,7 @@ class _MenuContext {
   final bool showWatchlistEntry;
   final bool watchlistRemoveOffered;
   final bool canDeleteFromServer;
+  final MediaItem? favoriteItem;
 
   /// A downloads folder (see [MediaContextMenu.isOffline]).
   final bool isDownloadsFolder;
@@ -111,6 +112,7 @@ class _MenuContext {
     required this.showWatchlistEntry,
     required this.watchlistRemoveOffered,
     required this.canDeleteFromServer,
+    this.favoriteItem,
   }) : isDownloadsFolder = false;
 
   /// A downloads folder's entries act on local downloads, so none of the
@@ -127,6 +129,7 @@ class _MenuContext {
       showWatchlistEntry = false,
       watchlistRemoveOffered = false,
       canDeleteFromServer = false,
+      favoriteItem = null,
       isDownloadsFolder = true;
 
   bool get isPlaylist => playlist != null;
@@ -280,6 +283,13 @@ class MediaContextMenu extends StatefulWidget {
 
 class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
+  MediaItem? _updatedFavorite;
+
+  @override
+  void didUpdateWidget(covariant MediaContextMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.item, widget.item)) _updatedFavorite = null;
+  }
 
   bool _openedFromKeyboard = false;
   bool _isContextMenuOpen = false;
@@ -530,6 +540,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
+    final favoritesOnline =
+        itemServerOnline && !widget.isOffline && context.read<OfflineModeProvider?>()?.isOffline != true;
 
     // Watchlist (movies and shows), backed by the connected catalog sources
     // (Trakt, Plex, MAL, ...). Whether THIS item resolves in a source needs
@@ -584,6 +596,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           ),
           isAdminActionAllowed: isAdmin,
         );
+    MediaItem? favoriteItem;
+    if (mediaItem != null && mediaClient?.capabilities.userFavorites == true && favoritesOnline) {
+      // Favorites represent the series on every surface, including episode
+      // thumbnails and season tabs, rather than an individual episode/season.
+      final targetId = mediaItem.isEpisode
+          ? mediaItem.grandparentId
+          : mediaItem.isSeason
+          ? mediaItem.parentId
+          : (mediaItem.isMovie || mediaItem.isShow ? mediaItem.id : null);
+      if (targetId != null) {
+        try {
+          final detail = targetId == mediaItem.id
+              ? _updatedFavorite ?? mediaItem
+              : await mediaClient!.fetchItem(targetId);
+          if (detail != null && detail.id == targetId && (detail.isShow || detail.isMovie)) favoriteItem = detail;
+        } catch (e) {
+          appLogger.d('Favorite state unavailable for context menu', error: e);
+        }
+      }
+    }
     return _MenuContext(
       mediaItem: mediaItem,
       playlist: playlist,
@@ -597,6 +629,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       showWatchlistEntry: showWatchlistEntry,
       watchlistRemoveOffered: watchlistRemoveOffered,
       canDeleteFromServer: canDeleteFromServer,
+      favoriteItem: favoriteItem,
     );
   }
 
@@ -658,6 +691,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     return [
       if (mediaKind.isMusic) ..._musicMenuActions(context, menu, mediaItem),
+      if (menu.favoriteItem case final favorite?)
+        _MenuAction(
+          value: 'toggle_favorite',
+          icon: Symbols.favorite_rounded,
+          label: favorite.isFavorite == true ? t.mediaMenu.unfavorite : t.mediaMenu.addToFavorites,
+        ),
       if (hasActiveProgress)
         _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
       // Trailer playback. The detail row may hide its trailer button on small
@@ -940,6 +979,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         outcome.didNavigate = true;
         if (context.mounted) {
           await navigateToVideoPlayer(context, metadata: mediaItem.copyWith(viewOffsetMs: 0), resolveWatchState: false);
+        }
+        break;
+      case 'toggle_favorite':
+        final favorite = menu.favoriteItem;
+        if (favorite != null && menu.mediaClient != null) {
+          final selected = favorite.isFavorite != true;
+          await menu.mediaClient!.setFavorite(favorite, selected);
+          final updated = favorite.copyWith(isFavorite: selected);
+          if (favorite.id == mediaItem.id) _updatedFavorite = updated;
+          _notifyRefresh(updated);
         }
         break;
       case 'play_trailer':
