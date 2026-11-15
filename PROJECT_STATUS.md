@@ -4,6 +4,29 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 owner-authorized build #16 completed: owner requested Apple TV
+build, granted build-scoped Unraid permission and confirmed Plezy closed / TV
+in Settings. Codemagic build `6af90c5d90e83b09c4fa6969` started at 04:35 Arabia
+time for `4838fc2ac55981b5254feac1382f30af85c15058`, unchanged M2 unsigned-IPA
+workflow. CI succeeded in 5m 17s, native archive 2m 54s; this device workflow
+does not run native policy tests. Downloaded and verified
+`/home/koolo7000/Downloads/Plezy-tvOS (14).ipa`, staged at 0600 as
+`/tmp/Plezy-4838fc2.ipa` (73,237,375 bytes), SHA-256
+`fc07352bb351f761e8b9fd58cbfd6f35aadc0188dbe70716189d349e2c586720`.
+ZIP CRC, tvOS platform, bundle identity, local-network declaration and both
+main/Top Shelf app-group entitlements pass. Preserved and verified 0600 Unraid
+backups `original-before-4838fc2.ipa` and `signed-before-4838fc2.ipa`, both source
+timestamp November 15 04:07. Uploaded at 04:42, restricted the new file to 0600,
+copied over active `original.ipa` and verified its timestamp and permissions.
+Renew requested once at 04:43; tvsign reports successful signing and in-place
+installation on Basement at 04:43, with a Valid card and new manual success
+log. Latest installed source is `4838fc2ac55981b5254feac1382f30af85c15058`.
+Same app/account, no stall, deletion/uninstall or signer/container changes;
+all earlier IPAs and backups retained. Proof: `/tmp/plezy-install-4838fc2.jpg`.
+Build-scoped Unraid authorization is fulfilled. Native visual, retained-settings
+and playback confirmation remain separate pending owner milestones.
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af90c5d90e83b09c4fa6969
+
 November 15 additional owner request before pushing: apply Home's smaller
 description font to TV season pages too, with slightly smaller episode
 thumbnails. Show/season/episode browsing synopses now use the same independent
@@ -19,9 +42,9 @@ All 265 combined Home/detail/rail/Explore/Favorites regressions pass
 1920x1080 episode/Show Info/lower-row navigation, unchanged episode title size
 and five smaller Show Info lines. Two-file analysis and diff checks pass
 (`/tmp/plezy-season-reading-analyze.log`). Owner requested pushing these changes
-together with the Home correction below. No new Apple TV build, installation
-or Unraid access; installed revision remains `6f40891eb`. Next: explicit owner
-build request and scoped Unraid permission, then separate visual/playback checks.
+together with the Home correction below. Both fixes were pushed and are
+included in the authorized build above, installed as `4838fc2ac`. Owner native
+visual/playback confirmation remains separate and pending.
 
 November 15 follow-up after build #15: owner photos confirm the wrong hierarchy:
 metadata/tags became tiny while the synopsis remained larger. Owner wants only
@@ -48,10 +71,9 @@ Favorites assertion that expected the already-removed empty show badge row.
 Seven-file analysis and diff checks pass (`/tmp/plezy-stable-reading-analyze.log`).
 Inspected actual Flutter renders at `/tmp/plezy-stable-reading-960.png`,
 `-1280.png`, `-1920.png` with the bundled Noto font and placeholder art/icons,
-not native device proof; temporary capture fixture removed. No new CI build,
-install or Unraid changes. Latest installed remains `6f40891eb`; these source
-corrections need a new explicit owner Apple TV build request and build-scoped
-Unraid permission, then separate owner visual/playback confirmation.
+not native device proof; temporary capture fixture removed. These Home
+corrections are included with the season addition in the authorized build
+above, installed as `4838fc2ac`; separate owner visual/playback checks pending.
 
 November 15: owner explicitly requested an Apple TV build, authorized Unraid,
 and confirmed Plezy closed / TV in Settings. Codemagic build #15
@@ -69,7 +91,7 @@ November 14 20:08) and `signed-before-6f40891.ipa` (20:09). Uploaded at 04:07,
 restricted to 0600, copied over active `original.ipa`, and verified its new
 timestamp/permissions. Renew requested once at 04:07; tvsign reports successful
 signing and in-place installation on Basement at 04:08, with a Valid card and
-new manual renewal success log. Latest installed source is
+new manual renewal success log. Previous installed source was
 `6f40891eb88370facbb45627f53f1edcff0f5726`. Same app/account, no stall,
 deletion/uninstall or signer/container changes; all older IPAs/backups retained.
 Proof: `/tmp/plezy-install-6f40891.jpg`. This build's Unraid authorization is
@@ -731,6 +753,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 15, `4838fc2`: Codemagic build #16 `6af90c5d90e83b09c4fa6969`
+  passed in 5m 17s, native archive 2m 54s, IPA integrity/tvOS/app-group checks
+  pass. tvsign reports successful in-place installation on Basement at 04:43.
+  Same app/account, no stall or deletion, all backups retained. Owner Home and
+  season typography, thumbnail bounds, retained settings and playback checks pending.
 - November 15, `6f40891`: Codemagic build #15 `6af9044390e83b09c4fa67da`
   passed in 5m 10s; native archive succeeded (2m 49s), IPA integrity/tvOS/app-group
   checks pass. tvsign reports successful in-place installation on Basement at
@@ -937,12 +964,12 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Await an explicit owner Apple TV build request and build-scoped Unraid
-permission for the source correction above. Installed `6f40891eb` has an
-owner-confirmed typography regression, not an approved visual result.
-After the next install, owner checks restored normal header/logo/tag sizes,
-smaller independent three-line synopsis, adaptive poster bounds and larger
-full-text Read more. Confirm IMDb stays first and spotlight changes feel prompt.
+Owner test of installed `4838fc2ac`: restored normal Home header/logo/tag sizes,
+smaller independent Home and season synopses, four browsing episode lines,
+five Show Info lines, slightly smaller episode thumbnails and adaptive bounds.
+Confirm the larger full-text Read more, IMDb-first order and prompt spotlight
+changes. Previous installed `6f40891eb` has an owner-confirmed typography
+regression; this new revision's visual result still needs owner confirmation.
 Initial episode row and lower detail rows
 fit completely, tags appear promptly when browsing episodes, and size 6 Home
 posters leave a readable synopsis. Retain recent regression checks:
