@@ -142,7 +142,8 @@ const double _heroSideInset = 16;
 bool _isCompactHero(double contentWidth) => contentWidth < ScreenBreakpoints.mobile;
 
 const double _tvDetailTallPosterScale = 0.72;
-const double _tvDetailEpisodeThumbnailScale = 0.72;
+const double _tvDetailEpisodeThumbnailScale = 0.66;
+const double _tvDetailExtrasThumbnailScale = 0.72;
 const double _tvDetailActionSize = 46;
 const double _tvDetailActionRailGap = 4;
 const String _tvDetailSeasonsErrorHubId = 'detail_seasons_error';
@@ -3932,28 +3933,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             left: 0,
             right: 0,
             bottom: -railShift,
-            child: TvBrowseRail(
-              key: _tvDetailRailKey,
-              fitActiveHub: true,
-              showNextHubPeek: false,
-              hubs: detailHubs,
-              focusMemory: _hubFocusMemory,
-              iconForHub: _getTvDetailHubIcon,
-              onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
-              onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
-              onActiveHubChanged: _handleTvDetailHubChanged,
-              onActivateItem: _handleTvDetailRailItemActivated,
-              trailingForHub: _tvDetailTrailingState,
-              leadingItemForHub: _tvDetailLeadingItemForHub,
-              onRetryHub: _retryTvDetailHub,
-              onNavigateUp: _focusTvDetailActionRow,
-              onBack: _popMediaDetailIfBackNotSuppressed,
-              tallPosterScale: _tvDetailTallPosterScale,
-              widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
-              initialHubId: _tvDetailInitialHubId(metadata),
-              initialItemId: _tvDetailInitialItemId(metadata),
-              episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
-              showTitleImpliedForHub: _isTvDetailEpisodeHub,
+            child: TvBrowseRailHeightLimit(
+              maxHeight: _tvDetailActiveReadingRailLimit(size, detailHubs) ?? double.infinity,
+              child: TvBrowseRail(
+                key: _tvDetailRailKey,
+                fitActiveHub: true,
+                showNextHubPeek: false,
+                hubs: detailHubs,
+                focusMemory: _hubFocusMemory,
+                iconForHub: _getTvDetailHubIcon,
+                onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
+                onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
+                onActiveHubChanged: _handleTvDetailHubChanged,
+                onActivateItem: _handleTvDetailRailItemActivated,
+                trailingForHub: _tvDetailTrailingState,
+                leadingItemForHub: _tvDetailLeadingItemForHub,
+                onRetryHub: _retryTvDetailHub,
+                onNavigateUp: _focusTvDetailActionRow,
+                onBack: _popMediaDetailIfBackNotSuppressed,
+                tallPosterScale: _tvDetailTallPosterScale,
+                widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
+                initialHubId: _tvDetailInitialHubId(metadata),
+                initialItemId: _tvDetailInitialItemId(metadata),
+                episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
+                showTitleImpliedForHub: _isTvDetailEpisodeHub,
+              ),
             ),
           ),
       ],
@@ -4022,7 +4026,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final tracksHeight = inlineTracks ? MediaTechnicalBadges.rowHeight(scale, 1) + tracksGap : 0.0;
         final logoMetadataGap = 14 * scale;
         final summaryGap = (expandShowInfo ? 16 : 10) * scale;
-        final summaryFontSize = availableHeight < 260 * scale ? 16.2 * scale : 18 * scale;
+        // Match Home's smaller browsing synopsis without scaling the title,
+        // metadata or file tags. The full details sheet retains its larger text.
+        final summaryFontSize = inlineTracks
+            ? TvSpotlightLayout.summaryFontSize * scale
+            : availableHeight < 260 * scale
+            ? 16.2 * scale
+            : 18 * scale;
         final summaryLineHeight = summaryFontSize * 1.35;
         final actionHeight = _tvDetailActionSize * scale;
         final actionGap = (expandShowInfo ? 24 : 16) * scale;
@@ -4450,7 +4460,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-  double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs) {
+  double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs, {double? maxHeight}) {
     final svc = SettingsService.instance;
     return TvBrowseRailLayout.estimateHeight(
       size: size,
@@ -4463,13 +4473,45 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       gridSpacing: svc.read(SettingsService.gridSpacing),
       tallPosterScale: _tvDetailTallPosterScale,
       showNextHubPeek: false,
+      maxHeight: maxHeight,
     );
+  }
+
+  double? _tvDetailActiveReadingRailLimit(Size size, List<MediaHub> hubs) {
+    final activeId = _tvDetailActiveHubId.value ?? _tvDetailInitialHubId(_metadata);
+    final activeHub = hubs.where((hub) => hub.id == activeId).firstOrNull ?? hubs.firstOrNull;
+    if (activeHub == null || !(_metadata.isShow || _metadata.isSeason || _metadata.isEpisode)) return null;
+    final episodeTitleHeight = _isTvDetailEpisodeHub(activeHub) ? 34.0 : 0.0;
+    final scale = TvLayoutConstants.scaleForSize(size);
+    final top = _hasTvSeasonTabs
+        ? MediaQuery.paddingOf(context).top + 64 + 48 + 16 * scale
+        : (size.height * 0.08).clamp(56 * scale, 110 * scale).toDouble();
+    // Keep four smaller synopsis lines and the existing title/tag/action sizes.
+    // Only short viewports need a further artwork cap beyond the 8% reduction.
+    final infoHeight =
+        (60 +
+            14 +
+            episodeTitleHeight +
+            22 +
+            MediaTechnicalBadges.rowHeight(1, 1) +
+            8 +
+            10 +
+            4 * TvSpotlightLayout.summaryFontSize * 1.35 +
+            16 +
+            _tvDetailActionSize) *
+        scale;
+    final gap = _hasTvSeasonTabs ? 20 : _tvDetailActionRailGap;
+    return math.max(0, size.height - top - infoHeight - gap * scale + 12 * scale);
   }
 
   double _estimateTvDetailRailHeight(Size size, List<MediaHub> hubs) {
     final activeId = _tvDetailActiveHubId.value ?? _tvDetailInitialHubId(_metadata);
     final activeHub = hubs.where((hub) => hub.id == activeId).firstOrNull ?? hubs.firstOrNull;
-    final hubRailHeight = _estimateTvBrowseRailHeight(size, activeHub == null ? const [] : [activeHub]);
+    final hubRailHeight = _estimateTvBrowseRailHeight(
+      size,
+      activeHub == null ? const [] : [activeHub],
+      maxHeight: _tvDetailActiveReadingRailLimit(size, hubs),
+    );
     if (hubRailHeight > 0) return hubRailHeight;
     return _estimateTvDetailEmptyRailReserveHeight(size);
   }
@@ -4512,7 +4554,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   double _tvDetailWidePosterScaleForHub(MediaHub hub) {
-    return _isTvDetailEpisodeHub(hub) || hub.id == _tvDetailExtrasHubId ? _tvDetailEpisodeThumbnailScale : 1.0;
+    if (_isTvDetailEpisodeHub(hub)) return _tvDetailEpisodeThumbnailScale;
+    return hub.id == _tvDetailExtrasHubId ? _tvDetailExtrasThumbnailScale : 1.0;
   }
 
   List<MediaHub> _tvDetailHubs(MediaItem metadata) {

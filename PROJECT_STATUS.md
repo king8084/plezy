@@ -4,6 +4,25 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 additional owner request before pushing: apply Home's smaller
+description font to TV season pages too, with slightly smaller episode
+thumbnails. Show/season/episode browsing synopses now use the same independent
+14-scaled-pixel font; episode title, metadata, tags and full details sheet
+typography retain their established sizes. Episode thumbnail target scale is
+0.66 (previously 0.72, about 8% smaller); extras retain their previous target.
+Short TV viewports additionally reserve four synopsis lines and the existing
+minimum logo/title/tag/action space before sizing the active detail rail.
+Both the estimate and actual artwork use the same cap, including lower cast
+and recommendation rows, avoiding the 960x540 overflow discovered in testing.
+All 265 combined Home/detail/rail/Explore/Favorites regressions pass
+(`/tmp/plezy-combined-reading-tests.log`), including 960x540, 1280x720 and
+1920x1080 episode/Show Info/lower-row navigation, unchanged episode title size
+and five smaller Show Info lines. Two-file analysis and diff checks pass
+(`/tmp/plezy-season-reading-analyze.log`). Owner requested pushing these changes
+together with the Home correction below. No new Apple TV build, installation
+or Unraid access; installed revision remains `6f40891eb`. Next: explicit owner
+build request and scoped Unraid permission, then separate visual/playback checks.
+
 November 15 follow-up after build #15: owner photos confirm the wrong hierarchy:
 metadata/tags became tiny while the synopsis remained larger. Owner wants only
 the synopsis reduced, with the upper section retaining its established sizes.

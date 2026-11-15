@@ -643,7 +643,7 @@ void main() {
     expect(find.text('S1E1'), findsOneWidget);
   });
 
-  for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
+  for (final canvas in [const Size(960, 540), const Size(1280, 720), const Size(1920, 1080)]) {
     testWidgets('show info has five synopsis lines and clear actions above large rails at $canvas', (tester) async {
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.libraryDensity, LibraryDensity.max);
@@ -717,6 +717,12 @@ void main() {
       final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
       final actions = find.byKey(const ValueKey('tv_detail_actions'));
       final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
+      final scale = TvLayoutConstants.scaleForSize(canvas);
+      expect(tester.widget<Text>(summary).style!.fontSize, 14 * scale);
+      expect(
+        tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_title'))).style!.fontSize,
+        24 * scale,
+      );
       expect(tester.widget<Text>(summary).maxLines, 4);
       expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
       expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
@@ -731,8 +737,8 @@ void main() {
       }
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
       expect(tester.widget<Text>(summary).maxLines, 5);
-      expect(tester.getSize(summary).height, greaterThanOrEqualTo(100));
-      final scale = TvLayoutConstants.scaleForSize(canvas);
+      expect(tester.widget<Text>(summary).style!.fontSize, 14 * scale);
+      expect(tester.getSize(summary).height, closeTo(5 * 14 * scale * 1.35, 0.01));
       expect(
         tester.getBottomLeft(actions).dy + 24 * scale,
         lessThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),
