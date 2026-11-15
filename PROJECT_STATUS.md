@@ -34,13 +34,19 @@ Implemented / being validated:
   Pin titles/library metadata are cached; saved pins remain removable in Settings
   even if a collection disappears or the server is unavailable.
 - Signer recovery and checksum verification documented without server changes.
+- Full CI exposed new Go/Svelte advisories. Small toolchain/dependency patch
+  updates pass local relay race/build/scans and website tests/build/audit; no
+  running service, website deployment or server container was changed.
 
 ## Validation
 - Combined release gate passed: 8,609 Flutter tests, 7 skipped; isolated codegen,
   strict translations, formatting, full analysis, icons and repository guards pass.
 - Vendored settings-storage and wakelock suites: 60 tests pass. Unused code/files
   checks pass. Favorite/menu connection-recovery follow-up: 84 tests pass.
-- Full sanity CI on the owner fork is in progress. No IPA archive is requested.
+- Sanity CI on source `8c2a7ee63`: Code Analysis, tvOS/macOS native, Windows x64,
+  both Linux native runs, native format and Linux packaging smoke pass. Unit,
+  iOS/Android/Windows arm64 are pending; server/website advisory fixes await CI.
+- No IPA archive or installation is requested.
 - Record Apple native CI and formatting results separately from Dart validation.
 - Installed app remains at the checkpoint above; candidate appearance, retained
   settings and playback await a separately authorized device release and owner test.
