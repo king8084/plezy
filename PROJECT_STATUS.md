@@ -4,6 +4,31 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 owner-authorized build #17 completed: owner explicitly requested
+Apple TV build, granted build-scoped Unraid permission and confirmed Plezy
+closed / TV in Settings. Pushed `d827855019487574b4a2e60e5e55797607ea654f`;
+Codemagic build `6af91a5790e83b09c4fa6c64` started at 05:35 Arabia time using
+the unchanged M2 unsigned-IPA workflow. CI succeeded in 6m 2s, native archive
+3m 20s; this device workflow does not run native policy tests. Downloaded and
+verified `/home/koolo7000/Downloads/Plezy-tvOS (15).ipa`, staged 0600 as
+`/tmp/Plezy-d827855.ipa` (73,240,073 bytes), SHA-256
+`cd98b4a5476b7ad5f4e9c3a971e0796400c3584c0504da635e0d5d101e4883e5`.
+ZIP CRC, tvOS platform, bundle identity, local-network declaration and matching
+main/Top Shelf app-group entitlements pass. Preserved and verified 0600 Unraid
+backups `original-before-d827855.ipa` (source 04:42) and
+`signed-before-d827855.ipa` (04:43). Uploaded at 05:43, restricted to 0600,
+copied over active `original.ipa` and separately verified completion, timestamp
+and permissions. Automatic review initially stopped a combined verify/Renew
+call until this separate check was done; it did not execute Renew. One accepted
+Renew at 05:44 signed and installed the update in place on Basement at 05:44,
+with a Valid card and new manual renewal success log. Latest installed source
+is `d827855019487574b4a2e60e5e55797607ea654f`. No stall, deletion/uninstall or
+signer/container changes; same app/account and all earlier IPAs/backups retained.
+Proof: `/tmp/plezy-install-d827855.jpg`. Build-scoped Unraid permission fulfilled.
+Owner favorite/card/vote-count visual checks, retained settings and playback
+remain separate pending milestones.
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af91a5790e83b09c4fa6c64
+
 November 15 owner confirms Home / Continue Watching is finally correct and the
 episode/season page is fine. New source changes requested afterwards:
 - Long-press menus offer “Add to favorites” / “Unfavorite” on servers supporting
@@ -26,9 +51,9 @@ checks pass (`/tmp/plezy-favorites-rows-analyze.log`). New checks cover favorite
 add/remove/reopen/failure/offline states, canonical show writes from episode and
 season surfaces, compact/list score/count cache consistency, and exact Home-size
 recommendation rails at 960x540, 1280x720 and 1920x1080. An existing menu tap test
-now scrolls Add to into view after adding the favorite row. No new build/install
-or Unraid access; installed remains `4838fc2ac`. Next: explicit owner build
-request and build-scoped Unraid permission, then native checks and playback.
+now scrolls Add to into view after adding the favorite row. These changes are
+pushed and included in the authorized build above, installed as `d82785501`.
+Owner native checks and playback confirmation remain separate and pending.
 
 November 15 owner-authorized build #16 completed: owner requested Apple TV
 build, granted build-scoped Unraid permission and confirmed Plezy closed / TV
@@ -46,7 +71,7 @@ timestamp November 15 04:07. Uploaded at 04:42, restricted the new file to 0600,
 copied over active `original.ipa` and verified its timestamp and permissions.
 Renew requested once at 04:43; tvsign reports successful signing and in-place
 installation on Basement at 04:43, with a Valid card and new manual success
-log. Latest installed source is `4838fc2ac55981b5254feac1382f30af85c15058`.
+log. Previous installed source was `4838fc2ac55981b5254feac1382f30af85c15058`.
 Same app/account, no stall, deletion/uninstall or signer/container changes;
 all earlier IPAs and backups retained. Proof: `/tmp/plezy-install-4838fc2.jpg`.
 Build-scoped Unraid authorization is fulfilled. Native visual, retained-settings
@@ -779,6 +804,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 15, `d827855`: Codemagic build #17 `6af91a5790e83b09c4fa6c64`
+  passed in 6m 2s; native archive 3m 20s, IPA integrity/tvOS/app-group checks
+  pass. tvsign reports successful in-place installation on Basement at 05:44.
+  Same app/account, no stall or deletion, all backups retained. Owner favorite
+  toggling, larger lower cards, compact IMDb votes, settings and playback pending.
 - November 15, installed `4838fc2`: owner confirms Home / Continue Watching is
   nailed and episode/season layout is fine. Lower supplementary cards were too
   small, prompting the new source correction above. Playback/settings retention
@@ -994,19 +1024,13 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Build the new favorite/lower-row/vote-caption source changes only after an
-explicit owner Apple TV build request and build-scoped Unraid permission.
-After installation, owner checks favorite toggling from all show surfaces,
-Home-size lower rows, compact IMDb counts and retained approved Home layout.
-Owner has confirmed installed `4838fc2ac` Home and episode/season visuals;
-new-build playback and settings retention remain separate checks.
-
-Owner test of installed `4838fc2ac`: restored normal Home header/logo/tag sizes,
-smaller independent Home and season synopses, four browsing episode lines,
-five Show Info lines, slightly smaller episode thumbnails and adaptive bounds.
-Confirm the larger full-text Read more, IMDb-first order and prompt spotlight
-changes. Previous installed `6f40891eb` has an owner-confirmed typography
-regression; this new revision's visual result still needs owner confirmation.
+Owner test of installed `d82785501`: favorite/unfavorite always targets the show
+from show, season and episode surfaces; lower rows have Home-sized cards and
+prioritize artwork; Seerr captions use IMDb score/count without labels. Confirm
+approved Home and episode-row layout remains intact, plus larger Read more,
+IMDb-first order and prompt spotlight changes. Owner visual approval of Home
+and episode/season pages belongs to previous installed `4838fc2ac`, not this
+new build. New-build playback and settings retention remain separate checks.
 Initial episode row and lower detail rows
 fit completely, tags appear promptly when browsing episodes, and size 6 Home
 posters leave a readable synopsis. Retain recent regression checks:
