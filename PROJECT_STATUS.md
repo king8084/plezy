@@ -4,6 +4,16 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 owner approves installed build #17 visually (“Super beautiful”),
+requesting one menu-order change: favorite/unfavorite should follow Mark as
+watched / Mark as unwatched. Moved that action block immediately below both
+watch-state actions; all other existing entry ordering and favorite behavior
+remain unchanged. All 76 existing context-menu tests and diff checks pass
+(`/tmp/plezy-favorite-menu-order-tests.log`). Source change only: no new build,
+install or Unraid access; installed remains `d82785501`. Next: explicit owner
+Apple TV build request and scoped Unraid permission, then verify menu order.
+Owner visual approval does not establish new playback/settings confirmation.
+
 November 15 owner-authorized build #17 completed: owner explicitly requested
 Apple TV build, granted build-scoped Unraid permission and confirmed Plezy
 closed / TV in Settings. Pushed `d827855019487574b4a2e60e5e55797607ea654f`;

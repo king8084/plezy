@@ -691,12 +691,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     return [
       if (mediaKind.isMusic) ..._musicMenuActions(context, menu, mediaItem),
-      if (menu.favoriteItem case final favorite?)
-        _MenuAction(
-          value: 'toggle_favorite',
-          icon: Symbols.favorite_rounded,
-          label: favorite.isFavorite == true ? t.mediaMenu.unfavorite : t.mediaMenu.addToFavorites,
-        ),
       if (hasActiveProgress)
         _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
       // Trailer playback. The detail row may hide its trailer button on small
@@ -707,6 +701,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
         _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+      if (menu.favoriteItem case final favorite?)
+        _MenuAction(
+          value: 'toggle_favorite',
+          icon: Symbols.favorite_rounded,
+          label: favorite.isFavorite == true ? t.mediaMenu.unfavorite : t.mediaMenu.addToFavorites,
+        ),
       if (widget.isInContinueWatching &&
           (menu.canRemoveFromContinueWatching || context.read<RemovedContinueWatchingProvider?>() != null))
         _MenuAction(
