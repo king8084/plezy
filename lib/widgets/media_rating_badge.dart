@@ -35,7 +35,7 @@ List<MediaRatingSource> _ratingsFor(MediaItem item) {
 /// Every score read out as `<source> <value>`, for merged metadata-line
 /// announcements. Falls back to the bare value where the source is unnamed.
 String ratingsSemanticLabel(List<MediaRatingSource> ratings) => [
-  for (final rating in ratings)
+  for (final rating in orderedMediaRatings(ratings))
     switch (ratingSourceLabel(rating.source)) {
       final label? => '$label ${mediaRatingLabel(rating)}',
       null => mediaRatingLabel(rating),
@@ -112,7 +112,7 @@ class InlineRatingBadges extends StatelessWidget {
     final gap = entrySpacing ?? 10;
 
     final children = <Widget>[];
-    for (final rating in ratings) {
+    for (final rating in orderedMediaRatings(ratings)) {
       if (children.isNotEmpty) children.add(SizedBox(width: gap));
       children.add(
         _buildContent(

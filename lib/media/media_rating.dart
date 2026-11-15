@@ -75,16 +75,24 @@ List<MediaRatingSource> orderedMediaRatings(Iterable<MediaRatingSource> ratings)
     if (audience != null && (audience.value - imdb.value).abs() < 0.0001) unique.remove('audience');
   }
   final entries = unique.entries.toList();
+  final displayOrder = [
+    'imdb',
+    // Jellyfin's unbranded community score uses the same gold star in TV
+    // metadata. Keep that star before a Tomatometer without relabelling its
+    // unknown provenance or changing Plex's generic critic/audience order.
+    if (unique.keys.any((source) => source.startsWith('rottenTomatoes'))) ...['', 'audience'],
+    ...order.skip(1),
+  ];
   int rank(String source) {
-    final index = order.indexOf(source);
-    return index < 0 ? order.length : index;
+    final index = displayOrder.indexOf(source);
+    return index < 0 ? displayOrder.length : index;
   }
 
   // Preserve input order for equally ranked, unattributed sources.
   return [
-    for (final key in order)
+    for (final key in displayOrder)
       if (unique.containsKey(key)) unique[key]!,
     for (final entry in entries)
-      if (rank(entry.key) == order.length) entry.value,
+      if (rank(entry.key) == displayOrder.length) entry.value,
   ];
 }

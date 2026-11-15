@@ -314,7 +314,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       builder: (context) => AlertDialog(
         title: Text(item.title ?? item.displayTitle),
         content: SingleChildScrollView(
-          child: Text(summary == null || summary.isEmpty ? t.discover.noDescription : summary),
+          child: Text(
+            summary == null || summary.isEmpty ? t.discover.noDescription : summary,
+            style: PlatformDetector.isTV()
+                ? Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontSize: 30 * TvLayoutConstants.scaleOf(context), height: 1.5)
+                : null,
+          ),
         ),
         actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
       ),

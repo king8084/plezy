@@ -64,7 +64,9 @@ class TvSpotlightBackground extends StatelessWidget {
     this.metadataTrailing,
   });
 
-  double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
+  double _scale(BuildContext context) => compact
+      ? (MediaQuery.sizeOf(context).height / 1080).clamp(0.5, 1.35).toDouble()
+      : TvLayoutConstants.scaleOf(context);
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +124,7 @@ class TvSpotlightBackground extends StatelessWidget {
             if (media != null && showInfo)
               Positioned(
                 left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: contentLeft ?? TvLayoutConstants.horizontalInset,
+                right: (24 * _scale(context)).clamp(18.0, 40.0).toDouble(),
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
@@ -202,15 +204,31 @@ class TvSpotlightBackground extends StatelessWidget {
   }
 
   Widget _buildInfo(BuildContext context, MediaItem media, double width, {double? availableHeight}) {
-    final scale = _scale(context);
+    var scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
     final title = media.grandparentTitle ?? media.displayTitle;
-    final gap = _sectionGap(scale);
-    final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
     final episodeTitle = media.isEpisode ? media.title?.trim() : null;
     final hasEpisodeTitle = episodeTitle?.isNotEmpty == true;
+    // Series-level rows have no file tags. Do not leave an empty badge band
+    // between the show's metadata and description.
+    final hasTechnicalRow = media.isEpisode || media.isMovie || technicalItem?.mediaVersions?.isNotEmpty == true;
+    if (compact && availableHeight != null) {
+      // Match the mockup: three synopsis lines have a real height budget.
+      // Size the complete header proportionally on short logical TV canvases
+      // rather than sacrificing either the logo or all but one text line.
+      final unitHeight =
+          96 +
+          20 +
+          (hasEpisodeTitle ? 18 * textScale * 1.3 + 4 : 0) +
+          18 * textScale * 1.3 +
+          (hasTechnicalRow ? 6 + MediaTechnicalBadges.rowHeight(1, textScale) : 0) +
+          3 * 26 * 1.34;
+      scale = math.min(scale, math.max(0, availableHeight - 8) / unitHeight);
+    }
+    final gap = _sectionGap(scale);
+    final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
     final episodeTitleHeight = hasEpisodeTitle ? metadataHeight + 4 * scale : 0.0;
     final badgeHeight = MediaTechnicalBadges.rowHeight(scale, textScale);
     final badgeGap = 6 * scale;
@@ -220,15 +238,19 @@ class TvSpotlightBackground extends StatelessWidget {
         ? media
         : null;
     final technicalLabels = fileItem == null ? const <String>[] : buildMediaTechnicalLabels(fileItem);
-    final summaryFontSize = _summaryFontSize(scale) * textScale;
+    // Browsing synopsis has its own comfortable size; large Home labels must
+    // not squeeze it to one line. Read More keeps the full-size details sheet.
+    final summaryFontSize = _summaryFontSize(scale) * (compact ? 1 : textScale);
     final lineHeight = compact ? 1.34 : 1.45;
     // On an exceptionally short band at maximum text size, preserve the
     // existing metadata and one synopsis line rather than overflowing posters.
     final showBadgeRow =
-        availableHeight == null ||
-        availableHeight >=
-            episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight;
-    var summaryLines = compact ? (textScale >= 1.3 ? 3 : 4) : 4;
+        hasTechnicalRow &&
+        (compact ||
+            availableHeight == null ||
+            availableHeight >=
+                episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight);
+    var summaryLines = compact ? 3 : 4;
     final desiredLogoHeight = _logoHeight(scale);
     double remainingLogoHeight() => availableHeight == null
         ? desiredLogoHeight
@@ -238,7 +260,7 @@ class TvSpotlightBackground extends StatelessWidget {
               (showBadgeRow ? badgeGap + badgeHeight : 0) -
               2 * gap -
               summaryFontSize * lineHeight * summaryLines;
-    while (summaryLines > 1 && remainingLogoHeight() < desiredLogoHeight) {
+    while (!compact && summaryLines > 1 && remainingLogoHeight() < desiredLogoHeight) {
       summaryLines--;
     }
     final logoHeight = remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
@@ -270,7 +292,7 @@ class TvSpotlightBackground extends StatelessWidget {
               overflow: .ellipsis,
               style: TextStyle(
                 color: colorScheme.onSurface,
-                shadows: TvLayoutConstants.heroTextShadows,
+                shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 0.5))],
                 fontSize: _metadataFontSize(scale) * textScale,
                 fontWeight: .w600,
                 height: 1.3,
@@ -282,7 +304,10 @@ class TvSpotlightBackground extends StatelessWidget {
         SizedBox(
           key: const ValueKey('tv_spotlight_metadata'),
           height: metadataHeight,
-          child: Align(alignment: .topLeft, child: _buildMetadataLine(context, media)),
+          child: Align(
+            alignment: .topLeft,
+            child: _buildMetadataLine(context, media, layoutScale: scale),
+          ),
         ),
         if (showBadgeRow) ...[
           SizedBox(height: badgeGap),
@@ -298,16 +323,27 @@ class TvSpotlightBackground extends StatelessWidget {
         SizedBox(height: gap),
         SizedBox(
           height: summaryFontSize * lineHeight * summaryLines,
-          child: Text(
-            synopsis,
-            key: const ValueKey('tv_spotlight_summary'),
-            maxLines: summaryLines,
-            overflow: .ellipsis,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.78),
-              shadows: TvLayoutConstants.heroTextShadows,
-              fontSize: summaryFontSize,
-              height: lineHeight,
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0x33000000), Color(0x33000000), Colors.transparent],
+                stops: [0, 0.15, 0.85, 1],
+              ),
+            ),
+            child: Text(
+              synopsis,
+              key: const ValueKey('tv_spotlight_summary'),
+              maxLines: summaryLines,
+              overflow: .ellipsis,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.95),
+                shadows: const [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1))],
+                fontSize: summaryFontSize,
+                height: lineHeight,
+              ),
             ),
           ),
         ),
@@ -407,13 +443,13 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildMetadataLine(BuildContext context, MediaItem media) {
-    final scale = _scale(context);
+  Widget _buildMetadataLine(BuildContext context, MediaItem media, {double? layoutScale}) {
+    final scale = layoutScale ?? _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final textStyle = TextStyle(
       color: colorScheme.onSurface,
-      shadows: TvLayoutConstants.heroTextShadows,
+      shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 0.5))],
       fontSize: _metadataFontSize(scale) * textScale,
       fontWeight: .w700,
       letterSpacing: 0.1,
@@ -497,5 +533,5 @@ class TvSpotlightBackground extends StatelessWidget {
 
   double _metadataFontSize(double scale) => 18 * scale;
 
-  double _summaryFontSize(double scale) => 20 * scale;
+  double _summaryFontSize(double scale) => (compact ? 26 : 20) * scale;
 }

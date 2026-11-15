@@ -1,9 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/utils/rating_utils.dart';
+import 'package:plezy/media/media_rating.dart';
 
 void main() {
   setUpAll(() => LocaleSettings.setLocaleRaw('en'));
+
+  test('IMDb stays first and the fallback star precedes Rotten Tomatoes', () {
+    const rt = MediaRatingSource(source: 'rottenTomatoesCritic', value: 8.5);
+    const star = MediaRatingSource(source: 'audience', value: 7.4);
+    const imdb = MediaRatingSource(source: 'imdb', value: 7.4);
+    expect(orderedMediaRatings([rt, star]).map((rating) => rating.source), ['audience', 'rottenTomatoesCritic']);
+    expect(orderedMediaRatings([rt, star, imdb]).map((rating) => rating.source), ['imdb', 'rottenTomatoesCritic']);
+  });
 
   group('ratingInfoForSource - Rotten Tomatoes', () {
     test('critic at or above the 60% tomatometer is fresh', () {

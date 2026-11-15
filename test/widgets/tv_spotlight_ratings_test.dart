@@ -79,7 +79,24 @@ void main() {
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
-  testWidgets('tight Home header keeps the normal logo size', (tester) async {
+  testWidgets('Nocturne star precedes RT on show-level Home metadata', (tester) async {
+    for (final starSource in ['imdb', 'audience']) {
+      final show = MediaItem.jellyfin(
+        id: 'nocturne',
+        kind: MediaKind.show,
+        title: 'Nocturne',
+        ratings: [
+          const MediaRatingSource(source: 'rottenTomatoesCritic', value: 8.5),
+          MediaRatingSource(source: starSource, value: 7.4),
+        ],
+      );
+      await _pumpSpotlight(tester, show);
+      expect(tester.getTopLeft(find.text('7.4')).dx, lessThan(tester.getTopLeft(find.text('85%')).dx));
+      expect(find.byKey(const ValueKey('tv_spotlight_technical_badges')), findsNothing);
+    }
+  });
+
+  testWidgets('tight Home header reserves three synopsis lines without losing the logo', (tester) async {
     final episode = MediaItem.jellyfin(
       id: 'episode',
       kind: MediaKind.episode,
@@ -91,13 +108,13 @@ void main() {
     );
     await _pumpSpotlight(tester, episode, contentBottom: 760);
     final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
-    expect(tester.widget<Text>(summary).maxLines, 1);
+    expect(tester.widget<Text>(summary).maxLines, 3);
     expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(320));
-    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, 96);
+    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, greaterThanOrEqualTo(48));
     expect(tester.takeException(), isNull);
   });
 
-  for (final canvas in [const Size(1280, 720), const Size(1920, 1080)]) {
+  for (final canvas in [const Size(960, 540), const Size(1280, 720), const Size(1920, 1080)]) {
     for (final density in [6, 7]) {
       testWidgets('Home keeps its normal logo and readable synopsis with poster size $density at $canvas', (
         tester,
@@ -150,10 +167,10 @@ void main() {
         final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
         expect(tester.getSize(summary).width, greaterThan(canvas.width * 0.9));
         expect(tester.widget<Text>(summary).style!.shadows, isNotEmpty);
-        expect(tester.widget<Text>(summary).maxLines, greaterThanOrEqualTo(density == 6 ? 3 : 2));
+        expect(tester.widget<Text>(summary).maxLines, 3);
         expect(
           tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height,
-          closeTo(96 * (canvas.height / 1080).clamp(0.85, 1.35), 0.01),
+          inInclusiveRange(32, 96 * (canvas.height / 1080).clamp(0.5, 1.35)),
         );
         final rail = find.byKey(const ValueKey('home_rail_bounds'));
         expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(rail).dy));
@@ -257,7 +274,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('larger Home text scales descriptions and rating icons without overflow', (tester) async {
+  testWidgets('larger Home labels keep the compact three-line description size', (tester) async {
     const item = MediaItem.jellyfin(
       id: 'scaled',
       kind: MediaKind.movie,
@@ -288,7 +305,7 @@ void main() {
     await _pumpSpotlight(tester, item);
     final normal = tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize!;
     await _pumpSpotlight(tester, item, textScale: 1.5);
-    expect(tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize, normal * 1.5);
+    expect(tester.widget<Text>(find.text('Episode synopsis')).style!.fontSize, normal);
     expect(tester.widget<Text>(find.text('Episode synopsis')).maxLines, 3);
     expect(find.text('4K'), findsOneWidget);
     expect(find.text('HEVC'), findsOneWidget);

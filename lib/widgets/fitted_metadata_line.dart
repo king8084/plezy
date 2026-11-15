@@ -46,9 +46,10 @@ class MetadataLineIconText extends MetadataLinePart {
 /// The attributed-score slot. Every score shares this one slot so the bullet
 /// separators don't multiply with the number of sources.
 class MetadataLineRatings extends MetadataLinePart {
-  const MetadataLineRatings(this.ratings, {required super.dropPriority});
+  const MetadataLineRatings(this._ratings, {required super.dropPriority});
 
-  final List<MediaRatingSource> ratings;
+  final List<MediaRatingSource> _ratings;
+  List<MediaRatingSource> get ratings => orderedMediaRatings(_ratings);
 }
 
 /// A single-line metadata strip that sheds its least useful parts instead of

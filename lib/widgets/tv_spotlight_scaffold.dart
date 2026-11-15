@@ -91,7 +91,7 @@ class TvSpotlightScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final settings = SettingsService.instance;
-    final scale = TvLayoutConstants.scaleForSize(size);
+    final scale = (size.height / 1080).clamp(0.5, 1.35).toDouble();
     final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
     final railHeight = hubs.isEmpty

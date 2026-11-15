@@ -4,6 +4,38 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 continuation of the November 14 mockup review: owner initially
+requested design only, then explicitly approved implementing the latest Dexter
+mockup (full-width stacked metadata/tags, three-line synopsis and large posters).
+The approved concept supersedes the tentative separate-description-size setting.
+- Compact TV spotlights now budget three synopsis lines explicitly. Hero scale
+  follows the short logical TV canvas (including 960x540) instead of inheriting
+  the rail's 0.85 minimum; the whole information block fits proportionally when
+  necessary, rather than sacrificing the logo or dropping to one text line.
+  Poster sizing and navigation are unchanged. The synopsis has an independent
+  browsing font size, soft text shadow and a subtle fading dark reading band.
+  Home label-size preferences still apply to labels. Right text inset no longer
+  repeats the sidebar offset, and show-level rows omit the empty file-badge band.
+- Home Read more opens the entire description with larger TV text (30 scaled
+  pixels), wrapping/scrolling and no line cap. Spoiler behavior remains intact.
+- IMDb order is enforced by fitted rating slots and inline badge rendering,
+  including accessibility announcements. Jellyfin's generic community star
+  precedes RT without falsely attributing its unknown source to IMDb. Existing
+  generic critic/audience ordering without RT and duplicate removal remain.
+Validation: all 141 affected Home/detail/spotlight/fitted-line/rating tests pass
+(`/tmp/plezy-mockup-layout-tests.log`); ten-file analysis and diff checks pass
+(`/tmp/plezy-mockup-analyze.log`). Added real-rail regressions at 960x540,
+1280x720 and 1920x1080 with size 6 posters, 150% Home labels, long Dexter
+metadata, five file tags, three synopsis lines and fully visible captions.
+Nocturne checks cover both attributed IMDb and fallback star before RT; remote
+Select verifies the full, larger Read more description. Local font renders
+inspected: `/tmp/plezy-mockup-implemented-960.png`, `-1280.png`, `-1920.png`
+(placeholder artwork/icons and title fallback, not device visual proof).
+Temporary render fixture removed. No device build/install or Unraid change
+started. Latest installed remains `02c56ee20`; next is an explicit owner Apple
+TV build request with build-scoped Unraid permission, followed by separate
+owner visual/response/playback confirmation.
+
 November 14: owner explicitly requested an Apple TV build, authorized Unraid,
 and confirmed Plezy closed / TV in Settings. Codemagic build #14
 `6af893fb90e83b09c4fa44ee` started at 20:02 Arabia time for pushed source
