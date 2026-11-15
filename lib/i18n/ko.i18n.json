@@ -1233,6 +1233,7 @@
     "movie": "영화",
     "tvShow": "TV 시리즈",
     "minutesLeft": "${minutes}분 남음",
+    "durationLeft": "",
     "moreLikeThis": "비슷한 콘텐츠",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

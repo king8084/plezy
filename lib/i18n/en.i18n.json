@@ -1237,6 +1237,7 @@
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
+    "durationLeft": "${duration} left",
     "moreLikeThis": "More Like This",
     "moreLikeThisOwned": "More Like This — In Your Library",
     "moreLikeThisRequest": "More Like This — Request",

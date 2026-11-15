@@ -50,6 +50,7 @@ import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
+import '../utils/media_runtime_label.dart';
 import '../services/plex_client.dart';
 import '../services/jellyfin_media_info_mapper.dart';
 import '../media/media_backend.dart';
@@ -4283,8 +4284,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (lineMetadata.contentRating != null) {
       parts.add(MetadataLineText(formatContentRating(lineMetadata.contentRating!), dropPriority: 2));
     }
-    if (lineMetadata.durationMs != null) {
-      parts.add(MetadataLineText(formatDurationTextual(lineMetadata.durationMs!), dropPriority: 1));
+    if (mediaRuntimeLabel(lineMetadata) case final runtime?) {
+      parts.add(MetadataLineText(runtime, dropPriority: 1));
     }
     final episodeRatings = focusedEpisode == null
         ? const <MediaRatingSource>[]

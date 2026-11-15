@@ -1233,6 +1233,7 @@
     "movie": "映画",
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分",
+    "durationLeft": "",
     "moreLikeThis": "似ている作品",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

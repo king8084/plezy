@@ -1233,6 +1233,7 @@
     "movie": "电影",
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟",
+    "durationLeft": "",
     "moreLikeThis": "更多类似内容",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

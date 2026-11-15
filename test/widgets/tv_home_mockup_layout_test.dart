@@ -57,6 +57,7 @@ void main() {
                 rating: 8.7,
                 ratings: [MediaRatingSource(source: 'imdb', value: 8.7)],
                 durationMs: 3480000,
+                viewOffsetMs: 44 * 60000,
                 originallyAvailableAt: '2026-11-08',
                 genres: ['Crime', 'Drama'],
                 contentRating: 'TV-MA',

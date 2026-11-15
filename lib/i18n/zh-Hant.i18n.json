@@ -1233,6 +1233,7 @@
     "movie": "電影",
     "tvShow": "影集",
     "minutesLeft": "剩餘 ${minutes} 分鐘",
+    "durationLeft": "",
     "moreLikeThis": "更多類似內容",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

@@ -80,6 +80,25 @@ void main() {
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
+  testWidgets('TV spotlight replaces runtime with remaining time for episodes and movies', (tester) async {
+    for (final kind in [MediaKind.episode, MediaKind.movie]) {
+      final item = MediaItem.jellyfin(
+        id: 'resumable',
+        kind: kind,
+        title: 'Basketball',
+        durationMs: 21 * 60000,
+        viewOffsetMs: 7 * 60000,
+      );
+      await _pumpSpotlight(tester, item);
+      expect(find.text('14 min left'), findsOneWidget);
+      expect(find.text('21min'), findsNothing);
+      await _pumpSpotlight(tester, item.copyWith(viewOffsetMs: 0));
+      expect(find.text('14 min left'), findsNothing);
+      expect(find.text('21min'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('Nocturne star precedes RT on show-level Home metadata', (tester) async {
     for (final starSource in ['imdb', 'audience']) {
       final show = MediaItem.jellyfin(

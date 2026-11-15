@@ -1474,6 +1474,7 @@ void main() {
       rating: 7.2,
       index: 1,
       durationMs: 1380000,
+      viewOffsetMs: 9 * 60000,
       parentId: season.id,
       parentIndex: season.index,
       grandparentId: show.id,
@@ -1554,6 +1555,7 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSemantics(information).label, contains('The Show, The One Where the Title Matters, S1 E1'));
+    expect(tester.getSemantics(information).label, contains('14 min left'));
 
     // Genres are the show's and never change while browsing: not a hero row.
     // They stay in the announcement because the sheet the block opens has them.
@@ -1586,6 +1588,7 @@ void main() {
     );
     expect(find.text('S1E2'), findsOneWidget);
     expect(find.text('S1E1'), findsNothing);
+    expect(tester.getSemantics(information).label, isNot(contains('min left')));
     semantics.dispose();
   });
 

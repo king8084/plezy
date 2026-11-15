@@ -1237,6 +1237,7 @@
     "movie": "Film",
     "tvShow": "TV-sorozat",
     "minutesLeft": "${minutes} perc van hátra",
+    "durationLeft": "",
     "moreLikeThis": "Hasonló tartalmak",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

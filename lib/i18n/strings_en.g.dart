@@ -3421,6 +3421,9 @@ class Translations$discover$en {
 	/// en: '${minutes} min left'
 	String minutesLeft({required Object minutes}) => '${minutes} min left';
 
+	/// en: '${duration} left'
+	String durationLeft({required Object duration}) => '${duration} left';
+
 	/// en: 'More Like This'
 	String get moreLikeThis => 'More Like This';
 
@@ -9383,6 +9386,7 @@ extension on Translations {
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
+			'discover.durationLeft' => ({required Object duration}) => '${duration} left',
 			'discover.moreLikeThis' => 'More Like This',
 			'discover.moreLikeThisOwned' => 'More Like This — In Your Library',
 			'discover.moreLikeThisRequest' => 'More Like This — Request',
@@ -9772,9 +9776,9 @@ extension on Translations {
 			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
 			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
-			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
@@ -10286,9 +10290,9 @@ extension on Translations {
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
-			'performanceOverlay.app' => 'App',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',

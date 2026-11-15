@@ -1237,6 +1237,7 @@
     "movie": "Film",
     "tvShow": "Serie TV",
     "minutesLeft": "${minutes} minuti rimanenti",
+    "durationLeft": "",
     "moreLikeThis": "Altri contenuti simili",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

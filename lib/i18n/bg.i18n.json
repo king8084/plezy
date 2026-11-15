@@ -1237,6 +1237,7 @@
     "movie": "Филм",
     "tvShow": "ТВ сериал",
     "minutesLeft": "Остават ${minutes} мин",
+    "durationLeft": "",
     "moreLikeThis": "Подобно на това",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

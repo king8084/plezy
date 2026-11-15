@@ -13,6 +13,7 @@ import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/media_quality_labels.dart';
+import '../utils/media_runtime_label.dart';
 import '../services/settings_service.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import 'cycling_media_backdrop.dart';
@@ -462,8 +463,8 @@ class TvSpotlightBackground extends StatelessWidget {
       );
     }
     if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: -1));
-    if (media.durationMs != null) {
-      parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
+    if (mediaRuntimeLabel(media) case final runtime?) {
+      parts.add(MetadataLineText(runtime, dropPriority: 1));
     }
     if (media.isEpisode && media.originallyAvailableAt != null) {
       parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));

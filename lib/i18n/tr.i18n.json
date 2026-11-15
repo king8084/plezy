@@ -1237,6 +1237,7 @@
     "movie": "Film",
     "tvShow": "TV Dizisi",
     "minutesLeft": "${minutes} dk kaldı",
+    "durationLeft": "",
     "moreLikeThis": "Buna Benzerler",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",

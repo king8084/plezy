@@ -1237,6 +1237,7 @@
     "movie": "Kino",
     "tvShow": "TV Şou",
     "minutesLeft": "${minutes} dəq qaldı",
+    "durationLeft": "",
     "moreLikeThis": "Buna bənzərlər",
     "moreLikeThisOwned": "",
     "moreLikeThisRequest": "",
