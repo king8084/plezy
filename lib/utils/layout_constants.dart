@@ -82,3 +82,25 @@ class TvLayoutConstants {
 
   static double scaleOf(BuildContext context) => scaleForSize(MediaQuery.sizeOf(context));
 }
+
+/// The compact spotlight reserves its reading space before sizing the rail.
+/// Poster density and synopsis length must never change header typography.
+class TvSpotlightLayout {
+  static const double summaryFontSize = 14;
+  static const double summaryLineHeight = 1.34;
+  static const int summaryLines = 3;
+
+  static double infoHeight({
+    required double scale,
+    required double textScale,
+    bool episodeTitle = true,
+    bool technicalRow = true,
+  }) =>
+      scale *
+      (TvLayoutConstants.compactHeroLogoHeight +
+          20 +
+          (episodeTitle ? 18 * textScale * 1.3 + 4 : 0) +
+          18 * textScale * 1.3 +
+          (technicalRow ? 6 + 16 * textScale * 1.3 + 8 : 0) +
+          summaryLines * summaryFontSize * summaryLineHeight);
+}

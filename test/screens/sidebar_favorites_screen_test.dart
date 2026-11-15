@@ -81,7 +81,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Description for favorite show 1.'), findsOneWidget);
     expect(find.textContaining('Comedy'), findsWidgets);
-    expect(tester.widget<MediaTechnicalBadges>(find.byType(MediaTechnicalBadges)).labels, isEmpty);
+    expect(find.byType(MediaTechnicalBadges), findsNothing);
     final rail = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
     expect(rail.focusedMediaItem?.id, 'show1');
     final narrow = tester.getSize(find.byType(MediaCard).first).width;

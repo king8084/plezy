@@ -94,6 +94,26 @@ class TvSpotlightScaffold extends StatelessWidget {
     final scale = (size.height / 1080).clamp(0.5, 1.35).toDouble();
     final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
+    final readingGap = 8 * scale;
+    final items = hubs.expand((hub) => hub.items);
+    final hasEpisodes = items.any((item) => item.isEpisode);
+    final hasFiles = items.any((item) => item.isEpisode || item.isMovie || item.mediaVersions?.isNotEmpty == true);
+    // Reserve the complete episode header, including three smaller synopsis
+    // lines, independently of the selected title and poster-size preference.
+    // The rail uses this same limit when rendering; estimates cannot diverge.
+    final maxRailHeight =
+        (size.height -
+                spotlightTop -
+                readingGap -
+                TvSpotlightLayout.infoHeight(
+                  scale: TvLayoutConstants.scaleForSize(size),
+                  textScale: textScale,
+                  episodeTitle: hasEpisodes,
+                  technicalRow: hasFiles,
+                ))
+            .clamp(0.0, size.height)
+            .toDouble();
     final railHeight = hubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -106,12 +126,9 @@ class TvSpotlightScaffold extends StatelessWidget {
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
             widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
             showNextHubPeek: showNextHubPeek,
+            maxHeight: maxRailHeight,
           );
-    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final desiredSpotlightBottom = minimumSpotlightBottom;
-    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
-    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
+    final spotlightBottom = railHeight + readingGap;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
 
     return Material(
@@ -147,7 +164,7 @@ class TvSpotlightScaffold extends StatelessWidget {
                 );
               },
             ),
-            foreground,
+            TvBrowseRailHeightLimit(maxHeight: maxRailHeight, child: foreground),
           ],
         ),
       ),

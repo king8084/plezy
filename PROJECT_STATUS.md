@@ -4,6 +4,36 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 follow-up after build #15: owner photos confirm the wrong hierarchy:
+metadata/tags became tiny while the synopsis remained larger. Owner wants only
+the synopsis reduced, with the upper section retaining its established sizes.
+Removed compact spotlight's whole-block fitting and 0.5 minimum typography
+scale. Logo/title, episode title, metadata and tags again use the established
+TV scale (0.85 minimum) and existing Home label-size preference. Only browsing
+synopsis uses an independent smaller font: 14 scaled pixels, three lines.
+Read more retains the larger complete wrapping/scrolling description.
+
+The layout now reserves header and three-line reading space first, before
+estimating the poster rail. A scoped height limit feeds both the rail estimate
+and the actual rail's artwork geometry; tight viewports cap artwork height
+proportionally instead of shrinking header text or cutting off captions.
+Poster-size preferences remain targets up to this available-height ceiling.
+Shows-only pages reserve no empty episode-title/file-tag bands. Other rails,
+season-detail layout, playback, metadata fetching and focus delays are unchanged.
+All 264 affected Home/Explore/Favorites/detail/rail/spotlight tests pass
+(`/tmp/plezy-stable-reading-tests.log`). The real-font matrix covers all seven
+poster sizes, show and episode rows, 100%/150% Home labels and 960x540,
+1280x720, 1920x1080; the owner's long Basketball synopsis fits without ellipsis,
+normal header/tag fonts stay fixed and all card captions fit. Updated a stale
+Favorites assertion that expected the already-removed empty show badge row.
+Seven-file analysis and diff checks pass (`/tmp/plezy-stable-reading-analyze.log`).
+Inspected actual Flutter renders at `/tmp/plezy-stable-reading-960.png`,
+`-1280.png`, `-1920.png` with the bundled Noto font and placeholder art/icons,
+not native device proof; temporary capture fixture removed. No new CI build,
+install or Unraid changes. Latest installed remains `6f40891eb`; these source
+corrections need a new explicit owner Apple TV build request and build-scoped
+Unraid permission, then separate owner visual/playback confirmation.
+
 November 15: owner explicitly requested an Apple TV build, authorized Unraid,
 and confirmed Plezy closed / TV in Settings. Codemagic build #15
 `6af9044390e83b09c4fa67da` started at 04:00 Arabia time for pushed source
@@ -888,10 +918,12 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
-Owner test of installed `6f40891eb`: approved Dexter mockup layout with normal
-logo proportions, full-width stacked metadata/tags, three readable synopsis
-lines, subtle dark reading band and larger full-text Read more. Confirm IMDb
-stays first, episode synopsis remains visible and spotlight changes feel prompt.
+Await an explicit owner Apple TV build request and build-scoped Unraid
+permission for the source correction above. Installed `6f40891eb` has an
+owner-confirmed typography regression, not an approved visual result.
+After the next install, owner checks restored normal header/logo/tag sizes,
+smaller independent three-line synopsis, adaptive poster bounds and larger
+full-text Read more. Confirm IMDb stays first and spotlight changes feel prompt.
 Initial episode row and lower detail rows
 fit completely, tags appear promptly when browsing episodes, and size 6 Home
 posters leave a readable synopsis. Retain recent regression checks:

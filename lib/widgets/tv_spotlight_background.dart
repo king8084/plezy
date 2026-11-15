@@ -64,9 +64,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.metadataTrailing,
   });
 
-  double _scale(BuildContext context) => compact
-      ? (MediaQuery.sizeOf(context).height / 1080).clamp(0.5, 1.35).toDouble()
-      : TvLayoutConstants.scaleOf(context);
+  double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +202,7 @@ class TvSpotlightBackground extends StatelessWidget {
   }
 
   Widget _buildInfo(BuildContext context, MediaItem media, double width, {double? availableHeight}) {
-    var scale = _scale(context);
+    final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
@@ -214,19 +212,6 @@ class TvSpotlightBackground extends StatelessWidget {
     // Series-level rows have no file tags. Do not leave an empty badge band
     // between the show's metadata and description.
     final hasTechnicalRow = media.isEpisode || media.isMovie || technicalItem?.mediaVersions?.isNotEmpty == true;
-    if (compact && availableHeight != null) {
-      // Match the mockup: three synopsis lines have a real height budget.
-      // Size the complete header proportionally on short logical TV canvases
-      // rather than sacrificing either the logo or all but one text line.
-      final unitHeight =
-          96 +
-          20 +
-          (hasEpisodeTitle ? 18 * textScale * 1.3 + 4 : 0) +
-          18 * textScale * 1.3 +
-          (hasTechnicalRow ? 6 + MediaTechnicalBadges.rowHeight(1, textScale) : 0) +
-          3 * 26 * 1.34;
-      scale = math.min(scale, math.max(0, availableHeight - 8) / unitHeight);
-    }
     final gap = _sectionGap(scale);
     final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
     final episodeTitleHeight = hasEpisodeTitle ? metadataHeight + 4 * scale : 0.0;
@@ -241,7 +226,7 @@ class TvSpotlightBackground extends StatelessWidget {
     // Browsing synopsis has its own comfortable size; large Home labels must
     // not squeeze it to one line. Read More keeps the full-size details sheet.
     final summaryFontSize = _summaryFontSize(scale) * (compact ? 1 : textScale);
-    final lineHeight = compact ? 1.34 : 1.45;
+    final lineHeight = compact ? TvSpotlightLayout.summaryLineHeight : 1.45;
     // On an exceptionally short band at maximum text size, preserve the
     // existing metadata and one synopsis line rather than overflowing posters.
     final showBadgeRow =
@@ -250,7 +235,7 @@ class TvSpotlightBackground extends StatelessWidget {
             availableHeight == null ||
             availableHeight >=
                 episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight);
-    var summaryLines = compact ? 3 : 4;
+    var summaryLines = compact ? TvSpotlightLayout.summaryLines : 4;
     final desiredLogoHeight = _logoHeight(scale);
     double remainingLogoHeight() => availableHeight == null
         ? desiredLogoHeight
@@ -263,7 +248,7 @@ class TvSpotlightBackground extends StatelessWidget {
     while (!compact && summaryLines > 1 && remainingLogoHeight() < desiredLogoHeight) {
       summaryLines--;
     }
-    final logoHeight = remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
+    final logoHeight = compact ? desiredLogoHeight : remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
     // Slot sizes depend only on viewport and text size, never on logo aspect,
     // synopsis length or missing metadata. Swiping between titles therefore
     // preserves the metadata and synopsis baselines and their actual font size.
@@ -533,5 +518,5 @@ class TvSpotlightBackground extends StatelessWidget {
 
   double _metadataFontSize(double scale) => 18 * scale;
 
-  double _summaryFontSize(double scale) => (compact ? 26 : 20) * scale;
+  double _summaryFontSize(double scale) => (compact ? TvSpotlightLayout.summaryFontSize : 20) * scale;
 }

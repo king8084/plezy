@@ -42,6 +42,20 @@ import 'sliver_child_memo.dart';
 
 const _inactiveArtworkDimAlpha = 0.3;
 
+/// A spotlight can reserve text space without changing rail settings or
+/// constraining overlays/toolbars elsewhere in its foreground.
+class TvBrowseRailHeightLimit extends InheritedWidget {
+  const TvBrowseRailHeightLimit({super.key, required this.maxHeight, required super.child});
+
+  final double maxHeight;
+
+  static double? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TvBrowseRailHeightLimit>()?.maxHeight;
+
+  @override
+  bool updateShouldNotify(TvBrowseRailHeightLimit oldWidget) => maxHeight != oldWidget.maxHeight;
+}
+
 class TvBrowseRailLayoutMetrics {
   final bool isPersonHub;
   final bool isMixedHub;
@@ -146,6 +160,24 @@ class TvBrowseRailLayout {
     return sectionHeight + peekHeight - (showNextHubPeek ? 0 : 12 * scale);
   }
 
+  static double activeRailHeightLimit({
+    required double maxHeight,
+    required double scale,
+    required bool showNextHubPeek,
+    required int hubCount,
+  }) => math.max(
+    0,
+    maxHeight -
+        railTopPaddingForScale(scale) -
+        railBottomPaddingForScale(scale) -
+        viewportHeightFor(
+          hubCount: hubCount,
+          scale: scale,
+          sectionHeight: hubStripHeightForScale(scale),
+          showNextHubPeek: showNextHubPeek,
+        ),
+  );
+
   static bool isPersonHub(MediaHub hub) => hub.type == 'person';
 
   static double cardWidthFor({
@@ -177,6 +209,7 @@ class TvBrowseRailLayout {
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
     bool hasLeading = false,
+    double? maxHeight,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
@@ -206,12 +239,19 @@ class TvBrowseRailLayout {
       horizontalPadding: railEdgePadding * 2,
       itemGap: itemGap,
     );
-    final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
+    final aspectRatio = (isPersonHub || isSquareHub) ? 1.0 : (useWideLayout ? 16 / 9 : 2 / 3);
+    // Keep captions, heading and focus padding at their normal sizes. Only
+    // artwork gives way when the spotlight needs more reading space.
+    final maxPosterHeight = maxHeight == null
+        ? double.infinity
+        : math.max(1, maxHeight - labelHeight - focusExtra - 22 * scale - 1);
+    final maxCardWidth = maxPosterHeight * aspectRatio + (fullCardLayout ? 0 : 6 * scale);
+    final cardWidth = math.min(baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale), maxCardWidth);
     final posterWidth = fullCardLayout ? cardWidth : cardWidth - (6 * scale);
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (22 * scale);
 
@@ -243,8 +283,9 @@ class TvBrowseRailLayout {
     GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
+    double? maxHeight,
   }) {
-    var maxHeight = 0.0;
+    var tallestHeight = 0.0;
     for (final hub in hubs) {
       final metrics = metricsForHub(
         hub: hub,
@@ -256,10 +297,11 @@ class TvBrowseRailLayout {
         gridSpacing: gridSpacing,
         tallPosterScale: tallPosterScale,
         widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
+        maxHeight: maxHeight,
       );
-      if (metrics.height > maxHeight) maxHeight = metrics.height;
+      if (metrics.height > tallestHeight) tallestHeight = metrics.height;
     }
-    return maxHeight;
+    return tallestHeight;
   }
 
   static double estimatedMaxScrollExtent({
@@ -320,6 +362,7 @@ class TvBrowseRailLayout {
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
     bool showNextHubPeek = true,
+    double? maxHeight,
   }) {
     if (hubs.isEmpty) return 0;
 
@@ -339,6 +382,14 @@ class TvBrowseRailLayout {
       gridSpacing: gridSpacing,
       tallPosterScale: tallPosterScale,
       widePosterScale: widePosterScale,
+      maxHeight: maxHeight == null
+          ? null
+          : activeRailHeightLimit(
+              maxHeight: maxHeight,
+              scale: scale,
+              showNextHubPeek: showNextHubPeek,
+              hubCount: hubs.length,
+            ),
     );
 
     final sectionHeight = hubSectionHeightFor(scale: scale, activeRailHeight: railHeight);
@@ -1309,6 +1360,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             final wideScales = [
               for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
             ];
+            final heightLimit = TvBrowseRailHeightLimit.of(context);
             final metricsByHub = [
               for (var i = 0; i < widget.hubs.length; i++)
                 TvBrowseRailLayout.metricsForHub(
@@ -1322,6 +1374,14 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                   tallPosterScale: widget.tallPosterScale,
                   widePosterScale: wideScales[i],
                   hasLeading: _hasLeadingFor(widget.hubs[i]),
+                  maxHeight: heightLimit == null
+                      ? null
+                      : TvBrowseRailLayout.activeRailHeightLimit(
+                          maxHeight: heightLimit,
+                          scale: scale,
+                          showNextHubPeek: widget.showNextHubPeek,
+                          hubCount: widget.hubs.length,
+                        ),
                 ),
             ];
             final sectionHeights = [

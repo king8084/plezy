@@ -12,6 +12,7 @@ import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:plezy/widgets/tv_spotlight_scaffold.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
@@ -106,11 +107,11 @@ void main() {
       index: 16,
       summary: List.filled(20, 'Phil trains for a charity basketball game.').join(' '),
     );
-    await _pumpSpotlight(tester, episode, contentBottom: 760);
+    await _pumpSpotlight(tester, episode, contentBottom: 730);
     final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
     expect(tester.widget<Text>(summary).maxLines, 3);
-    expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(320));
-    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, greaterThanOrEqualTo(48));
+    expect(tester.getBottomLeft(summary).dy, lessThanOrEqualTo(350));
+    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, 96);
     expect(tester.takeException(), isNull);
   });
 
@@ -137,6 +138,12 @@ void main() {
         final hubs = [
           MediaHub(id: 'continue', title: 'Continue Watching', type: 'show', items: [episode]),
         ];
+        final scale = TvLayoutConstants.scaleForSize(canvas);
+        final maxRailHeight =
+            canvas.height -
+            canvas.height * 0.075 -
+            8 * canvas.height / 1080 -
+            TvSpotlightLayout.infoHeight(scale: scale, textScale: 1);
         final railHeight = TvBrowseRailLayout.estimateHeight(
           size: canvas,
           hubs: hubs,
@@ -145,6 +152,7 @@ void main() {
           tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
           showNextHubPeek: false,
+          maxHeight: maxRailHeight,
         );
         final spotlight = ValueNotifier<MediaItem?>(episode);
         addTearDown(spotlight.dispose);
@@ -168,10 +176,7 @@ void main() {
         expect(tester.getSize(summary).width, greaterThan(canvas.width * 0.9));
         expect(tester.widget<Text>(summary).style!.shadows, isNotEmpty);
         expect(tester.widget<Text>(summary).maxLines, 3);
-        expect(
-          tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height,
-          inInclusiveRange(32, 96 * (canvas.height / 1080).clamp(0.5, 1.35)),
-        );
+        expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, 96 * scale);
         final rail = find.byKey(const ValueKey('home_rail_bounds'));
         expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(rail).dy));
         expect(tester.getBottomRight(rail).dy, lessThanOrEqualTo(canvas.height));
@@ -367,7 +372,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('maximum Home text size stays inside the short spotlight band on a 960x540 TV', (tester) async {
+  testWidgets('header typography does not shrink to fit a shorter spotlight band', (tester) async {
     const item = MediaItem.jellyfin(
       id: 'tight',
       kind: MediaKind.movie,
@@ -381,9 +386,21 @@ void main() {
       textScale: 1.5,
       canvas: const Size(960, 540),
       contentTop: 54,
-      contentBottom: 400,
+      contentBottom: 250,
     );
-    expect(tester.getBottomLeft(find.byKey(const ValueKey('tv_spotlight_summary'))).dy, lessThanOrEqualTo(140.01));
+    final summary = find.byKey(const ValueKey('tv_spotlight_summary'));
+    final fontSize = tester.widget<Text>(summary).style!.fontSize;
+    final logoHeight = tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height;
+    await _pumpSpotlight(
+      tester,
+      item,
+      textScale: 1.5,
+      canvas: const Size(960, 540),
+      contentTop: 54,
+      contentBottom: 100,
+    );
+    expect(tester.widget<Text>(summary).style!.fontSize, fontSize);
+    expect(tester.getSize(find.byKey(const ValueKey('tv_spotlight_logo_slot'))).height, logoHeight);
     expect(tester.takeException(), isNull);
   });
 
