@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codex/first-tvos-test-build
   # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
   pull_request:
     branches:

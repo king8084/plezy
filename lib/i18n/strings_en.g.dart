@@ -1531,6 +1531,15 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+
+	/// en: 'Pinned Home collections'
+	String get pinnedHomeCollections => 'Pinned Home collections';
+
+	/// en: 'Manage saved rows, including collections that are no longer available'
+	String get pinnedHomeCollectionsDescription => 'Manage saved rows, including collections that are no longer available';
+
+	/// en: 'Collection unavailable'
+	String get pinnedCollectionUnavailable => 'Collection unavailable';
 }
 
 // Path: themeEditor
@@ -8730,14 +8739,17 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'settings.pinnedHomeCollections' => 'Pinned Home collections',
+			'settings.pinnedHomeCollectionsDescription' => 'Manage saved rows, including collections that are no longer available',
+			'settings.pinnedCollectionUnavailable' => 'Collection unavailable',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.locked' => 'Unlock with the Theme & Icon Pack',
 			'themeEditor.savedLocked' => 'Saved — unlocks with the Theme & Icon Pack',
 			'themeEditor.title' => 'Custom Theme',
@@ -9247,11 +9259,11 @@ extension on Translations {
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
 			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
 			'profiles.profileRenamed' => 'Profile renamed.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
@@ -9761,11 +9773,11 @@ extension on Translations {
 			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.goToLive' => 'Go to Live',
 			'liveTv.record' => 'Record',
 			'liveTv.recordEpisode' => 'Record Episode',
@@ -10275,11 +10287,11 @@ extension on Translations {
 			'performanceOverlay.performance' => 'Performance',
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',

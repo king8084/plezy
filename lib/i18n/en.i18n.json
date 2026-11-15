@@ -527,7 +527,10 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export Plezy settings"
+    "exportDialogTitle": "Export Plezy settings",
+    "pinnedHomeCollections": "Pinned Home collections",
+    "pinnedHomeCollectionsDescription": "Manage saved rows, including collections that are no longer available",
+    "pinnedCollectionUnavailable": "Collection unavailable"
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -1210,7 +1213,6 @@
     "readFullDescription": "Read full description",
     "readMore": "Read more",
     "noDescription": "No description available.",
-
     "title": "Discover",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",

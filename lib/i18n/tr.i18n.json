@@ -222,6 +222,9 @@
     "gridView": "Izgara",
     "listView": "Liste",
     "showHeroSection": "Öne Çıkan Bölümünü Göster",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "İzlemeye Devam Et Eylemi",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Detayları Aç",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Bölüm başlıklarında her zaman sunucu adlarını göster.",
     "groupLibrariesByServer": "Kitaplıkları Sunucuya Göre Grupla",
     "groupLibrariesByServerDescription": "Yan menü kitaplıklarını her medya sunucusunun altında grupla.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yan Menüyü Her Zaman Açık Tut",
     "alwaysKeepSidebarOpenDescription": "Yan menü genişletilmiş kalır ve içerik alanı buna göre ayarlanır",
     "showUnwatchedCount": "İzlenmemiş Sayısını Göster",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Altyazı Biçimlendirmesi",
     "subtitleStylingDescription": "Altyazı görünümünü özelleştirin",
     "smallSkipDuration": "Küçük Atlama Süresi",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Büyük Atlama Süresi",
     "rewindOnResume": "Devam Ederken Geri Sar",
     "secondsUnit": "${seconds} saniye",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Her yerde",
     "playerScopeLibrary": "Kitaplık başına",
     "playerScopeTitle": "Dizi veya film başına",
-    "exportDialogTitle": "Plezy ayarlarını dışa aktar"
+    "exportDialogTitle": "Plezy ayarlarını dışa aktar",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Yerleşik",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Medya ögesi başarıyla silindi",
     "mediaFailedToDelete": "Medya ögesi silinemedi",
     "rate": "Oyla",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Baştan Oynat",
     "playVersion": "Sürümü Oynat..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV Dizisi",
     "minutesLeft": "${minutes} dk kaldı",
     "moreLikeThis": "Buna Benzerler",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} başlık",
       "other": "${n} başlık"

@@ -700,7 +700,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final mergedHubs = [
           ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
           ..._filterDiscoverHubs(freshHubs.hubs),
-          ...freshPinnedHubs,
+          ...freshPinnedHubs.where((hub) => succeededHubIds.contains(hub.serverId)),
         ];
         sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
         _replaceHubs(mergedHubs);

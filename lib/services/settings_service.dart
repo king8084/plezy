@@ -1044,6 +1044,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const libraryDensity = _LibraryDensityPref();
   static const homePinnedCollections = StringListPref('home_pinned_collections');
+  static const homePinnedCollectionMetadata = StringListPref('home_pinned_collection_metadata');
   static const homeRowOrder = StringListPref('home_row_order');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
@@ -1667,6 +1668,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static final List<Pref<Object?>> _resetOnlyPrefs = [
     customDownloadPathType,
     homePinnedCollections,
+    homePinnedCollectionMetadata,
     homeRowOrder,
     mediaVersionPreferences,
     localLastPlayedAt,

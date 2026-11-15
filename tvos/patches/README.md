@@ -44,6 +44,15 @@ binary has SHA-256
 Replacing the Docker container from its upstream image may restore the original
 signer; this manual replacement does not modify the upstream container image.
 
+Before each authorized renewal, verify the deployed signer against the checksum
+above. Stop if it differs; do not diagnose provisioning by repeatedly renewing
+with an unknown binary. Keep the original binary and this source patch available.
+For recovery, use the same source commit and the official Dockerfile's Rust build
+stage, apply the patch with `git apply --check` first, and run the named conflict
+tests before deploying. A checksum detects a lost patch; the pinned source and
+patch provide the recovery path. Container recreation is a separate operation
+requiring owner permission.
+
 Any Unraid deployment and subsequent installation require specific owner
 authorization. Preserve all existing files and the installed Apple TV app.
 The already-built Plezy IPA can be used after a compatible signer is prepared;

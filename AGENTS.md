@@ -6,6 +6,17 @@ recent commits. After meaningful changes, update the handoff with decisions,
 test results, unresolved issues, and the next step. Track CI builds, installs
 on the Apple TV, and owner-confirmed playback as separate milestones.
 
+When user-facing strings change, run
+`python3 scripts/checks/clean_translations.py --clean`, then
+`scripts/codegen.sh`, and include the generated outputs with the change.
+Before a release, require strict translation hygiene, generated-file freshness,
+formatting, analysis and the full Flutter suite to pass. Record native CI,
+device installation and owner playback confirmation separately; an IPA archive
+alone does not establish that the release checks passed.
+
+Keep personal addresses, device names and installation receipts out of tracked
+files. Preserve private installation history under `.git/plezy-private/`.
+
 Do not start an Apple TV build until the owner explicitly says “build apple tv”.
 Do not delete or uninstall the owner's Apple TV app as an update workaround.
 Preserve the installed app and its data; investigate a non-destructive update.

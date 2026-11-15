@@ -222,6 +222,9 @@
     "gridView": "Tor",
     "listView": "Siyahı",
     "showHeroSection": "Xüsusi bölməni göstər",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "İzləməyə davam et əməliyyatı",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Ətraflı aç",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Bölmə başlıqlarında həmişə server adlarını göstər.",
     "groupLibrariesByServer": "Kitabxanaları serverə görə qrupla",
     "groupLibrariesByServerDescription": "Yan menyu kitabxanalarını hər media serverinin altında qruplaşdır.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yan menyunu həmişə açıq saxla",
     "alwaysKeepSidebarOpenDescription": "Yan menyu genişlənmiş qalır və məzmun sahəsi buna uyğunlaşır",
     "showUnwatchedCount": "Baxılmamış sayını göstər",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Altyazı tənzimləmələri",
     "subtitleStylingDescription": "Altyazı görünüşünü özünüləşdirin",
     "smallSkipDuration": "Kiçik ötürmə müddəti",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Böyük ötürmə müddəti",
     "rewindOnResume": "Davam edərkən geri sar",
     "secondsUnit": "${seconds} saniyə",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Hər yerdə",
     "playerScopeLibrary": "Kitabxana üzrə",
     "playerScopeTitle": "Serial və ya film üzrə",
-    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
+    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Daxili",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Media elementi uğurla silindi",
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
     "rate": "Qiymətləndir",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Əvvəldən oynat",
     "playVersion": "Versiyanı oynat..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV Şou",
     "minutesLeft": "${minutes} dəq qaldı",
     "moreLikeThis": "Buna bənzərlər",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} başlıq",
       "other": "${n} başlıq"

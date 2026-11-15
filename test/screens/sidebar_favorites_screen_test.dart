@@ -6,6 +6,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/sidebar_favorites_screen.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -25,6 +26,10 @@ class _Client implements MediaServerClient {
   _Client(this.items);
   final List<MediaItem> items;
   final reads = <String>[];
+  @override
+  final authenticationSessionId = Object();
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
   @override
   ServerId get serverId => ServerId('server');
   @override

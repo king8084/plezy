@@ -222,6 +222,9 @@
     "gridView": "Мрежа",
     "listView": "Списък",
     "showHeroSection": "Показвай водеща секция",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Действие за продължаване на гледането",
     "continueWatchingPlay": "Пусни",
     "continueWatchingDetails": "Отвори подробности",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Винаги показвай имената на сървърите в заглавията на хъбовете.",
     "groupLibrariesByServer": "Групирай библиотеките по сървър",
     "groupLibrariesByServerDescription": "Групирай библиотеките в страничната лента под всеки медиен сървър.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Винаги дръж страничната лента отворена",
     "alwaysKeepSidebarOpenDescription": "Страничната лента остава разгъната и зоната със съдържание се наглася да пасне",
     "showUnwatchedCount": "Показвай броя негледани",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",
     "smallSkipDuration": "Малко прескачане",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Голямо прескачане",
     "rewindOnResume": "Връщане назад при продължаване",
     "secondsUnit": "${seconds} секунди",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Навсякъде",
     "playerScopeLibrary": "По библиотека",
     "playerScopeTitle": "По сериал или филм",
-    "exportDialogTitle": "Експортиране на настройките на Plezy"
+    "exportDialogTitle": "Експортиране на настройките на Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Вградени",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Елементът е изтрит успешно",
     "mediaFailedToDelete": "Неуспешно изтриване на елемента",
     "rate": "Оцени",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Пусни от началото",
     "playVersion": "Пусни версия..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "ТВ сериал",
     "minutesLeft": "Остават ${minutes} мин",
     "moreLikeThis": "Подобно на това",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} заглавие",
       "other": "${n} заглавия"

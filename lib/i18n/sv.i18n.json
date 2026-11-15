@@ -222,6 +222,9 @@
     "gridView": "Rutnät",
     "listView": "Lista",
     "showHeroSection": "Visa utvalt innehåll",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Åtgärd för Fortsätt titta",
     "continueWatchingPlay": "Spela",
     "continueWatchingDetails": "Öppna detaljer",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i innehållssektionernas rubriker.",
     "groupLibrariesByServer": "Gruppera bibliotek efter server",
     "groupLibrariesByServerDescription": "Gruppera biblioteken i sidofältet under respektive medieserver.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Håll alltid sidofältet öppet",
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir utfällt och innehållsytan anpassas efter det",
     "showUnwatchedCount": "Visa antal osedda",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Utseende för undertexter",
     "subtitleStylingDescription": "Anpassa undertexternas utseende",
     "smallSkipDuration": "Litet hoppsteg",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Stort hoppsteg",
     "rewindOnResume": "Spola tillbaka vid återupptagning",
     "secondsUnit": "${seconds} sekunder",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Överallt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Exportera Plezy-inställningar"
+    "exportDialogTitle": "Exportera Plezy-inställningar",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Inbyggda",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Medieobjektet har tagits bort",
     "mediaFailedToDelete": "Det gick inte att ta bort medieobjektet",
     "rate": "Betygsätt",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Spela från början",
     "playVersion": "Spela version..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min kvar",
     "moreLikeThis": "Mer liknande innehåll",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"

@@ -222,6 +222,9 @@
     "gridView": "Griglia",
     "listView": "Elenco",
     "showHeroSection": "Mostra sezione in evidenza",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Azione per Continua a guardare",
     "continueWatchingPlay": "Riproduci",
     "continueWatchingDetails": "Apri dettagli",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Mostra sempre i nomi dei server nei titoli delle sezioni.",
     "groupLibrariesByServer": "Raggruppa le librerie per server",
     "groupLibrariesByServerDescription": "Raggruppa le librerie della barra laterale sotto ciascun server multimediale.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Mantieni sempre aperta la barra laterale",
     "alwaysKeepSidebarOpenDescription": "La barra laterale rimane espansa e l'area del contenuto si adatta",
     "showUnwatchedCount": "Mostra il numero di episodi non visti",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Stile sottotitoli",
     "subtitleStylingDescription": "Personalizza l'aspetto dei sottotitoli",
     "smallSkipDuration": "Salto breve",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Salto lungo",
     "rewindOnResume": "Riavvolgimento alla ripresa",
     "secondsUnit": "${seconds} secondi",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Ovunque",
     "playerScopeLibrary": "Per libreria",
     "playerScopeTitle": "Per serie o film",
-    "exportDialogTitle": "Esporta le impostazioni di Plezy"
+    "exportDialogTitle": "Esporta le impostazioni di Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Integrati",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Elemento multimediale eliminato correttamente",
     "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale",
     "rate": "Valuta",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Riproduci dall'inizio",
     "playVersion": "Riproduci versione..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "Serie TV",
     "minutesLeft": "${minutes} minuti rimanenti",
     "moreLikeThis": "Altri contenuti simili",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titolo",
       "other": "${n} titoli"

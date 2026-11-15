@@ -222,6 +222,9 @@
     "gridView": "Toʻrsimon",
     "listView": "Roʻyxat",
     "showHeroSection": "Asosiy boʻlimni koʻrsatish",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "\"Tomoshani davom ettirish\" harakati",
     "continueWatchingPlay": "Ijro etish",
     "continueWatchingDetails": "Tafsilotlarni ochish",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Boʻlim sarlavhalarida har doim server nomini koʻrsatish.",
     "groupLibrariesByServer": "Kutubxonalarni server boʻyicha guruhlash",
     "groupLibrariesByServerDescription": "Yon menyudagi kutubxonalarni serverlar boʻyicha guruhlash.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yon menyuni har doim ochiq saqlash",
     "alwaysKeepSidebarOpenDescription": "Yon menyu ochiq holatda qoladi, kontent maydoni unga moslashadi",
     "showUnwatchedCount": "Koʻrilmaganlar sonini koʻrsatish",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",
     "smallSkipDuration": "Kichik oʻtkazish vaqti",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Katta oʻtkazish vaqti",
     "rewindOnResume": "Davom ettirganda orqaga qaytarish",
     "secondsUnit": "${seconds} soniya",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Hamma joyda",
     "playerScopeLibrary": "Kutubxona boʻyicha",
     "playerScopeTitle": "Serial yoki film boʻyicha",
-    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
+    "exportDialogTitle": "Plezy sozlamalarini eksport qilish",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Oʻrnatilgan",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Media elementi muvaffaqiyatli oʻchirildi",
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Boshidan ijro etish",
     "playVersion": "Versiyani ijro etish..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV Shou",
     "minutesLeft": "${minutes} daq qoldi",
     "moreLikeThis": "Oʻxshashlar",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} ta nom",
       "other": "${n} ta nom"

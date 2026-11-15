@@ -222,6 +222,9 @@
     "gridView": "Grille",
     "listView": "Liste",
     "showHeroSection": "Afficher la section à la une",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Action de « Continuer à regarder »",
     "continueWatchingPlay": "Lire",
     "continueWatchingDetails": "Ouvrir les détails",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Toujours afficher les noms des serveurs dans les titres des hubs.",
     "groupLibrariesByServer": "Grouper les bibliothèques par serveur",
     "groupLibrariesByServerDescription": "Regrouper les bibliothèques de la barre latérale par serveur multimédia.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Toujours garder la barre latérale ouverte",
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre d’éléments non vus",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Style des sous-titres",
     "subtitleStylingDescription": "Personnaliser l’apparence des sous-titres",
     "smallSkipDuration": "Durée du saut court",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Durée du saut long",
     "rewindOnResume": "Rembobiner à la reprise",
     "secondsUnit": "${seconds} secondes",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Partout",
     "playerScopeLibrary": "Par bibliothèque",
     "playerScopeTitle": "Par série ou film",
-    "exportDialogTitle": "Exporter les paramètres de Plezy"
+    "exportDialogTitle": "Exporter les paramètres de Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Intégrés",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
     "rate": "Noter",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Lire depuis le début",
     "playVersion": "Lire la version..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "Série TV",
     "minutesLeft": "${minutes} min restantes",
     "moreLikeThis": "Plus de contenus similaires",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titre",
       "other": "${n} titres"

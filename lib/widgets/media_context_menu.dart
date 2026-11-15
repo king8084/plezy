@@ -21,6 +21,7 @@ import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/home_pinned_collections.dart';
+import '../services/favorite_status.dart';
 import '../services/settings_service.dart';
 import '../providers/discover_provider.dart';
 import '../services/recent_tags_service.dart';
@@ -72,8 +73,15 @@ class _MenuAction {
   final IconData icon;
   final String label;
   final bool destructive;
+  final bool enabled;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.destructive = false});
+  _MenuAction({
+    required this.value,
+    required this.icon,
+    required this.label,
+    this.destructive = false,
+    this.enabled = true,
+  });
 }
 
 /// What [MediaContextMenuState] resolves before it can build an entry list:
@@ -93,13 +101,25 @@ class _MenuContext {
   final bool canEditMetadata;
   final bool showWatchlistEntry;
   final bool watchlistRemoveOffered;
-  final bool canDeleteFromServer;
-  final MediaItem? favoriteItem;
+  bool canDeleteFromServer;
+  MediaItem? favoriteItem;
+  bool favoriteLoading = false;
+  final revision = ValueNotifier<int>(0);
+  bool closed = false;
+
+  void changed() {
+    if (!closed) revision.value++;
+  }
+
+  void close() {
+    closed = true;
+    revision.dispose();
+  }
 
   /// A downloads folder (see [MediaContextMenu.isOffline]).
   final bool isDownloadsFolder;
 
-  const _MenuContext({
+  _MenuContext({
     required this.mediaItem,
     required this.playlist,
     required this.mediaClient,
@@ -117,7 +137,7 @@ class _MenuContext {
 
   /// A downloads folder's entries act on local downloads, so none of the
   /// server-side gates apply.
-  const _MenuContext.downloadsFolder(MediaItem this.mediaItem)
+  _MenuContext.downloadsFolder(MediaItem this.mediaItem)
     : playlist = null,
       mediaClient = null,
       catalogSources = null,
@@ -386,10 +406,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Returns `null` when the backend exposes no per-item permission (Plex),
   /// which leaves the account-level gate in charge, and `false` for every
   /// unknown on a backend that does expose one — offline, server down, request
-  /// failed or timed out. The probe blocks the menu opening, so it is bounded
-  /// by `MediaServerTimeouts.jellyfinDeletePermission` and does not chase
-  /// failover endpoints: a stalled endpoint hunt would be felt as a frozen
-  /// long-press, and hiding one entry is the cheaper failure.
+  /// failed or timed out. The menu opens while this bounded probe runs and
+  /// only adds Delete after a successful permission answer.
   ///
   /// Backend detection comes first so a menu on a backend without the
   /// capability neither probes nor touches offline state — the read would
@@ -421,14 +439,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // The awaited probe outlived the widget; the try/finally that normally
       // clears this flag only starts once the menu is on screen.
       _isContextMenuOpen = false;
+      menu.close();
       return;
     }
 
-    final menuActions = menu.isDownloadsFolder
-        ? _buildDownloadsFolderMenuActions(menu.mediaItem!)
-        : menu.isCollection || menu.isPlaylist
-        ? _buildListMenuActions(context, menu)
-        : _buildItemMenuActions(context, menu);
+    final leadingActions = <_MenuAction>[];
+    List<AppMenuEntry<String>> buildEntries(BuildContext _) => _menuEntries([
+      ...leadingActions,
+      if (menu.isDownloadsFolder)
+        ..._buildDownloadsFolderMenuActions(menu.mediaItem!)
+      else if (menu.isCollection || menu.isPlaylist)
+        ..._buildListMenuActions(context, menu)
+      else
+        ..._buildItemMenuActions(context, menu),
+      for (var i = 0; i < widget.extraEntries.length; i++)
+        _MenuAction(value: 'extra_$i', icon: widget.extraEntries[i].icon, label: widget.extraEntries[i].label),
+    ]);
     if (!widget.isOffline && menu.isCollection && menu.mediaItem != null) {
       final collection = menu.mediaItem!;
       final serverId = collection.serverId ?? menu.mediaClient?.serverId.value;
@@ -436,8 +462,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         final pinKey = homePinnedCollectionKey(serverId, collection.id);
         final settings = await SettingsService.getInstance();
         final isPinned = settings.read(SettingsService.homePinnedCollections).contains(pinKey);
-        menuActions.insert(
-          0,
+        leadingActions.add(
           _MenuAction(
             value: 'toggle_home_pin',
             icon: Symbols.push_pin_rounded,
@@ -448,13 +473,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
     if (!mounted || !context.mounted) {
       _isContextMenuOpen = false;
+      menu.close();
       return;
     }
-    for (var i = 0; i < widget.extraEntries.length; i++) {
-      final entry = widget.extraEntries[i];
-      menuActions.add(_MenuAction(value: 'extra_$i', icon: entry.icon, label: entry.label));
-    }
-
     final openedFromKeyboard = _openedFromKeyboard;
     _openedFromKeyboard = false;
 
@@ -472,7 +493,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final selected = await showAdaptiveAppMenu<String>(
       this.context,
       title: _itemMenuTitle(),
-      entries: _menuEntries(menuActions),
+      entries: buildEntries(context),
+      entriesListenable: menu.revision,
+      entriesBuilder: buildEntries,
       position: position,
       focusFirstItem: openedFromKeyboard,
       isScrollControlled: true,
@@ -496,6 +519,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } finally {
       _isContextMenuOpen = false;
+      menu.close();
 
       // Restore focus to the previously focused item after the menu closes,
       // but only if no navigation occurred and the focus node is still valid
@@ -505,8 +529,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Resolve everything the entry list depends on. The deletion probe is the
-  /// one awaited step, so callers re-check `mounted` on return.
+  /// Resolve local gates, then hydrate network-dependent entries in the open
+  /// menu. Unknown favorite state and deletion permission never enable actions.
   Future<_MenuContext> _resolveMenuContext(BuildContext context) async {
     final mediaItem = _mediaItem;
     final playlist = _playlist;
@@ -585,38 +609,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         mediaKind == MediaKind.movie ||
         mediaKind == MediaKind.show ||
         mediaKind == MediaKind.season;
-    final canDeleteFromServer =
-        isDeletableKind &&
-        isMediaDeletionAllowed(
-          itemBackend: itemBackend,
-          resolvedItemPermission: await _resolveDeletePermission(
-            client: mediaClient,
-            item: mediaItem,
-            serverOnline: itemServerOnline,
-          ),
-          isAdminActionAllowed: isAdmin,
-        );
-    MediaItem? favoriteItem;
-    if (mediaItem != null && mediaClient?.capabilities.userFavorites == true && favoritesOnline) {
-      // Favorites represent the series on every surface, including episode
-      // thumbnails and season tabs, rather than an individual episode/season.
-      final targetId = mediaItem.isEpisode
-          ? mediaItem.grandparentId
-          : mediaItem.isSeason
-          ? mediaItem.parentId
-          : (mediaItem.isMovie || mediaItem.isShow ? mediaItem.id : null);
-      if (targetId != null) {
-        try {
-          final detail = targetId == mediaItem.id
-              ? _updatedFavorite ?? mediaItem
-              : await mediaClient!.fetchItem(targetId);
-          if (detail != null && detail.id == targetId && (detail.isShow || detail.isMovie)) favoriteItem = detail;
-        } catch (e) {
-          appLogger.d('Favorite state unavailable for context menu', error: e);
-        }
-      }
-    }
-    return _MenuContext(
+    final favoriteStatus =
+        mediaItem != null &&
+            FavoriteStatus.targetId(mediaItem) != null &&
+            mediaClient != null &&
+            favoritesOnline &&
+            mediaClient.capabilities.userFavorites
+        ? FavoriteStatus.forClient(mediaClient)
+        : null;
+    final favoriteItem = mediaItem == null ? null : favoriteStatus?.cachedTarget(_updatedFavorite ?? mediaItem);
+    final menu = _MenuContext(
       mediaItem: mediaItem,
       playlist: playlist,
       mediaClient: mediaClient,
@@ -628,9 +630,41 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       canEditMetadata: canEditMetadata,
       showWatchlistEntry: showWatchlistEntry,
       watchlistRemoveOffered: watchlistRemoveOffered,
-      canDeleteFromServer: canDeleteFromServer,
+      canDeleteFromServer:
+          isDeletableKind &&
+          isMediaDeletionAllowed(itemBackend: itemBackend, resolvedItemPermission: null, isAdminActionAllowed: isAdmin),
       favoriteItem: favoriteItem,
     );
+    if (isDeletableKind) {
+      unawaited(
+        _resolveDeletePermission(client: mediaClient, item: mediaItem, serverOnline: itemServerOnline).then((
+          permission,
+        ) {
+          if (menu.closed) return;
+          menu.canDeleteFromServer = isMediaDeletionAllowed(
+            itemBackend: itemBackend,
+            resolvedItemPermission: permission,
+            isAdminActionAllowed: isAdmin,
+          );
+          menu.changed();
+        }),
+      );
+    }
+    if (favoriteStatus != null &&
+        mediaItem != null &&
+        FavoriteStatus.targetId(mediaItem) != null &&
+        favoriteItem == null) {
+      menu.favoriteLoading = true;
+      unawaited(
+        favoriteStatus.resolve(mediaClient!, mediaItem).then((favorite) {
+          if (menu.closed) return;
+          menu.favoriteItem = favorite;
+          menu.favoriteLoading = false;
+          menu.changed();
+        }),
+      );
+    }
+    return menu;
   }
 
   /// Entries for a downloads folder (see [MediaContextMenu.isOffline]).
@@ -701,9 +735,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
         _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+      if (menu.favoriteLoading)
+        _MenuAction(value: 'favorite_loading', icon: Symbols.favorite_rounded, label: t.common.loading, enabled: false),
       if (menu.favoriteItem case final favorite?)
         _MenuAction(
-          value: 'toggle_favorite',
+          value: favorite.isFavorite == true ? 'favorite_remove' : 'favorite_add',
           icon: Symbols.favorite_rounded,
           label: favorite.isFavorite == true ? t.mediaMenu.unfavorite : t.mediaMenu.addToFavorites,
         ),
@@ -981,12 +1017,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await navigateToVideoPlayer(context, metadata: mediaItem.copyWith(viewOffsetMs: 0), resolveWatchState: false);
         }
         break;
-      case 'toggle_favorite':
+      case 'favorite_add' || 'favorite_remove':
         final favorite = menu.favoriteItem;
         if (favorite != null && menu.mediaClient != null) {
-          final selected = favorite.isFavorite != true;
-          await menu.mediaClient!.setFavorite(favorite, selected);
-          final updated = favorite.copyWith(isFavorite: selected);
+          final shouldFavorite = selected == 'favorite_add';
+          await menu.mediaClient!.setFavorite(favorite, shouldFavorite);
+          final updated = favorite.copyWith(isFavorite: shouldFavorite);
           if (favorite.id == mediaItem.id) _updatedFavorite = updated;
           _notifyRefresh(updated);
         }
@@ -1190,6 +1226,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           icon: action.icon,
           label: action.label,
           destructive: action.destructive,
+          enabled: action.enabled,
         ),
     ];
   }

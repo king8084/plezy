@@ -222,6 +222,9 @@
     "gridView": "Grade",
     "listView": "Lista",
     "showHeroSection": "Mostrar Seção de Destaque",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Ação da seção Continuar assistindo",
     "continueWatchingPlay": "Reproduzir",
     "continueWatchingDetails": "Abrir detalhes",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Sempre mostrar nomes dos servidores nos títulos dos hubs.",
     "groupLibrariesByServer": "Agrupar Bibliotecas por Servidor",
     "groupLibrariesByServerDescription": "Agrupar bibliotecas da barra lateral por servidor de mídia.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Manter Barra Lateral Sempre Aberta",
     "alwaysKeepSidebarOpenDescription": "A barra lateral fica expandida e a área de conteúdo se ajusta",
     "showUnwatchedCount": "Mostrar Contagem de Não Assistidos",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Estilo de Legendas",
     "subtitleStylingDescription": "Personalizar aparência das legendas",
     "smallSkipDuration": "Duração do Avanço Curto",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Duração do Avanço Longo",
     "rewindOnResume": "Rebobinar ao retomar",
     "secondsUnit": "${seconds} segundos",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Em todos os lugares",
     "playerScopeLibrary": "Por biblioteca",
     "playerScopeTitle": "Por série ou filme",
-    "exportDialogTitle": "Exportar configurações do Plezy"
+    "exportDialogTitle": "Exportar configurações do Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Item de mídia excluído com sucesso",
     "mediaFailedToDelete": "Falha ao excluir item de mídia",
     "rate": "Avaliar",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Reproduzir do início",
     "playVersion": "Reproduzir versão..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "Série de TV",
     "minutesLeft": "${minutes} min restantes",
     "moreLikeThis": "Títulos semelhantes",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} título",
       "other": "${n} títulos"

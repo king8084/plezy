@@ -8,6 +8,7 @@ import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/removed_continue_watching_provider.dart';
 import 'removed_continue_watching_screen.dart';
+import 'pinned_home_collections_screen.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -137,6 +138,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 destinationBuilder: (_) => const RemovedContinueWatchingScreen(),
               ),
             _episodeActionSelector(),
+            SettingNavigationTile(
+              icon: Symbols.push_pin_rounded,
+              title: t.settings.pinnedHomeCollections,
+              subtitle: t.settings.pinnedHomeCollectionsDescription,
+              destinationBuilder: (_) => const PinnedHomeCollectionsScreen(),
+            ),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,

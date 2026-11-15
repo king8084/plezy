@@ -222,6 +222,9 @@
     "gridView": "Raster",
     "listView": "Lijst",
     "showHeroSection": "Toon hoofdsectie",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Actie voor 'Doorgaan met kijken'",
     "continueWatchingPlay": "Afspelen",
     "continueWatchingDetails": "Details openen",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Toon servernamen altijd in hubtitels.",
     "groupLibrariesByServer": "Bibliotheken groeperen per server",
     "groupLibrariesByServerDescription": "Groepeer zijbalkbibliotheken onder elke mediaserver.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Ondertitelopmaak",
     "subtitleStylingDescription": "Pas de weergave van ondertitels aan",
     "smallSkipDuration": "Korte sprong",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Lange sprong",
     "rewindOnResume": "Terugspoelen bij hervatten",
     "secondsUnit": "${seconds} seconden",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Overal",
     "playerScopeLibrary": "Per bibliotheek",
     "playerScopeTitle": "Per serie of film",
-    "exportDialogTitle": "Plezy-instellingen exporteren"
+    "exportDialogTitle": "Plezy-instellingen exporteren",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Ingebouwd",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Afspelen vanaf het begin",
     "playVersion": "Versie afspelen..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "Tv-serie",
     "minutesLeft": "nog ${minutes} min",
     "moreLikeThis": "Meer zoals dit",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titels"

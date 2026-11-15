@@ -222,6 +222,9 @@
     "gridView": "グリッド",
     "listView": "リスト",
     "showHeroSection": "注目コンテンツを表示",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "視聴中の操作",
     "continueWatchingPlay": "再生",
     "continueWatchingDetails": "詳細を開く",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "ハブのタイトルに常にサーバー名を表示します。",
     "groupLibrariesByServer": "サーバーごとにライブラリをグループ化",
     "groupLibrariesByServerDescription": "サイドバーのライブラリをメディアサーバーごとにまとめます。",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "サイドバーを常に開いておく",
     "alwaysKeepSidebarOpenDescription": "サイドバーを展開したままにし、コンテンツ領域を幅に合わせて調整します",
     "showUnwatchedCount": "未視聴数を表示",
@@ -278,6 +285,8 @@
     "subtitleStyling": "字幕スタイル",
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",
     "smallSkipDuration": "短いスキップ時間",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "長いスキップ時間",
     "rewindOnResume": "再開時に巻き戻し",
     "secondsUnit": "${seconds}秒",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "すべて",
     "playerScopeLibrary": "ライブラリごと",
     "playerScopeTitle": "作品ごと",
-    "exportDialogTitle": "Plezyの設定をエクスポート"
+    "exportDialogTitle": "Plezyの設定をエクスポート",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "標準",
@@ -765,6 +777,8 @@
     "mediaDeletedSuccessfully": "メディアアイテムを正常に削除しました",
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
     "rate": "評価",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "最初から再生",
     "playVersion": "バージョンを選んで再生…"
   },
@@ -1220,6 +1234,8 @@
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分",
     "moreLikeThis": "似ている作品",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n}作品"
     },

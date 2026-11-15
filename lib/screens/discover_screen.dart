@@ -45,6 +45,7 @@ import '../services/apple_tv_remote_touch_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
+import '../widgets/full_description_dialog.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import '../mixins/refreshable.dart';
@@ -311,20 +312,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final summary = hidden ? null : item.summary;
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item.title ?? item.displayTitle),
-        content: SingleChildScrollView(
-          child: Text(
-            summary == null || summary.isEmpty ? t.discover.noDescription : summary,
-            style: PlatformDetector.isTV()
-                ? Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontSize: 30 * TvLayoutConstants.scaleOf(context), height: 1.5)
-                : null,
-          ),
-        ),
-        actions: [TextButton(autofocus: true, onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
-      ),
+      builder: (context) => FullDescriptionDialog(item: item, description: summary),
     );
   }
 

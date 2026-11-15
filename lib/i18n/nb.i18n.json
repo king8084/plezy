@@ -222,6 +222,9 @@
     "gridView": "Rutenett",
     "listView": "Liste",
     "showHeroSection": "Vis fremhevet seksjon",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Handling for «Fortsett å se»",
     "continueWatchingPlay": "Spill av",
     "continueWatchingDetails": "Åpne detaljer",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Vis alltid servernavn i hubtitler.",
     "groupLibrariesByServer": "Grupper biblioteker etter server",
     "groupLibrariesByServerDescription": "Grupper sidepanelbiblioteker under hver medieserver.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Hold sidefeltet alltid åpent",
     "alwaysKeepSidebarOpenDescription": "Sidefeltet forblir utvidet og innholdsområdet tilpasser seg",
     "showUnwatchedCount": "Vis antall usette",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpass utseendet på undertekster",
     "smallSkipDuration": "Kort hoppvarighet",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Lang hoppvarighet",
     "rewindOnResume": "Spol tilbake ved gjenopptakelse",
     "secondsUnit": "${seconds} sekunder",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Eksporter Plezy-innstillinger"
+    "exportDialogTitle": "Eksporter Plezy-innstillinger",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Innebygde",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Vurder",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Spill fra begynnelsen",
     "playVersion": "Spill av versjon..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min igjen",
     "moreLikeThis": "Mer som dette",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} tittel",
       "other": "${n} titler"

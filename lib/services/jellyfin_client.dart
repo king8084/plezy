@@ -15,6 +15,7 @@ import '../media/library_filter_result.dart';
 import '../media/library_genre.dart';
 import '../media/library_query.dart';
 import 'favorite_channels_repository.dart';
+import 'favorite_status.dart';
 import 'live_session_tracker.dart';
 import 'file_info_parser.dart';
 import 'library_query_translator.dart';

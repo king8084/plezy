@@ -92,5 +92,6 @@ mixin _JellyfinWatchStateMethods on _JellyfinClientInternals {
         ? await _http.post(path, queryParameters: {'userId': connection.userId})
         : await _http.delete(path, queryParameters: {'userId': connection.userId});
     throwIfHttpError(response);
+    FavoriteStatus.forClient(this as MediaServerClient).confirm(itemId, isFavorite);
   }
 }

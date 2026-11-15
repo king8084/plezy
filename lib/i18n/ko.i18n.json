@@ -222,6 +222,9 @@
     "gridView": "그리드 보기",
     "listView": "목록 보기",
     "showHeroSection": "주요 추천 영역 표시",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "계속 보기 동작",
     "continueWatchingPlay": "재생",
     "continueWatchingDetails": "상세 정보 열기",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다.",
     "groupLibrariesByServer": "서버별로 라이브러리 그룹화",
     "groupLibrariesByServerDescription": "사이드바 라이브러리를 미디어 서버별로 그룹화합니다.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "사이드바 항상 열어두기",
     "alwaysKeepSidebarOpenDescription": "사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다",
     "showUnwatchedCount": "미시청 수 표시",
@@ -278,6 +285,8 @@
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막 모양을 사용자 지정합니다",
     "smallSkipDuration": "짧은 건너뛰기 시간",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "긴 건너뛰기 시간",
     "rewindOnResume": "재개 시 되감기",
     "secondsUnit": "${seconds}초",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "모든 곳",
     "playerScopeLibrary": "라이브러리별",
     "playerScopeTitle": "시리즈 또는 영화별",
-    "exportDialogTitle": "Plezy 설정 내보내기"
+    "exportDialogTitle": "Plezy 설정 내보내기",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "기본 제공",
@@ -765,6 +777,8 @@
     "mediaDeletedSuccessfully": "미디어 항목이 성공적으로 삭제되었습니다",
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
     "rate": "평가",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "처음부터 재생",
     "playVersion": "버전 재생..."
   },
@@ -1220,6 +1234,8 @@
     "tvShow": "TV 시리즈",
     "minutesLeft": "${minutes}분 남음",
     "moreLikeThis": "비슷한 콘텐츠",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n}개 타이틀"
     },

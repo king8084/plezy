@@ -3886,6 +3886,8 @@ class _DetailSeerrSources extends CatalogSourcesProvider {
 }
 
 class _FakeMediaServerClient implements MediaServerClient {
+  @override
+  final authenticationSessionId = Object();
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;

@@ -222,6 +222,9 @@
     "gridView": "Тор",
     "listView": "Тізім",
     "showHeroSection": "Басты бөлімді көрсету",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "\"Көруді жалғастыру\" әрекеті",
     "continueWatchingPlay": "Ойнату",
     "continueWatchingDetails": "Толығырақ ашу",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "Бөлім тақырыптарында әрдайым сервер атын көрсету.",
     "groupLibrariesByServer": "Кітапханаларды сервер бойынша топтау",
     "groupLibrariesByServerDescription": "Мүйістік мәзірдегі кітапханаларды серверлер бойынша топтау.",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Сүйістік мәзірді әрдайым ашық ұстау",
     "alwaysKeepSidebarOpenDescription": "Бүйірлік мәзір ашық күйінде қалады, мазмұн аймағы соған бейімделеді",
     "showUnwatchedCount": "Көрілмегендер санын көрсету",
@@ -278,6 +285,8 @@
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",
     "smallSkipDuration": "Шағын өткізіп жіберу уақыты",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Үлкен өткізіп жіберу уақыты",
     "rewindOnResume": "Жалғастырғанда артқа айналдыру",
     "secondsUnit": "${seconds} секунд",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "Барлық жерде",
     "playerScopeLibrary": "Кітапхана бойынша",
     "playerScopeTitle": "Сериал немесе фильм бойынша",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "Plezy параметрлерін экспорттау",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "Кірістірілген",
@@ -768,6 +780,8 @@
     "mediaDeletedSuccessfully": "Медиа элементі сәтті өшірілді",
     "mediaFailedToDelete": "Медиа элементін өшіру мүмкін болмады",
     "rate": "Бағалау",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Басынан бастап ойнату",
     "playVersion": "Нұсқаны ойнату..."
   },
@@ -1224,6 +1238,8 @@
     "tvShow": "TV Шоу",
     "minutesLeft": "${minutes} мин қалды",
     "moreLikeThis": "Ұқсастар",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"

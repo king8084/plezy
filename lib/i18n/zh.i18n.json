@@ -222,6 +222,9 @@
     "gridView": "网格视图",
     "listView": "列表视图",
     "showHeroSection": "显示精选内容区",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "继续观看操作",
     "continueWatchingPlay": "播放",
     "continueWatchingDetails": "打开详情",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。",
     "groupLibrariesByServer": "按服务器分组媒体库",
     "groupLibrariesByServerDescription": "在侧边栏中按媒体服务器分组媒体库。",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "始终保持侧边栏展开",
     "alwaysKeepSidebarOpenDescription": "侧边栏保持展开状态，内容区域自动调整",
     "showUnwatchedCount": "显示未观看数量",
@@ -278,6 +285,8 @@
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",
     "smallSkipDuration": "短跳过时长",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "长跳过时长",
     "rewindOnResume": "恢复时回退",
     "secondsUnit": "${seconds} 秒",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "所有位置",
     "playerScopeLibrary": "按媒体库",
     "playerScopeTitle": "按剧集或电影",
-    "exportDialogTitle": "导出 Plezy 设置"
+    "exportDialogTitle": "导出 Plezy 设置",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "内置",
@@ -765,6 +777,8 @@
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "从头播放",
     "playVersion": "播放版本…"
   },
@@ -1220,6 +1234,8 @@
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟",
     "moreLikeThis": "更多类似内容",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n} 个标题"
     },

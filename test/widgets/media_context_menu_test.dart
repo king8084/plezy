@@ -14,6 +14,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/media/ids.dart';
@@ -70,6 +71,53 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  testWidgets('episode menu opens immediately while parent favorite lookup is pending', (tester) async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    final response = Completer<http.Response>();
+    final key = await _pumpJellyfinItemMenu(
+      tester,
+      isAdministrator: false,
+      item: testMediaItem(
+        id: 'e16',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        grandparentId: 'show',
+        serverId: 'srv-1',
+      ),
+      handler: (request) =>
+          request.url.path.endsWith('/show') ? response.future : Future.value(http.Response('{}', 200)),
+    );
+    key.currentState!.showContextMenu(key.currentContext!);
+    await tester.pumpAndSettle();
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+    expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    String? focusedLabel() => FocusManager.instance.primaryFocus?.context
+        ?.findAncestorWidgetOfExactType<AppMenuItemTile<String>>()
+        ?.item
+        .label;
+    expect(focusedLabel(), t.mediaMenu.rate);
+    response.complete(
+      http.Response(
+        jsonEncode({
+          'Id': 'show',
+          'Name': 'Show',
+          'Type': 'Series',
+          'UserData': {'IsFavorite': true},
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(t.mediaMenu.unfavorite), findsOneWidget);
+    expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+    expect(focusedLabel(), t.mediaMenu.rate, reason: 'late entries must not steal the focused action');
+  });
+
   for (final initialFavorite in [false, true]) {
     testWidgets('favorite menu toggles and reopens correctly from $initialFavorite', (tester) async {
       resetSharedPreferencesForTest();
@@ -501,7 +549,11 @@ void main() {
 
       menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
       await tester.pump();
-      expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the permission answer');
+      expect(
+        find.text(t.mediaMenu.fileInfo),
+        findsOneWidget,
+        reason: 'ordinary actions do not wait for the permission answer',
+      );
 
       await tester.pump(MediaServerTimeouts.jellyfinDeletePermission + const Duration(milliseconds: 1));
       await tester.pumpAndSettle();

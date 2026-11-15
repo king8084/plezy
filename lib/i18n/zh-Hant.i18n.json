@@ -222,6 +222,9 @@
     "gridView": "網格檢視",
     "listView": "清單檢視",
     "showHeroSection": "顯示精選內容區",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "繼續觀看操作",
     "continueWatchingPlay": "播放影片",
     "continueWatchingDetails": "開啟詳情頁",
@@ -234,6 +237,10 @@
     "showServerNameOnHubsDescription": "一律在推薦區標題中顯示伺服器名稱。",
     "groupLibrariesByServer": "依伺服器將媒體庫分組",
     "groupLibrariesByServerDescription": "將側邊欄中的媒體庫依伺服器進行分組。",
+    "sidebarOrder": "",
+    "sidebarOrderDescription": "",
+    "pinFavoritesToSidebar": "",
+    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "一律保持側邊欄展開",
     "alwaysKeepSidebarOpenDescription": "側邊欄保持展開狀態，內容區域自動調整",
     "showUnwatchedCount": "顯示未觀看數量",
@@ -278,6 +285,8 @@
     "subtitleStyling": "字幕樣式",
     "subtitleStylingDescription": "調整字幕外觀",
     "smallSkipDuration": "短跳過時間",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "長跳過時間",
     "rewindOnResume": "繼續播放時稍微倒轉",
     "secondsUnit": "${seconds} 秒",
@@ -518,7 +527,10 @@
     "playerScopeGlobal": "全部",
     "playerScopeLibrary": "依媒體庫",
     "playerScopeTitle": "依影集或電影",
-    "exportDialogTitle": "匯出 Plezy 設定"
+    "exportDialogTitle": "匯出 Plezy 設定",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": ""
   },
   "themeEditor": {
     "builtIn": "內建",
@@ -765,6 +777,8 @@
     "mediaDeletedSuccessfully": "媒體已成功刪除",
     "mediaFailedToDelete": "刪除媒體失敗",
     "rate": "評分",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "從頭播放",
     "playVersion": "播放版本…"
   },
@@ -1220,6 +1234,8 @@
     "tvShow": "影集",
     "minutesLeft": "剩餘 ${minutes} 分鐘",
     "moreLikeThis": "更多類似內容",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n} 部作品"
     },
