@@ -4,14 +4,36 @@ Personal Jellyfin client fork developed on CachyOS with the ChatGPT desktop app.
 Playback setup: Apple TV 4K, LG C6H, and Denon AVR-X3800H.
 
 ## Current status
+November 15 owner-authorized build #18 completed: owner explicitly requested
+Apple TV build, granted build-scoped Unraid permission and confirmed Plezy
+closed / TV Settings. Pushed `22f5fc8bb363d42c969fe9b5e5b1a17e1d26434c`;
+Codemagic build `6af91e4290e83b09c4fa6d24` started at 05:51 Arabia time using
+the unchanged M2 unsigned-IPA workflow. CI succeeded in 4m 35s, native archive
+2m 23s; this device workflow does not run native policy tests. Downloaded and
+verified `/home/koolo7000/Downloads/Plezy-tvOS (16).ipa`, staged 0600 as
+`/tmp/Plezy-22f5fc8.ipa` (73,240,402 bytes), SHA-256
+`6c3e0929303be28795d33c8c43672fc2a71a248dce1072cb794210d077074284`.
+ZIP CRC, tvOS platform, bundle identity, local-network declaration and matching
+main/Top Shelf app-group entitlements pass. Preserved and verified 0600 backups
+`original-before-22f5fc8.ipa` (source 05:43) and `signed-before-22f5fc8.ipa`
+(05:44). Uploaded at 05:57, restricted to 0600, copied over active original and
+separately verified completion, timestamp and permissions before signing.
+After owner continuation, one Renew at 09:08 signed and installed the update
+in place on Basement at 09:08, with a Valid card and new manual success log.
+Latest installed source is `22f5fc8bb363d42c969fe9b5e5b1a17e1d26434c`.
+Same app/account, no stall, deletion/uninstall or signer/container changes;
+all older IPAs/backups retained. Proof: `/tmp/plezy-install-22f5fc8.jpg`.
+Build-scoped Unraid permission fulfilled. Owner menu-order visual check,
+retained settings and playback remain separate pending milestones.
+https://codemagic.io/app/6af73c658b158cee7474719c/build/6af91e4290e83b09c4fa6d24
+
 November 15 owner approves installed build #17 visually (“Super beautiful”),
 requesting one menu-order change: favorite/unfavorite should follow Mark as
 watched / Mark as unwatched. Moved that action block immediately below both
 watch-state actions; all other existing entry ordering and favorite behavior
 remain unchanged. All 76 existing context-menu tests and diff checks pass
-(`/tmp/plezy-favorite-menu-order-tests.log`). Source change only: no new build,
-install or Unraid access; installed remains `d82785501`. Next: explicit owner
-Apple TV build request and scoped Unraid permission, then verify menu order.
+(`/tmp/plezy-favorite-menu-order-tests.log`). Included in the authorized build
+above, installed as `22f5fc8bb`; owner native menu-order confirmation pending.
 Owner visual approval does not establish new playback/settings confirmation.
 
 November 15 owner-authorized build #17 completed: owner explicitly requested
@@ -31,8 +53,8 @@ copied over active `original.ipa` and separately verified completion, timestamp
 and permissions. Automatic review initially stopped a combined verify/Renew
 call until this separate check was done; it did not execute Renew. One accepted
 Renew at 05:44 signed and installed the update in place on Basement at 05:44,
-with a Valid card and new manual renewal success log. Latest installed source
-is `d827855019487574b4a2e60e5e55797607ea654f`. No stall, deletion/uninstall or
+with a Valid card and new manual renewal success log. Previous installed source
+was `d827855019487574b4a2e60e5e55797607ea654f`. No stall, deletion/uninstall or
 signer/container changes; same app/account and all earlier IPAs/backups retained.
 Proof: `/tmp/plezy-install-d827855.jpg`. Build-scoped Unraid permission fulfilled.
 Owner favorite/card/vote-count visual checks, retained settings and playback
@@ -814,6 +836,11 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   choosing a change.
 
 ## Milestones
+- November 15, `22f5fc8`: Codemagic build #18 `6af91e4290e83b09c4fa6d24`
+  passed in 4m 35s; native archive 2m 23s, IPA integrity/tvOS/app-group checks
+  pass. tvsign reports successful in-place installation on Basement at 09:08.
+  Same app/account, no stall or deletion, all backups retained. Owner menu-order,
+  retained-settings and playback checks remain pending.
 - November 15, `d827855`: Codemagic build #17 `6af91a5790e83b09c4fa6c64`
   passed in 6m 2s; native archive 3m 20s, IPA integrity/tvOS/app-group checks
   pass. tvsign reports successful in-place installation on Basement at 05:44.
@@ -1034,6 +1061,10 @@ for authorized device builds; do not repeatedly retry unavailable GitHub runners
   context menu; actual behavior on the Apple TV still needs owner confirmation.
 
 ## Next milestone
+Owner checks installed `22f5fc8bb` favorite/unfavorite appears directly after
+Mark as watched / Mark as unwatched. Verify retained settings and playback
+separately. This installation fulfills this build's Unraid authorization.
+
 Owner test of installed `d82785501`: favorite/unfavorite always targets the show
 from show, season and episode surfaces; lower rows have Home-sized cards and
 prioritize artwork; Seerr captions use IMDb score/count without labels. Confirm
