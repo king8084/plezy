@@ -3,6 +3,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+# Root pub get omits path dependencies' development dependencies. The full
+# analyzer also visits the vendored plugin's tests and Pigeon definitions.
+(cd packages/wakelock_plus && flutter pub get --enforce-lockfile --no-example)
+
 python3 scripts/checks/clean_translations.py --check --strict
 bash scripts/codegen.sh --check
 bash scripts/ci_guard_checks.sh
