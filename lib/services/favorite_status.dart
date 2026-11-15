@@ -9,12 +9,15 @@ import '../media/media_server_client.dart';
 /// A small shared cache for the current authenticated client session. It never
 /// persists credentials or state across profiles, and never blocks navigation.
 class FavoriteStatus extends ChangeNotifier {
+  FavoriteStatus({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
   static final _sessions = Expando<FavoriteStatus>();
 
   static FavoriteStatus forClient(MediaServerClient client) =>
       _sessions[client.authenticationSessionId] ??= FavoriteStatus();
 
   final _items = <String, MediaItem>{};
+  final DateTime Function() _now;
   final _confirmed = <String, bool>{};
   final _confirmedAt = <String, DateTime>{};
   final _pending = <String, Future<MediaItem?>>{};
@@ -30,7 +33,7 @@ class FavoriteStatus extends ChangeNotifier {
 
   bool? value(String id, {bool? fallback}) {
     final writtenAt = _confirmedAt[id];
-    if (writtenAt != null && DateTime.now().difference(writtenAt) < const Duration(minutes: 2)) {
+    if (writtenAt != null && _now().difference(writtenAt) < const Duration(minutes: 2)) {
       return _confirmed[id];
     }
     return fallback ?? _items[id]?.isFavorite;
@@ -47,7 +50,7 @@ class FavoriteStatus extends ChangeNotifier {
   void confirm(String id, bool favorite) {
     _versions[id] = (_versions[id] ?? 0) + 1;
     _confirmed[id] = favorite;
-    _confirmedAt[id] = DateTime.now();
+    _confirmedAt[id] = _now();
     if (_items[id] case final item?) _items[id] = item.copyWith(isFavorite: favorite);
     _trim();
     notifyListeners();
@@ -59,8 +62,8 @@ class FavoriteStatus extends ChangeNotifier {
     final id = targetId(item);
     if (id == null || !client.capabilities.userFavorites) return Future.value();
     final cached = cachedTarget(item);
-    if (id == item.id ||
-        (_readAt[id] != null && DateTime.now().difference(_readAt[id]!) < const Duration(minutes: 2))) {
+    final freshness = cached == null ? const Duration(seconds: 5) : const Duration(minutes: 2);
+    if (id == item.id || (_readAt[id] != null && _now().difference(_readAt[id]!) < freshness)) {
       return Future.value(cached);
     }
     return _pending[id] ??= _load(client, id);
@@ -83,7 +86,7 @@ class FavoriteStatus extends ChangeNotifier {
     } catch (_) {
       return _items[id];
     } finally {
-      _readAt[id] = DateTime.now();
+      _readAt[id] = _now();
       _pending.removeWhere((key, _) => key == id);
       _trim();
     }

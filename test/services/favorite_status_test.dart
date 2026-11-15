@@ -16,10 +16,11 @@ class _Client implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
   final response = Completer<MediaItem?>();
   int fetches = 0;
+  Future<MediaItem?> Function()? load;
   @override
   Future<MediaItem?> fetchItem(String id) {
     fetches++;
-    return response.future;
+    return load?.call() ?? response.future;
   }
 
   @override
@@ -72,6 +73,17 @@ void main() {
     expect(status.value('show'), isNull);
     expect(await status.resolve(client, episode), isNull);
     expect(client.fetches, 1);
+  });
+
+  test('a transient lookup failure allows a quick retry after connection recovery', () async {
+    var now = DateTime.utc(2026);
+    final client = _Client()..load = () async => throw StateError('offline');
+    final status = FavoriteStatus(now: () => now);
+    expect(await status.resolve(client, episode), isNull);
+    now = now.add(const Duration(seconds: 6));
+    client.load = () async => show.copyWith(isFavorite: true);
+    expect((await status.resolve(client, episode))!.isFavorite, isTrue);
+    expect(client.fetches, 2);
   });
 
   test('episode and season targets always resolve their series', () {

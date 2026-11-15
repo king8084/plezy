@@ -26,7 +26,9 @@ Implemented / being validated:
   episode titles include series, season/episode number and episode title.
 - Favorite series decoration is paint-only and keeps the focus border separate.
   Session-scoped favorite state is shared with parent-show menu lookups.
-- Menus open while favorite and delete-permission probes resolve; unknown
+- Menus open while favorite and delete-permission probes resolve; focus and
+  action intent survive late updates. Failed unknown favorite lookups retry soon.
+  Unknown
   favorite state cannot offer a misleading Add/Remove action.
 - Delta refreshes accept pinned rows only for successfully fetched servers.
   Pin titles/library metadata are cached; saved pins remain removable in Settings
@@ -34,16 +36,14 @@ Implemented / being validated:
 - Signer recovery and checksum verification documented without server changes.
 
 ## Validation
-- Focused menu, reader, pin, Favorites and detail-layout regressions pass.
-- Full-project analysis, formatting, icon/unused checks, strict translations and
-  repository guards pass. Full Flutter suite passed: 8,608 tests, 7 skipped. First pass exposed four
-  incomplete test-client fixtures, now corrected and rechecked. The final combined
-  release gate is pending after menu-lifetime and archive-gate follow-ups.
-- Full sanity CI will run on the owner fork; no IPA archive is being requested.
-- Apple native CI and native formatting require the corresponding toolchains;
-  record their actual results separately, never infer them from Dart tests.
-- The installed app remains at the checkpoint above. Source tests are not proof
-  of new native playback or device appearance.
+- Combined release gate passed: 8,609 Flutter tests, 7 skipped; isolated codegen,
+  strict translations, formatting, full analysis, icons and repository guards pass.
+- Vendored settings-storage and wakelock suites: 60 tests pass. Unused code/files
+  checks pass. Favorite/menu connection-recovery follow-up: 84 tests pass.
+- Full sanity CI on the owner fork is in progress. No IPA archive is requested.
+- Record Apple native CI and formatting results separately from Dart validation.
+- Installed app remains at the checkpoint above; candidate appearance, retained
+  settings and playback await a separately authorized device release and owner test.
 
 ## Deferred until device evidence / release checks
 - Duplicate display-criteria watchdog hypothesis: saved traces do not establish
