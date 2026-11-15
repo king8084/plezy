@@ -36,8 +36,9 @@ Implemented / being validated:
 ## Validation
 - Focused menu, reader, pin, Favorites and detail-layout regressions pass.
 - Full-project analysis, formatting, icon/unused checks, strict translations and
-  repository guards pass. Final full Flutter run is in progress; first pass
-  exposed four incomplete test-client fixtures, now corrected and rechecked.
+  repository guards pass. Full Flutter suite passed: 8,608 tests, 7 skipped. First pass exposed four
+  incomplete test-client fixtures, now corrected and rechecked. The final combined
+  release gate is pending after menu-lifetime and archive-gate follow-ups.
 - Full sanity CI will run on the owner fork; no IPA archive is being requested.
 - Apple native CI and native formatting require the corresponding toolchains;
   record their actual results separately, never infer them from Dart tests.

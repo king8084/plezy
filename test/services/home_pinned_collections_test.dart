@@ -98,4 +98,20 @@ void main() {
       hasLength(1),
     );
   });
+
+  test('pinning preserves its title before the first network refresh', () async {
+    final settings = await SettingsService.getInstance();
+    final client = _Client('server/alice', 'Saved title');
+    final collection = testMediaItem(
+      id: 'new',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.collection,
+      title: 'Saved title',
+      serverId: 'server',
+    );
+    await rememberPinnedHomeCollection(settings: settings, client: client, collection: collection);
+    final saved = readPinnedHomeCollectionMetadata(settings).values.single;
+    expect((saved['item'] as Map)['title'], 'Saved title');
+    expect(client.titleReads, 0);
+  });
 }

@@ -68,6 +68,11 @@ jobs:
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh
 
+      - name: Verify translated UI and user-facing errors
+        run: |
+          python3 scripts/checks/check_hardcoded_strings.py
+          python3 scripts/checks/check_user_facing_errors.py
+
       - name: Verify formatting
         run: |
           paths=(lib)

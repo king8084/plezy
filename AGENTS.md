@@ -13,6 +13,8 @@ Before a release, require strict translation hygiene, generated-file freshness,
 formatting, analysis and the full Flutter suite to pass. Record native CI,
 device installation and owner playback confirmation separately; an IPA archive
 alone does not establish that the release checks passed.
+Check Code Analysis, Unit Tests and Apple native reliability (tvOS) on the
+candidate in the owner's fork before starting its device archive.
 
 Keep personal addresses, device names and installation receipts out of tracked
 files. Preserve private installation history under `.git/plezy-private/`.

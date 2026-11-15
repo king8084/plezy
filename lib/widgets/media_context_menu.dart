@@ -112,6 +112,7 @@ class _MenuContext {
   }
 
   void close() {
+    if (closed) return;
     closed = true;
     revision.dispose();
   }
@@ -304,6 +305,13 @@ class MediaContextMenu extends StatefulWidget {
 class MediaContextMenuState extends State<MediaContextMenu> {
   Offset? _tapPosition;
   MediaItem? _updatedFavorite;
+  _MenuContext? _activeMenu;
+
+  @override
+  void dispose() {
+    _activeMenu?.close();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant MediaContextMenu oldWidget) {
@@ -434,75 +442,70 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     final previousFocus = FocusManager.instance.primaryFocus;
 
-    final menu = await _resolveMenuContext(context);
-    if (!mounted || !context.mounted) {
-      // The awaited probe outlived the widget; the try/finally that normally
-      // clears this flag only starts once the menu is on screen.
-      _isContextMenuOpen = false;
-      menu.close();
-      return;
-    }
-
-    final leadingActions = <_MenuAction>[];
-    List<AppMenuEntry<String>> buildEntries(BuildContext _) => _menuEntries([
-      ...leadingActions,
-      if (menu.isDownloadsFolder)
-        ..._buildDownloadsFolderMenuActions(menu.mediaItem!)
-      else if (menu.isCollection || menu.isPlaylist)
-        ..._buildListMenuActions(context, menu)
-      else
-        ..._buildItemMenuActions(context, menu),
-      for (var i = 0; i < widget.extraEntries.length; i++)
-        _MenuAction(value: 'extra_$i', icon: widget.extraEntries[i].icon, label: widget.extraEntries[i].label),
-    ]);
-    if (!widget.isOffline && menu.isCollection && menu.mediaItem != null) {
-      final collection = menu.mediaItem!;
-      final serverId = collection.serverId ?? menu.mediaClient?.serverId.value;
-      if (serverId != null && serverId.isNotEmpty) {
-        final pinKey = homePinnedCollectionKey(serverId, collection.id);
-        final settings = await SettingsService.getInstance();
-        final isPinned = settings.read(SettingsService.homePinnedCollections).contains(pinKey);
-        leadingActions.add(
-          _MenuAction(
-            value: 'toggle_home_pin',
-            icon: Symbols.push_pin_rounded,
-            label: isPinned ? t.mediaMenu.removeFromHome : t.mediaMenu.pinToHome,
-          ),
-        );
-      }
-    }
-    if (!mounted || !context.mounted) {
-      _isContextMenuOpen = false;
-      menu.close();
-      return;
-    }
-    final openedFromKeyboard = _openedFromKeyboard;
-    _openedFromKeyboard = false;
-
-    var position = _tapPosition;
-    if (position == null) {
-      final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
-    }
-
-    // Present from the menu's own context: it sits at the trigger widget,
-    // below any screen-level OverlaySheetHost, while callers often pass a
-    // screen context from ABOVE its host (which would skip the host and
-    // fall back to a hostless modal sheet).
-    final selected = await showAdaptiveAppMenu<String>(
-      this.context,
-      title: _itemMenuTitle(),
-      entries: buildEntries(context),
-      entriesListenable: menu.revision,
-      entriesBuilder: buildEntries,
-      position: position,
-      focusFirstItem: openedFromKeyboard,
-      isScrollControlled: true,
-    );
-
     final outcome = _MenuOutcome();
     try {
+      final menu = await _resolveMenuContext(context);
+      _activeMenu = menu;
+      if (!mounted || !context.mounted) {
+        return;
+      }
+
+      final leadingActions = <_MenuAction>[];
+      List<AppMenuEntry<String>> buildEntries(BuildContext _) => _menuEntries([
+        ...leadingActions,
+        if (menu.isDownloadsFolder)
+          ..._buildDownloadsFolderMenuActions(menu.mediaItem!)
+        else if (menu.isCollection || menu.isPlaylist)
+          ..._buildListMenuActions(context, menu)
+        else
+          ..._buildItemMenuActions(context, menu),
+        for (var i = 0; i < widget.extraEntries.length; i++)
+          _MenuAction(value: 'extra_$i', icon: widget.extraEntries[i].icon, label: widget.extraEntries[i].label),
+      ]);
+      if (!widget.isOffline && menu.isCollection && menu.mediaItem != null) {
+        final collection = menu.mediaItem!;
+        final serverId = collection.serverId ?? menu.mediaClient?.serverId.value;
+        if (serverId != null && serverId.isNotEmpty) {
+          final pinKey = homePinnedCollectionKey(serverId, collection.id);
+          final settings = await SettingsService.getInstance();
+          final isPinned = settings.read(SettingsService.homePinnedCollections).contains(pinKey);
+          leadingActions.add(
+            _MenuAction(
+              value: 'toggle_home_pin',
+              icon: Symbols.push_pin_rounded,
+              label: isPinned ? t.mediaMenu.removeFromHome : t.mediaMenu.pinToHome,
+            ),
+          );
+        }
+      }
+      if (!mounted || !context.mounted) {
+        return;
+      }
+      final openedFromKeyboard = _openedFromKeyboard;
+      _openedFromKeyboard = false;
+
+      var position = _tapPosition;
+      if (position == null) {
+        final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+        final RenderBox renderBox = context.findRenderObject() as RenderBox;
+        position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
+      }
+
+      // Present from the menu's own context: it sits at the trigger widget,
+      // below any screen-level OverlaySheetHost, while callers often pass a
+      // screen context from ABOVE its host (which would skip the host and
+      // fall back to a hostless modal sheet).
+      final selected = await showAdaptiveAppMenu<String>(
+        this.context,
+        title: _itemMenuTitle(),
+        entries: buildEntries(context),
+        entriesListenable: menu.revision,
+        entriesBuilder: buildEntries,
+        position: position,
+        focusFirstItem: openedFromKeyboard,
+        isScrollControlled: true,
+      );
+
       if (!context.mounted) return;
       await _dispatchMenuSelection(
         context,
@@ -519,8 +522,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } finally {
       _isContextMenuOpen = false;
-      menu.close();
-
+      _activeMenu?.close();
+      _activeMenu = null;
       // Restore focus to the previously focused item after the menu closes,
       // but only if no navigation occurred and the focus node is still valid
       if (!outcome.didNavigate && previousFocus != null) {
@@ -961,6 +964,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           pins.add(pinKey);
         }
         await settings.write(SettingsService.homePinnedCollections, pins);
+        if (!isPinned && menu.mediaClient != null) {
+          try {
+            await rememberPinnedHomeCollection(settings: settings, client: menu.mediaClient!, collection: collection);
+          } catch (error) {
+            appLogger.d('Pinned collection title could not be cached', error: error);
+          }
+        }
         if (!context.mounted) break;
         try {
           await context.read<DiscoverProvider>().load();

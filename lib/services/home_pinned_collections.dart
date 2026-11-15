@@ -131,3 +131,19 @@ Map<String, dynamic> pinnedHomeCollectionMetadata(MediaItem collection, String p
     'serverName': collection.serverName,
   },
 };
+
+/// Preserve the name at pin time, even if the first Home refresh fails. Mark it
+/// stale so the next successful fetch still completes its library metadata.
+Future<void> rememberPinnedHomeCollection({
+  required SettingsService settings,
+  required MediaServerClient client,
+  required MediaItem collection,
+}) async {
+  final pinKey = homePinnedCollectionKey(client.serverId.value, collection.id);
+  final cacheKey = '${client.cacheServerId}$_pinSeparator$pinKey';
+  final metadata = readPinnedHomeCollectionMetadata(settings);
+  metadata[cacheKey] = pinnedHomeCollectionMetadata(collection, pinKey)
+    ..['cacheKey'] = cacheKey
+    ..['cachedAt'] = 0;
+  await settings.write(SettingsService.homePinnedCollectionMetadata, metadata.values.map(jsonEncode).toList());
+}
