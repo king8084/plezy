@@ -1,0 +1,101 @@
+import datetime as dt
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from plezy_search.query import parse  # noqa: E402
+from plezy_search.search import Engine  # noqa: E402
+from test_index import episode, make_indexer, movie, series  # noqa: E402
+
+TODAY = dt.date(2026, 11, 16)
+
+
+class ParserTest(unittest.TestCase):
+    def test_owner_example_rating_genre_kind(self):
+        p = parse('give me sci fi shows with over 8 ratings', today=TODAY)
+        self.assertEqual((p.kinds, p.genres, p.rating_min > 8, p.text), ({'Series'}, ['scifi'], True, ''))
+
+    def test_rating_phrasings(self):
+        self.assertEqual(parse('anime rated 8+', today=TODAY).rating_min, 8.0)
+        self.assertEqual(parse('shows with imdb at least 8.5', today=TODAY).rating_min, 8.5)
+        self.assertIsNone(parse('movies over 90 minutes', today=TODAY).rating_min)
+        self.assertEqual(parse('movies over 90 minutes', today=TODAY).runtime_min, 90)
+
+    def test_decades_and_years(self):
+        p = parse('90s comedies', today=TODAY)
+        self.assertEqual((p.year_min, p.year_max), (1990, 1999))
+        self.assertEqual(parse('movies after 2010', today=TODAY).year_min, 2011)
+        self.assertEqual(parse('2010s thrillers', today=TODAY).year_min, 2010)
+
+    def test_people_need_vocabulary(self):
+        p = parse('tom hanks movies', {'people': {'tom hanks': 'Tom Hanks'}}, today=TODAY)
+        self.assertEqual((p.people, p.kinds), (['tom hanks'], {'Movie'}))
+
+    def test_plot_descriptions_do_not_become_filters(self):
+        p = parse('A Russian cop teams up with a Chicago detective to capture a drug lord', today=TODAY)
+        self.assertEqual((p.genres, p.languages), ([], set()))
+        self.assertIn('mystery', p.soft_genres)
+
+    def test_list_style_requests_keep_filters(self):
+        p = parse('best korean thriller movies', today=TODAY)
+        self.assertEqual((p.languages, p.genres, p.sort), ({'ko'}, ['thriller'], 'rating'))
+
+
+class EngineTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        items = [
+            series(1, 'Firefly', rating=9.0, Tags=['space', 'spaceship']),
+            series(2, 'Dragon Saga', rating=9.1, Tags=['dragon', 'magic']),
+            series(3, 'Low Rated Space', rating=6.0, Tags=['space']),
+            series(4, 'Friends', genres=('Comedy',), rating=8.9),
+            series(5, 'Modern Family', genres=('Comedy', 'Family'), rating=8.5),
+            episode(10, f'{4:032x}', 'Friends', 7, 13, 'The One Where Rosita Dies',
+                    "Rachel accidentally breaks Joey's armchair."),
+            movie(20, 'Breaking Bad Movie Night', CommunityRating=7.0),
+            movie(21, 'Family Fun Film', Genres=['Family'], CommunityRating=6.0),
+            movie(22, 'Heat'), movie(23, 'Heat'),   # two copies of one film
+        ]
+        w = make_indexer(cls.tmp.name, items)
+        w.initial_import()
+        w.db.close()
+        cls.engine = Engine(Path(cls.tmp.name) / 'index.sqlite')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def titles(self, q):
+        return [r['title'] for r in self.engine.instant(q)['results']]
+
+    def test_scifi_shows_over_8_puts_scifi_before_fantasy_and_respects_rating(self):
+        got = self.titles('sci fi shows over 8')
+        self.assertEqual(got[:2], ['Firefly', 'Dragon Saga'])
+        self.assertNotIn('Low Rated Space', got)
+
+    def test_exact_title_beats_genre_words(self):
+        got = self.titles('modern family')
+        self.assertEqual(got[0], 'Modern Family')
+        self.assertNotIn('Family Fun Film', got)
+
+    def test_typo_finds_title(self):
+        self.assertEqual(self.titles('firefli')[0], 'Firefly')
+
+    def test_show_scoped_episode_text(self):
+        got = self.engine.instant('friends episode where rachel breaks joey armchair')['results']
+        self.assertEqual(got[0]['title'], 'The One Where Rosita Dies')
+
+    def test_duplicate_copies_are_merged(self):
+        got = self.engine.instant('heat')['results']
+        heat = [r for r in got if r['title'] == 'Heat']
+        self.assertEqual(len(heat), 1)
+        self.assertEqual(len(heat[0]['other_ids']), 1)
+
+
+if __name__ == '__main__':
+    unittest.main()
