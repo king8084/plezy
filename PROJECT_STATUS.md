@@ -204,6 +204,24 @@ Implemented and source/native CI validated:
   (zero results violating kind/genre/rating/year/person/studio/runtime/language);
   typo cases fixed; p50 ~6 ms server-side. Pilot scene questions are the smart
   path's job. 21 offline unit tests plus Codex's 36 verifier tests pass.
+- Embeddings complete: 61,832/61,832, zero failures, ~34 min on the PC GPU.
+  Closed, integrity-checked snapshot (610 MB) kept locally.
+- Smart search (full library; private case files): tuned set 33/38 top-1,
+  35/38 top-3. Honest held-out sets written after tuning: set 1 10/16 top-1,
+  14/16 top-10 (2 answers absent from the metadata); set 2 10/13 top-1,
+  13/13 top-10. Not a general accuracy guarantee. Typical latency: instant
+  ~6-30 ms; smart re-rank ~0.1-0.3 s; with generator recall ~1.2 s warm.
+- Generator recall (qwen3.5:9b) only proposes titles; only owned titles are
+  used and they stay "possible" unless the evidence checks confirm them.
+- Deployed files (additive, O_EXCL, hash-verified) into new smartsearch
+  folders code/config/models/live (863 MB). The existing pilot folders are
+  untouched. An empty `.probe-owner-check` file created there by mistake is
+  left in place (no deletions). The local end-to-end test of the service
+  layout passed (auth, health, instant, smart, indexer up to date, events
+  connected).
+- Container not created yet: waiting for the owner to paste the reviewed
+  build/run command. App integration (Search screen instant + AI rows)
+  not started; needs a local Flutter toolchain or CI.
 - Committed locally on this branch only (not pushed: avoid triggering CI
   until the owner decides). No Apple TV build; the owner's magic words
   "build apple tv" are still required.

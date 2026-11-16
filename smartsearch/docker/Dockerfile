@@ -2,7 +2,7 @@
 # mounted read-only from smartsearch/code so updates never require replacing
 # this container (owner rule: nothing on Unraid is ever deleted).
 FROM python:3.14-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PYTHONPATH=/code
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-deps --require-hashes --only-binary=:all: -r /tmp/requirements.txt
 USER 99:100
