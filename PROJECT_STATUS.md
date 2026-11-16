@@ -2,14 +2,13 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `73439a2268b7426b47ea71c552c19e6954e183c4` (build 21).
-- Current candidate: Simkl recommendation row and redesigned TV sidebar.
-  Local release gate passed; cloud/native CI pending. Not archived or installed.
+- Installed app source: `6f20266637f85e08a48aff983f55ff0d10b3cae8` (build 22).
+  Analysis, unit and tvOS native CI, release gate, archive and install passed.
 - Draft release PR into the owner's fork: https://github.com/king8084/plezy/pull/1.
   Both branches belong to `king8084/plezy`; upstream is untouched.
-- Previous installed sources `d627ca4c7` (build 20) and `22f5fc8bb`, with
+- Previous installed sources `73439a226` (build 21), `d627ca4c7` and `22f5fc8bb`, with
   their IPA backups, are preserved. Owner approved the earlier layouts.
-- Build 21 signed and installed in place successfully; no deletion/uninstall.
+- Build 22 signed and installed in place successfully; no deletion/uninstall.
   Current appearance, retained settings and playback await owner confirmation.
 - Full historical handoff, verified Git bundle, pinned engine and installed IPA are retained privately
   in `.git/plezy-private/release-2026-11-15/`. Keep that archive out of commits.
@@ -42,7 +41,10 @@
 - Full local gate: 8,645 passed, 7 skipped; strict translations, isolated codegen,
   formatting, analyzer, icon/string/error/CI guards pass. Real-font Home tests
   cover all seven poster sizes; sidebar and pin persistence render tests pass.
-- No Apple TV build or Unraid access authorized/used for this enhancement.
+- November 16: authorized build 22 passed the cloud gate (8,645 tests, 7 skipped),
+  native archive and IPA identity/integrity/app-group checks. Installed in place.
+  Verified prior IPAs preserved; signer checksum matched, binary unchanged.
+  Installation proof and receipt are private. Scoped Unraid permission fulfilled.
 
 ## Prior audit hardening
 Owner authorizes audit fixes, bug regression work and a subtle metallic gold
@@ -68,6 +70,9 @@ Implemented and source/native CI validated:
   running service, website deployment or server container was changed.
 
 ## Prior native CI / unresolved issues
+- Candidate runs 43740308821 / 43740315253 passed every enabled job except iOS.
+  Both speed tests failed in the PR run; logs saved privately. Unresolved;
+  no assertions weakened, native changes or blind retries for this build.
 - Build 21 branch CI 43719426061 passes 14 jobs; iOS fails the paused
   audio 2x-speed test. The required analysis/unit/tvOS checks pass on both runs.
   The parallel PR run 43719430628 passed all 14 enabled jobs, including both iOS
@@ -89,12 +94,99 @@ Implemented and source/native CI validated:
   is ready for that decision; do not merge or push main without approval.
 - Do not change the intentionally stable diagnostics-sharing key automatically.
 
+## AI search research (November 16)
+- Research and measured pilot results: docs/ai-search-research.md. Owner's latest
+  direction is automatic fast matches plus a separate asynchronous AI row rather
+  than the earlier checkbox idea. UI remains a proposal; approved layouts unchanged.
+- Initial tiny connection check passed using the supplied restricted account
+  (admin/deletion disabled) and local Ollama. Credentials, inventory and receipts
+  remain Git-ignored/private; keep environment details out of tracked documents.
+- Owner then authorized Modern Family season 4 indexing. Only server write scope
+  is the dedicated smartsearch folder recorded in the private scope file; rule
+  saved in AGENTS.md. Never alter existing media/Jellyfin-managed files. No
+  container or server-setting changes authorized by this pilot.
+- Fetched all 24 S4 episodes with descriptions, validated identities. Added local
+  embeddinggemma:300m (about 622 MB) while retaining existing models. Document
+  embeddings: four batches, 1.889 s request time including first model load,
+  excluding download/DB writes. Model pull took about 13 s.
+- Pilot retrieval: 13/13 preselected positive queries ranked correctly first;
+  simple text baseline 11/13. Median local text lookup 0.107 ms; warm query
+  embedding median 71 ms (66–164 ms), vector ranking median 0.534 ms. These are
+  small-corpus engine/request measurements, not whole-library or TV UI latency.
+- Nearest-vector search also returns candidates for unsupported questions.
+  Three separate reasoning checks passed: one supported answer with literal
+  source evidence and two rejections. First 7.127 s includes 5.352 s model load;
+  two subsequent short rejections about 1 s. Not a general accuracy guarantee.
+- Built SQLite locally, closed it, exported a new immutable snapshot (172,032
+  bytes) with corpus/results/harness/report/hash manifest only within the approved
+  folder. Verified bytes, integrity and 24-row count read-only across the mount;
+  no live writable database/journals there. Exact private path is in pilot state.
+- Owner subsequently approved a 500-item mixed test and requires its work to seed
+  the final index. Added isolated scripts/search_index_pilot.py; no application
+  search/UI change. Private plan freezes sample size, identities and query cases.
+- Reusable seed now has 386 episodes across 14 shows, 100 movies and 14 show
+  records. Reused all 24 original vectors; generated only 476 new vectors in
+  21.403 s of embedding requests. Also saved 40 query vectors. Actual resume run
+  preserved all 500 vectors with zero new document embedding requests.
+- Mixed retrieval: 33/34 predefined answers first, 34/34 in top three; Phil/Jay
+  fishing query remains correct without the series name. Median query embedding
+  110.457 ms, ranking 0.116 ms, local text lookup 0.595 ms. Curated small corpus;
+  these are not whole-library accuracy or Apple TV UI measurements.
+- Original batch AI verifier passed only 10/13; wrong/omitted characters and
+  reversed actors escaped quote checking. Preserved as a failed baseline and
+  superseded by the default verifier below; never silently fall back to it.
+- New-content architecture: permanent writer/index on Unraid, Ollama on the PC.
+  Restricted-account event socket handshake/keepalive and clean close verified
+  using ApiKey query spelling. No actual library-change event occurred during the
+  bounded observation; no source changes were manufactured. Scoped changed-since
+  API filtering verified on an existing item using past/future cutoffs. Persisted
+  event queue/upsert/cache replay and transaction rollback pass local checks.
+- Flagged one placeholder overview and performed a real API recheck of only that
+  item; next check due in 24 h. Tag/resolve behavior tested locally. Daily queue
+  is saved in the seed DB; permanent listener/worker/scheduler is not deployed.
+  Jellyfin scanning/notification batching can delay visibility of new content.
+- Closed 4,390,912-byte seed exported to a new folder only in approved smartsearch
+  storage, with results/failures, model provenance, queues, harness and hashes.
+  Read-only exported integrity/count passed; original S4 snapshot preserved.
+  Private state records the exact path and incremental-probe addendum.
+- Mixed pilot fulfilled. No full index, service deployment, Apple TV build/install.
+  Preserve this seed and caches. Ordinary search must work with inference PC asleep.
+
+## Verifier correction before full indexing (November 16)
+- Owner explicitly requests fixing the false confirmations before a full run.
+  Default pilot verify now uses independent-evidence-v5. No client/UI changes.
+- New isolated evidence/entailment/evaluation modules check source-backed names
+  and show identity, require two independent local semantic checks with actual
+  quotations, and veto unbound active agents and unsupported dependent clauses.
+  Ambiguous surname aliases never merge distinct people. Missing/invalid evidence
+  stays possible; identity mismatches are rejected. Existing candidates remain.
+- Final curated evaluation: 56 cases, zero incorrect confirmations; 27/27
+  unsupported queries unconfirmed. All 29 legitimate targets retained: 23
+  confirmed, six possible. Strict fully-confirmed expectations remain 50/56;
+  do not report 56/56 or a general accuracy guarantee. Original labels/failures
+  and unsuccessful intermediate approaches are preserved.
+- 36 offline unit tests pass; all 56 saved decisions replay identically offline.
+  Default entry point passes a fail-closed gate requiring no false confirmations
+  and retention of all valid targets. All 500 index rows/document/query vectors
+  remain byte-for-byte unchanged; zero new embedding requests in this work.
+- Added a pinned, hash-verified English NLI model/tokenizer (~253 MB) and isolated
+  Python runtime only on the PC; no system package/service changes. The small
+  classifier runs on CPU; existing Ollama handles the generator. Verification
+  is query-shortlist work with reusable caches, not an LLM pass over every item.
+- Tested code, exact results/uncertainties, caches, pinned model and hashes are
+  saved additively in approved smartsearch storage; exact bundle path in private
+  verifier state. The original index and all prior snapshots remain intact.
+- No full index, permanent Unraid worker/daily scheduler, build or installation
+  started. Next: agreed full-index/server deployment scope using the retained
+  seed; validate actual server/runtime/permissions and reconnect handling there.
+  These English curated cases do not establish whole-library/device accuracy.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
   authorization; app closed, Apple TV awake in Settings before installation.
 - Keep environment addresses, household device names and install receipts private.
 - After strings change: clean translations, regenerate, commit generated outputs.
-- Next: current-candidate cloud CI; archive/install only after a new explicit
-  build request. Diagnose inconsistent iOS speed results separately.
+- Next: owner visual/settings/playback checks. Build authorization is fulfilled.
+  Diagnose inconsistent iOS speed results separately; native behavior unchanged.
   PR #1/main approval remains pending. Recovery receipts/bundles remain private.

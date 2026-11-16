@@ -25,6 +25,46 @@ Preserve the installed app and its data; investigate a non-destructive update.
 Never change anything on the owner's Unraid server without their explicit
 permission for that change. Never delete anything on Unraid.
 
+Never delete, edit, overwrite, rename, or move the owner's video files or
+Jellyfin-managed files, including its existing databases, configuration,
+metadata, artwork, subtitles, and media sidecars. For search/indexing work,
+read metadata through Jellyfin's API; do not use metadata-management, refresh,
+or deletion operations to alter the source library.
+The owner permits additive creation of separate Plezy-owned search/index
+files and databases within the agreed task. Keep them in a dedicated folder,
+separate from existing Jellyfin files; maintain only these Plezy-owned additions
+and never overwrite an existing unrelated path. This permission does not
+authorize changing containers, Jellyfin settings, or unrelated Unraid services.
+For Jellyfin search/index work, the only authorized server write location is
+the owner's dedicated smartsearch directory. Its exact Unraid and CachyOS-mount
+paths are recorded privately in `.env.plezy-search-scope.json`; read and enforce
+that scope before writing. Do not write to its parent or any sibling folder.
+Use unique additive pilot directories and preserve all existing files. Do not
+open a live writable SQLite database across the network mount: build locally
+and copy a closed snapshot, or run the eventual writer locally on Unraid.
+Keep test credentials in a private ignored local file, never in tracked files
+or tool output. Initial testing is a bounded metadata/Ollama pilot, not an
+automatic full-library index or Apple TV build.
+Preserve indexing pilot data as a seed for the eventual full database, not a
+throwaway benchmark. Reuse metadata and document/query embeddings when the
+document hash, model digest and preprocessing version match. Save completed
+batches and retain immutable snapshots; never regenerate unchanged descriptions
+merely because the inventory grows or an update event is replayed.
+The intended permanent indexer/database live on Unraid and call the configured
+Ollama host for inference. New-item events update text first and queue embeddings
+separately, with reconnect reconciliation. Flag missing/known placeholder
+descriptions for a daily metadata-only recheck; resolve the flag when a real
+description arrives and embed only the changed text. A pilot does not install
+a permanent background service or scheduler automatically.
+Search evidence must preserve the query's characters, show, actor/patient roles
+and additional conditions. A matching quote, vector score or single model vote
+is not sufficient confirmation. Use the current verifier entry point; never
+fall back silently to the historical batch checker. Keep uncertain candidates
+as possible matches instead of asserting facts or dropping valid search hits.
+Cache raw checks by source/input/model identity, reapply the current policy,
+and preserve failed evaluations. Verification work must not re-embed unchanged
+library items or hold up ordinary search results.
+
 Before installing an Apple TV update, keep the TV awake in Apple TV Settings
 with Plezy closed. On November 13, an in-place update stalled on Home despite
 the app being closed, then completed when the owner entered Settings. Home /
