@@ -41,6 +41,7 @@ GENRES = {
     'soap': (set(), {'Soap'}),
     'talk': (set(), {'Talk'}),
     'news': (set(), {'News'}),
+    'anime': ({'Animation'}, {'Animation'}),
 }
 # Genres with no TV equivalent fall back to TMDB keywords (tags) for shows.
 TAG_FALLBACK = {'horror': {'horror', 'supernatural', 'zombie', 'vampire', 'ghost'},
@@ -74,6 +75,7 @@ GENRE_WORDS = {
     'soap': ['soap', 'soaps', 'soap opera'],
     'talk': ['talk show', 'talk shows'],
     'news': ['news'],
+    'anime': ['anime', 'animes'],
 }
 
 KIND_WORDS = {
@@ -83,7 +85,7 @@ KIND_WORDS = {
 }
 
 LANGUAGES = {
-    'korean': 'ko', 'k drama': 'ko', 'kdrama': 'ko', 'k-drama': 'ko', 'japanese': 'ja', 'anime': 'ja',
+    'korean': 'ko', 'k drama': 'ko', 'kdrama': 'ko', 'k-drama': 'ko', 'japanese': 'ja',
     'chinese': 'zh', 'mandarin': 'zh', 'cantonese': 'cn', 'spanish': 'es', 'french': 'fr', 'german': 'de',
     'italian': 'it', 'hindi': 'hi', 'bollywood': 'hi', 'turkish': 'tr', 'arabic': 'ar', 'danish': 'da',
     'swedish': 'sv', 'norwegian': 'no', 'russian': 'ru', 'portuguese': 'pt', 'thai': 'th', 'polish': 'pl',
@@ -274,8 +276,6 @@ def parse(query, vocab=None, today=None):
         found, text = _take(text, phrase)
         if found:
             p.languages.add(code)
-            if phrase == 'anime' and 'animation' not in p.genres:
-                p.genres.append('animation')
             p.understood.append(phrase.title())
     for phrase, studios in _STUDIO_PHRASES:
         found, text = _take(text, phrase)
@@ -312,11 +312,16 @@ def parse(query, vocab=None, today=None):
     # contains genre words by accident. Only list-style requests make them filters.
     explicit = (p.kinds or p.rating_min is not None or p.rating_max is not None or p.year_min or p.year_max
                 or p.people or p.studios or p.status or p.runtime_max or p.runtime_min)
-    if (p.genres or p.languages) and not explicit and len(words) >= 3:
-        soft_langs = {k.title() for k, v in LANGUAGES.items() if v in p.languages}
-        p.soft_genres, p.genres = p.genres, []
-        p.languages = set()
-        p.understood = [u for u in p.understood if u not in _genre_labels(p.soft_genres) and u not in soft_langs]
+    if len(words) >= 3:
+        # Describing a plot: genre words are hints ("a poor family" is not the Family genre).
+        if p.genres:
+            p.soft_genres, p.genres = p.genres, []
+            p.understood = [u for u in p.understood if u not in _genre_labels(p.soft_genres)]
+        # Nationality words only filter in list-style requests ("korean movies about ..." keeps them).
+        if p.languages and not explicit:
+            soft_langs = {k.title() for k, v in LANGUAGES.items() if v in p.languages}
+            p.languages = set()
+            p.understood = [u for u in p.understood if u not in soft_langs]
     return p
 
 

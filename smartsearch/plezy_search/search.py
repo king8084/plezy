@@ -85,7 +85,11 @@ class Engine:
             key = norm(title)
             if len(key) >= 3:
                 series.setdefault(key, []).append(item_id)
-        self.vocab = {'people': people, 'series': series}
+        titles = {}
+        for item_id, kind, title, year in db.execute(
+                "SELECT item_id, kind, title, year FROM items WHERE active=1 AND kind IN ('Movie','Series')"):
+            titles.setdefault(norm(title), []).append((item_id, kind, year))
+        self.vocab = {'people': people, 'series': series, 'titles': titles}
         sig = db.execute('SELECT count(*), max(updated_utc) FROM items WHERE active=1 AND embedding_key IS NOT NULL').fetchone()
         if sig != self._vector_sig:
             rows = db.execute('SELECT i.item_id, e.vector FROM items i JOIN embedding_cache e ON e.key=i.embedding_key '
@@ -108,6 +112,12 @@ class Engine:
         # Episodes inherit genres/people/studios/language/status from their show.
         owner = "CASE WHEN i.kind='Episode' THEN i.series_id ELSE i.item_id END"
         for concept in p.genres:
+            if concept == 'anime':
+                where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='genre' AND value='Animation')")
+                where.append(f"({owner} IN (SELECT item_id FROM item_terms WHERE field='tag' AND norm IN "
+                             f"('anime','based on manga','based on light novel','shounen','seinen','shoujo','isekai')) "
+                             f"OR (SELECT language FROM items o WHERE o.item_id={owner})='ja')")
+                continue
             clauses = []
             for kind in sorted(kinds or {'Series', 'Movie', 'Episode'}):
                 names = Q.genre_names(concept, 'Movie' if kind == 'Movie' else 'Series')
@@ -223,20 +233,82 @@ class Engine:
             out.append(r)
         return out
 
+    CUES_AFTER = {'episode', 'episodes', 'ep', 'season', 'seasons', 'show', 'series', 'sitcom'}
+
     def _series_in(self, p):
-        """Find a show name inside the request ("the friends episode where ...")."""
+        """Find a show the request explicitly points at ("the friends episode where ...").
+
+        Many show titles are ordinary words (FROM, Trapped, Hidden, War...), so a
+        title with fewer than two content words only counts when followed by a cue
+        such as "episode"/"season"/"show", or after "episode of".
+        """
         words = norm(p.original).split()
-        best = None
+        series = self.vocab.get('series', {})
         for size in range(min(6, len(words)), 0, -1):
             for i in range(len(words) - size + 1):
                 chunk = ' '.join(words[i:i + size])
-                if chunk in self.vocab.get('series', {}):
-                    rest = words[:i] + words[i + size:]
-                    if best is None:
-                        best = (chunk, self.vocab['series'][chunk], rest)
-            if best:
-                break
-        return best
+                if chunk not in series:
+                    continue
+                content = [w for w in chunk.split() if w not in STOPWORDS]
+                after = words[i + size] if i + size < len(words) else ''
+                before = ' '.join(words[max(0, i - 2):i])
+                cued = after in self.CUES_AFTER or before.endswith(('episode of', 'episode in', 'episodes of'))
+                if len(content) >= 2 or (content and cued):
+                    return chunk, series[chunk], words[:i] + words[i + size:]
+        return None
+
+    def _soft_genre_boost(self, fused, concepts):
+        ids = list(fused)
+        rows = self.db.execute(
+            f"SELECT i.item_id, i.kind, t.field, t.value, t.norm FROM items i JOIN item_terms t ON "
+            f"t.item_id=CASE WHEN i.kind='Episode' THEN i.series_id ELSE i.item_id END "
+            f"WHERE i.item_id IN ({','.join('?' * len(ids))}) AND t.field IN ('genre','tag')", ids).fetchall()
+        hits = set()
+        for item_id, kind, field, value, n in rows:
+            for c in concepts:
+                names = Q.genre_names(c, 'Movie' if kind == 'Movie' else 'Series')
+                tags = Q.tag_fallback(c) | ({'anime', 'based on manga', 'shounen', 'seinen'} if c == 'anime' else set())
+                if (field == 'genre' and value in names and c != 'anime') or (field == 'tag' and n in tags):
+                    hits.add(item_id)
+        for item_id in hits:
+            fused[item_id] *= 1.3
+
+    def _recall(self, raw, restrict):
+        """Map generator-suggested titles onto items in this library (exact title match)."""
+        found = []
+        for s in self.verifier.suggest(raw):
+            title = norm(s.get('title', ''))
+            if not title:
+                continue
+            if s.get('type') == 'episode' and s.get('show'):
+                show_ids = self.vocab.get('series', {}).get(norm(s['show']), [])
+                if not show_ids:
+                    continue
+                marks = ','.join('?' * len(show_ids))
+                rows = [r[0] for r in self.db.execute(
+                    f"SELECT item_id, title FROM items WHERE kind='Episode' AND active=1 AND series_id IN ({marks})",
+                    show_ids).fetchall() if norm(r[1]) == title or norm(r[1]).rstrip(' 0123456789') == title]
+                if not rows and isinstance(s.get('season'), int) and isinstance(s.get('episode'), int):
+                    rows = [r[0] for r in self.db.execute(
+                        f"SELECT item_id FROM items WHERE kind='Episode' AND active=1 AND series_id IN ({marks}) "
+                        f"AND season=? AND episode=?", show_ids + [s['season'], s['episode']])]
+            else:
+                kind = 'Movie' if s.get('type') == 'movie' else 'Series'
+                rows = [r for r in self.vocab.get('titles', {}).get(title, []) if r[1] == kind]
+                year = s.get('year')
+                if isinstance(year, int) and len(rows) > 1:
+                    rows = sorted(rows, key=lambda r: abs((r[2] or year) - year))
+                rows = [r[0] for r in rows]
+            for item_id in rows[:2]:
+                if item_id not in found:
+                    found.append(item_id)
+        if restrict and found:
+            where, args = restrict
+            ok = {r[0] for r in self.db.execute(
+                f"SELECT i.item_id FROM items i WHERE {where} AND i.item_id IN ({','.join('?' * len(found))})",
+                args + found)}
+            found = [x for x in found if x in ok]
+        return found
 
     # -- title matching -----------------------------------------------------------
     def _titles(self, raw, limit=12):
@@ -360,15 +432,15 @@ class Engine:
         blobs, _ = self.ollama.embed([QUERY_PREFIX + text], timeout=10)
         return np.frombuffer(blobs[0], dtype='<f4'), False
 
-    def smart(self, raw, limit=20, verify=True, verify_top=8, confirm=False):
+    def smart(self, raw, limit=20, verify=True, verify_top=8, confirm=False, recall=True):
         start = time.perf_counter()
         p = Q.parse(raw, self.vocab)
         if self.vectors is None:
             raise SearchError('index has no embeddings yet')
-        # Embed what the user meant, minus pure filter words, but keep the full
-        # request when the filters consumed everything.
+        # Embed the whole request: words the parser turns into filters ("tv show",
+        # "anime") still carry meaning. Filters are applied separately below.
         scoped = self._series_in(p)
-        text = p.text if len(p.text.split()) >= 2 else raw
+        text = raw
         vec, cached = self.query_vector(text)
         t_embed = time.perf_counter()
         matrix, ids, index = self.vectors
@@ -389,10 +461,14 @@ class Engine:
             scores = scores + mask
         top = np.argsort(-scores)[:max(limit * 3, 60)]
         semantic = [(ids[n], float(scores[n])) for n in top if np.isfinite(scores[n])]
-        # Reciprocal-rank fusion with full text, so exact words still count.
+        # Reciprocal-rank fusion of meaning, the instant results (titles, filters,
+        # show-scoped text) and full text, so exact words and titles still count.
         fused = {}
         for rank, (item_id, _) in enumerate(semantic):
             fused[item_id] = fused.get(item_id, 0) + 1 / (60 + rank)
+        instant = self.instant(raw, 30)['results']
+        for rank, r in enumerate(instant):
+            fused[r['id']] = fused.get(r['id'], 0) + 1 / (60 + rank)
         tokens = _fts_tokens(text)
         if tokens:
             where, args = restrict or ('i.active=1', [])
@@ -401,6 +477,24 @@ class Engine:
                     f'WHERE search_text MATCH ? AND {where} ORDER BY bm25(search_text, 6.0, 3.0, 2.0, 1.0, 2.0) LIMIT 60',
                     [_match_expr(tokens, prefix_last=False, op=' OR ')] + args)):
                 fused[item_id] = fused.get(item_id, 0) + 0.5 / (60 + rank)
+        # Genre hints from a description nudge matching items up ("space anime ...").
+        if p.soft_genres and fused:
+            self._soft_genre_boost(fused, p.soft_genres)
+        # The generator's own knowledge of famous plots ("a boy sees dead people").
+        recalled = []
+        if recall and self.verifier:
+            recalled = self._recall(raw, restrict)
+            for rank, item_id in enumerate(recalled):
+                fused[item_id] = fused.get(item_id, 0) + 2 / (60 + rank)
+        wants_episode = bool(scoped) or bool({'episode', 'episodes', 'ep', 'season'} & set(norm(raw).split())) \
+            or p.kinds == {'Episode'}
+        if not wants_episode:
+            # "show about ...", "anime about ...": whole shows/movies first.
+            kinds = dict(self.db.execute(f"SELECT item_id, kind FROM items WHERE item_id IN "
+                                         f"({','.join('?' * len(fused))})", list(fused)))
+            for item_id in fused:
+                if kinds.get(item_id) == 'Episode':
+                    fused[item_id] *= 0.6
         order = sorted(fused, key=lambda x: -fused[x])[:limit]
         sim = dict(semantic)
         rows = {r[0]: r for r in self.db.execute(
@@ -418,7 +512,8 @@ class Engine:
             # re-rank: confirmed > possible (by support) > rejected identity mismatches.
             t0 = time.perf_counter()
             top = results[:verify_top]
-            verdicts = self.verifier.check(raw, [r['id'] for r in top], use_generator=confirm)
+            verdicts = self.verifier.check(raw, [r['id'] for r in top], use_generator=confirm,
+                                           shows=[scoped[0]] if scoped else [])
             rank = {'confirmed': 0, 'possible': 1, 'rejected': 2}
             for r in top:
                 v = verdicts.get(r['id'], {'status': 'possible', 'reason': 'not_checked'})
@@ -426,9 +521,26 @@ class Engine:
                 r['support'] = v.get('entailment')
                 if r['match'] != 'rejected' and v.get('evidence'):
                     r['evidence'] = v['evidence'][0]
-            top.sort(key=lambda r: (rank[r['match']], -(r.get('support') or 0)))
+            # Blend: the checker's support decides when it is confident; the
+            # original (meaning + text) order only breaks ties when it is unsure.
+            # An episode/movie title repeating 2+ of the request's key words is
+            # strong evidence too ("friends episode where rachel quits" -> "...Rachel Quits").
+            show_words = set(scoped[0].split()) if scoped else set()
+            key_words = {w for w in _fts_tokens(raw, keep_stopwords=False)
+                         if w not in Q.FILLER and w not in self.CUES_AFTER and w not in show_words
+                         and w not in ('where', 'when', 'give')}
+            for n, r in enumerate(top):
+                support = r.get('support') or 0
+                prior = 0.35 * (1 - n / len(top)) * (1 - support)
+                title_hits = len(key_words & set(_fts_tokens(r['title'])))
+                bonus = (0.3 if title_hits >= 2 else 0) + (0.25 if r['id'] in recalled else 0)
+                r['_key'] = (rank[r['match']], -(support + prior + bonus))
+            top.sort(key=lambda r: r.pop('_key'))
             results = top + results[verify_top:]
             checked_ms = round((time.perf_counter() - t0) * 1000, 1)
+        for r in results:
+            if r['id'] in recalled:
+                r['recalled'] = True
         return {'query': raw, 'understood': p.understood, 'results': results, 'query_vector_cached': cached,
                 'verify_ms': checked_ms,
                 'embed_ms': round((t_embed - start) * 1000, 1),

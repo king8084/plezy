@@ -18,7 +18,12 @@ from pathlib import Path
 
 from .clients import Ollama
 from .common import SearchError
+from .query import parse as _parse
 from .search import Engine
+
+
+def engine_parse(q, engine):
+    return _parse(q, engine.vocab)
 
 MAX_QUERY = 200
 
@@ -65,13 +70,17 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(200, {'query': '', 'results': []})
                 # Fast re-rank with the local checker by default; confirm=1 adds the
                 # slower second vote (the app asks /v1/verify for that separately).
+                # recall=1 adds the generator's knowledge of famous titles (~1 s warm).
                 return self._send(200, engine.smart(q, min(limit, 30), verify=args.get('rerank', '1') == '1',
-                                                    confirm=args.get('confirm', '0') == '1'))
+                                                    confirm=args.get('confirm', '0') == '1',
+                                                    recall=args.get('recall', '1') == '1'))
             if url.path == '/v1/verify':
                 ids = [x for x in (args.get('ids') or '').split(',') if x][:8]
                 if not engine.verifier:
                     return self._send(503, {'error': 'verification unavailable'})
-                return self._send(200, {'query': q, 'verdicts': engine.verifier.check(q, ids)})
+                scoped = engine._series_in(engine_parse(q, engine))
+                return self._send(200, {'query': q, 'verdicts': engine.verifier.check(
+                    q, ids, shows=[scoped[0]] if scoped else [])})
             if url.path == '/v1/health':
                 return self._send(200, self.server.health())
             if url.path == '/v1/status':

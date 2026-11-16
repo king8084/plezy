@@ -181,6 +181,33 @@ Implemented and source/native CI validated:
   seed; validate actual server/runtime/permissions and reconnect handling there.
   These English curated cases do not establish whole-library/device accuracy.
 
+## Full-library smart search (November 16, Claude took over from Codex)
+- Codex stopped mid-task (usage limit) after writing an untested full indexer.
+  Its drafts `scripts/search_library_indexer.py` / `search_library_events.mjs`
+  are superseded by `smartsearch/` and intentionally left uncommitted.
+- Owner approved: the full-library index; an always-on dedicated container that
+  the owner creates by pasting a reviewed command; broad freedom to improve Plezy.
+  Absolute rule: never delete any file on Unraid (see AGENTS.md).
+- New `smartsearch/plezy_search` package (README there): resumable indexer with
+  genres/IMDb rating/cast/tags/networks/language/status; instant search
+  (no AI) with query understanding, title-first ranking and typo tolerance;
+  smart search (embeddings plus full text, re-ranked by the unchanged
+  independent-evidence-v5 checker); LAN API; supervisor; hash-pinned runtime.
+- Full import from this PC: 61,832 items (2,470 movies, 1,438 shows, 57,928
+  episodes) in ~5 min; all 500 pilot vectors carried over by content hash with
+  no new requests for them; ~30 embeddings/s on the PC GPU.
+- Daily recheck queue (live data): ~1.2k missing descriptions (mostly
+  episodes), placeholder descriptions, upcoming titles and items with no
+  rating/genres. Live event socket and per-minute catch-up verified
+  read-only against the real server.
+- Instant benchmark (full library, private cases): every filter case clean
+  (zero results violating kind/genre/rating/year/person/studio/runtime/language);
+  typo cases fixed; p50 ~6 ms server-side. Pilot scene questions are the smart
+  path's job. 21 offline unit tests plus Codex's 36 verifier tests pass.
+- Committed locally on this branch only (not pushed: avoid triggering CI
+  until the owner decides). No Apple TV build; the owner's magic words
+  "build apple tv" are still required.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid

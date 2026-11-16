@@ -40,6 +40,15 @@ class ParserTest(unittest.TestCase):
         self.assertEqual((p.genres, p.languages), ([], set()))
         self.assertIn('mystery', p.soft_genres)
 
+    def test_anime_is_not_a_hard_language_filter(self):
+        p = parse('anime rated 8+', today=TODAY)
+        self.assertEqual((p.genres, p.languages), (['anime'], set()))
+
+    def test_genre_words_in_a_plot_stay_hints_even_with_a_kind(self):
+        p = parse('korean movie about a poor family who con their way into a rich home', today=TODAY)
+        self.assertEqual((p.kinds, p.languages, p.genres), ({'Movie'}, {'ko'}, []))
+        self.assertIn('family', p.soft_genres)
+
     def test_list_style_requests_keep_filters(self):
         p = parse('best korean thriller movies', today=TODAY)
         self.assertEqual((p.languages, p.genres, p.sort), ({'ko'}, ['thriller'], 'rating'))
@@ -89,6 +98,25 @@ class EngineTest(unittest.TestCase):
     def test_show_scoped_episode_text(self):
         got = self.engine.instant('friends episode where rachel breaks joey armchair')['results']
         self.assertEqual(got[0]['title'], 'The One Where Rosita Dies')
+
+    def test_one_word_show_names_need_a_cue(self):
+        p = parse('a woman returns from being lost at sea', self.engine.vocab, today=TODAY)
+        self.assertIsNone(self.engine._series_in(p))   # 'friends' etc. not mentioned; no cue
+        p = parse('the friends episode where joey breaks the chair', self.engine.vocab, today=TODAY)
+        self.assertEqual(self.engine._series_in(p)[0], 'friends')
+
+    def test_recall_maps_only_titles_in_the_library(self):
+        class Stub:
+            def suggest(self, q):
+                return [{'type': 'movie', 'title': 'Not In Library'}, {'type': 'show', 'title': 'Firefly'},
+                        {'type': 'episode', 'title': 'The One Where Rosita Dies', 'show': 'Friends'}]
+        self.engine.verifier = Stub()
+        try:
+            got = self.engine._recall('anything', None)
+        finally:
+            self.engine.verifier = None
+        titles = [self.engine.db.execute('SELECT title FROM items WHERE item_id=?', (i,)).fetchone()[0] for i in got]
+        self.assertEqual(titles, ['Firefly', 'The One Where Rosita Dies'])
 
     def test_duplicate_copies_are_merged(self):
         got = self.engine.instant('heat')['results']

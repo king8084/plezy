@@ -59,6 +59,8 @@ class Indexer:
     # -- setup ------------------------------------------------------------------
     def open(self):
         require_local_disk(self.data)
+        if self.settings.get('require_existing_index') and not (self.data / store.DB_NAME).exists():
+            raise SearchError('waiting for the initial index to be copied in; not starting a new import')
         source = self.jf.login()
         self.db = store.connect(self.data / store.DB_NAME, journal=self.settings.get('journal_mode', 'PERSIST'))
         store.bind_identity(self.db, {'server_id': source['server_id'], 'user_id': source['user_id']}, self.model)

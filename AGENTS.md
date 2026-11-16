@@ -56,6 +56,14 @@ separately, with reconnect reconciliation. Flag missing/known placeholder
 descriptions for a daily metadata-only recheck; resolve the flag when a real
 description arrives and embed only the changed text. A pilot does not install
 a permanent background service or scheduler automatically.
+On November 16 the owner approved the full-library index and an always-on
+service in one dedicated Docker container (`plezy-smartsearch`) that the owner
+creates by pasting a reviewed command. It writes only to `smartsearch/live`;
+code, config and models are mounted read-only. Never delete any file on
+Unraid, ever, including SQLite side files: use PERSIST journals there (never
+WAL), write status files in place, and update code by reloading the mounted
+folder instead of replacing the container. Stage files locally and copy only
+finished files to the share; never leave probe files there.
 Search evidence must preserve the query's characters, show, actor/patient roles
 and additional conditions. A matching quote, vector score or single model vote
 is not sufficient confirmation. Use the current verifier entry point; never
