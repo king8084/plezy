@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Qism kartochkalarida mavsum va qism raqamini koʻrsatish",
     "showSeasonPostersOnTabs": "Varaqlarda mavsum posterlarini koʻrsatish",
     "showSeasonPostersOnTabsDescription": "Har bir mavsum posterini oʻz boʻlimida koʻrsatish",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Toʻliq TV kartochkalari",
     "tvFullCardLayoutDescription": "Aktyor ismlari ustiga yozilgan, faqat rasmdan iborat TV kartochkalaridan foydalanish",
     "focusGlow": "Fokus nuri",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

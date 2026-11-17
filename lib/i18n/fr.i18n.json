@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Afficher les numéros de saison et d’épisode sur les cartes d’épisode",
     "showSeasonPostersOnTabs": "Afficher les affiches de saison sur les onglets",
     "showSeasonPostersOnTabsDescription": "Afficher l’affiche de chaque saison au-dessus de son onglet",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Cartes TV plein format",
     "tvFullCardLayoutDescription": "Utiliser des cartes TV composées uniquement d’une image, avec le nom des acteurs en surimpression",
     "focusGlow": "Halo de sélection",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Vis sæson- og episodenummer på episodekort",
     "showSeasonPostersOnTabs": "Vis sæsonplakater på faner",
     "showSeasonPostersOnTabsDescription": "Vis hver sæsons plakat over dens fane",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "TV-kort med billeder over hele fladen",
     "tvFullCardLayoutDescription": "Brug TV-kort, der kun viser billeder, med skuespillernavnene ovenpå",
     "focusGlow": "Fokusglød",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

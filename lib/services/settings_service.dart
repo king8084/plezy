@@ -1059,6 +1059,9 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Home rows the user hid in Settings → Home & Sidebar (see homeRowKey).
   static const homeRowHidden = StringListPref('home_row_hidden');
+
+  /// TV show and season pages use the previous (pre-redesign) layout.
+  static const classicShowPage = BoolPref('classic_show_page');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1687,6 +1690,7 @@ class SettingsService extends BaseSharedPreferencesService {
     homePinnedCollectionMetadata,
     homeRowOrder,
     homeRowHidden,
+    classicShowPage,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

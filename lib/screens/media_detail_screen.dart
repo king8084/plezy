@@ -120,6 +120,7 @@ part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
 part 'media_detail/seerr_recommendations.dart';
 part 'media_detail/simkl_recommendations.dart';
+part 'media_detail/tv_modern_layout.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -462,6 +463,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Show page Find: whether this show's server has a smart-search index,
   /// checked once per show (see [_syncFindInShowAvailability]).
   bool _findInShowAvailable = false;
+
+  /// True while the redesigned TV show/season layout is on screen (see
+  /// media_detail/tv_modern_layout.dart); off for movies, episodes and the
+  /// Classic show page setting.
+  bool _tvModernLayoutActive = false;
   String? _findInShowCheckedFor;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
@@ -2563,6 +2569,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
+      if (_tvModernLayoutActive && _hasTvSeasonTabs && _tvDetailSeasonTabsShown) {
+        _focusTvSeasonTabs();
+        return;
+      }
       _tvDetailRailKey.currentState?.requestFocus();
       return;
     }
@@ -2745,7 +2755,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
                     label: PlatformDetector.isTV() && season.index != null && season.index! > 0
-                        ? 'S${season.index}'
+                        ? (_tvModernLayoutActive ? t.common.seasonNumber(number: season.index!) : 'S${season.index}')
                         : season.displayTitle,
                     isSelected: index == _selectedSeasonIndex,
                     topImage: topImage,
@@ -2784,13 +2794,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           }
                         : null,
                     onNavigateDown: () {
+                      if (PlatformDetector.isTV() && _tvModernLayoutActive) {
+                        // Tabs sit right above the episodes they switch.
+                        _tvDetailRailKey.currentState?.requestFocus();
+                        return;
+                      }
                       if (PlatformDetector.isTV()) {
                         _tvDetailInfoFocusNode.requestFocus();
                         return;
                       }
                       _firstEpisodeFocusNode.requestFocus();
                     },
-                    onNavigateUp: PlatformDetector.isTV() ? _backButtonFocusNode.requestFocus : null,
+                    onNavigateUp: PlatformDetector.isTV()
+                        ? (_tvModernLayoutActive ? _focusTvDetailActionRow : _backButtonFocusNode.requestFocus)
+                        : null,
                     onLongPress: () => _showSeasonTabContextMenu(index),
                     onBack: () {
                       Navigator.of(context).maybePop();
@@ -3838,7 +3855,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     KeyEventResult Function(FocusNode, KeyEvent) handleBack,
   ) => ListenableBuilder(
     listenable: _tvDetailChromeFocus,
-    builder: (context, _) => _buildTvDetailLayout(context, metadata, handleBack),
+    builder: (context, _) {
+      _tvModernLayoutActive = _useTvModernLayout(metadata);
+      return _tvModernLayoutActive
+          ? _buildTvModernDetailLayout(context, metadata, handleBack)
+          : _buildTvDetailLayout(context, metadata, handleBack);
+    },
   );
 
   Widget _buildTvDetailLayout(
@@ -4667,6 +4689,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (simklHub != null && _simklRecommendationsSource != null) hubs.add(simklHub);
     final requestHub = _seerrRecommendationsHub;
     if (requestHub != null && _seerrRecommendationsSource?.canRequest(metadata.kind) == true) hubs.add(requestHub);
+    if (_tvModernLayoutActive) {
+      // Redesigned show page: plain row names; the cards keep their ratings,
+      // votes, years and availability badges.
+      return [
+        for (final hub in hubs)
+          if (hub.title == t.discover.moreLikeThisOwned)
+            hub.copyWith(title: t.discover.moreLikeThis)
+          else if (identical(hub, simklHub))
+            hub.copyWith(title: t.detailActions.simklPicks)
+          else if (identical(hub, requestHub))
+            hub.copyWith(title: t.detailActions.notInLibrary)
+          else
+            hub,
+      ];
+    }
     return hubs;
   }
 

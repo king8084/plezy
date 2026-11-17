@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Mostrar temporada y episodio en tarjetas de episodio",
     "showSeasonPostersOnTabs": "Mostrar pósters de temporada en las pestañas",
     "showSeasonPostersOnTabsDescription": "Mostrar el póster de cada temporada sobre su pestaña",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Tarjetas TV completas",
     "tvFullCardLayoutDescription": "Usar tarjetas TV solo con imagen y nombres de actores superpuestos",
     "focusGlow": "Resplandor de selección",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

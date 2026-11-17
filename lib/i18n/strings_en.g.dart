@@ -56,6 +56,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$rateSheet$en rateSheet = Translations$rateSheet$en.internal(_root);
 	late final Translations$accessibility$en accessibility = Translations$accessibility$en.internal(_root);
 	late final Translations$findInShow$en findInShow = Translations$findInShow$en.internal(_root);
+	late final Translations$detailActions$en detailActions = Translations$detailActions$en.internal(_root);
 	late final Translations$tooltips$en tooltips = Translations$tooltips$en.internal(_root);
 	late final Translations$audioTracks$en audioTracks = Translations$audioTracks$en.internal(_root);
 	late final Translations$videoControls$en videoControls = Translations$videoControls$en.internal(_root);
@@ -689,6 +690,12 @@ class Translations$settings$en {
 
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
+
+	/// en: 'Classic show page'
+	String get classicShowPage => 'Classic show page';
+
+	/// en: 'Use the previous layout for show and season pages'
+	String get classicShowPageDescription => 'Use the previous layout for show and season pages';
 
 	/// en: 'Full TV Cards'
 	String get tvFullCardLayout => 'Full TV Cards';
@@ -2369,6 +2376,48 @@ class Translations$findInShow$en {
 
 	/// en: 'Find isn't available right now'
 	String get failed => 'Find isn\'t available right now';
+}
+
+// Path: detailActions
+class Translations$detailActions$en {
+	Translations$detailActions$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Shuffle'
+	String get shuffle => 'Shuffle';
+
+	/// en: 'Find'
+	String get find => 'Find';
+
+	/// en: 'Mark watched'
+	String get markWatched => 'Mark watched';
+
+	/// en: 'Mark unwatched'
+	String get markUnwatched => 'Mark unwatched';
+
+	/// en: 'More'
+	String get more => 'More';
+
+	/// en: 'Trailer'
+	String get trailer => 'Trailer';
+
+	/// en: 'Simkl picks'
+	String get simklPicks => 'Simkl picks';
+
+	/// en: 'Not in your library'
+	String get notInLibrary => 'Not in your library';
+
+	/// en: '${count} episodes'
+	String episodes({required Object count}) => '${count} episodes';
+
+	/// en: 'E${number}'
+	String episodeShort({required Object number}) => 'E${number}';
+
+	/// en: '${watched} of ${total} watched'
+	String watchedOf({required Object watched, required Object total}) => '${watched} of ${total} watched';
 }
 
 // Path: tooltips
@@ -8558,6 +8607,8 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.classicShowPage' => 'Classic show page',
+			'settings.classicShowPageDescription' => 'Use the previous layout for show and season pages',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.focusGlow' => 'Focus Glow',
@@ -8843,10 +8894,10 @@ extension on Translations {
 			'settings.pinToSidebar' => 'Pin to sidebar',
 			'settings.unpinFromSidebar' => 'Unpin from sidebar',
 			'settings.sidebarMoveUp' => 'Move up',
-			'settings.sidebarMoveDown' => 'Move down',
-			'settings.homeAndSidebar' => 'Home & Sidebar',
 			_ => null,
 		} ?? switch (path) {
+			'settings.sidebarMoveDown' => 'Move down',
+			'settings.homeAndSidebar' => 'Home & Sidebar',
 			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
 			'settings.homeRows' => 'Home rows',
 			'settings.homeRowsEmpty' => 'Open Home once to load its rows, then come back here.',
@@ -9129,6 +9180,17 @@ extension on Translations {
 			'findInShow.hint' => 'Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.',
 			'findInShow.noResults' => 'No matching episodes',
 			'findInShow.failed' => 'Find isn\'t available right now',
+			'detailActions.shuffle' => 'Shuffle',
+			'detailActions.find' => 'Find',
+			'detailActions.markWatched' => 'Mark watched',
+			'detailActions.markUnwatched' => 'Mark unwatched',
+			'detailActions.more' => 'More',
+			'detailActions.trailer' => 'Trailer',
+			'detailActions.simklPicks' => 'Simkl picks',
+			'detailActions.notInLibrary' => 'Not in your library',
+			'detailActions.episodes' => ({required Object count}) => '${count} episodes',
+			'detailActions.episodeShort' => ({required Object number}) => 'E${number}',
+			'detailActions.watchedOf' => ({required Object watched, required Object total}) => '${watched} of ${total} watched',
 			'tooltips.findInShow' => 'Find an episode',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
@@ -9346,6 +9408,8 @@ extension on Translations {
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
@@ -9359,8 +9423,6 @@ extension on Translations {
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
@@ -9860,6 +9922,8 @@ extension on Translations {
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
@@ -9873,8 +9937,6 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.liveStreamFailed' => 'Live stream failed',
 			'liveTv.unknownProgram' => 'Unknown Program',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.unknownHub' => 'Unknown',
 			'liveTv.unknownError' => 'Unknown error',
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
@@ -10374,6 +10436,8 @@ extension on Translations {
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
@@ -10387,8 +10451,6 @@ extension on Translations {
 			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',

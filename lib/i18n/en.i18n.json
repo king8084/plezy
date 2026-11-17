@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Show season and episode number on episode cards",
     "showSeasonPostersOnTabs": "Show Season Posters on Tabs",
     "showSeasonPostersOnTabsDescription": "Show each season's poster above its tab",
+    "classicShowPage": "Classic show page",
+    "classicShowPageDescription": "Use the previous layout for show and season pages",
     "tvFullCardLayout": "Full TV Cards",
     "tvFullCardLayoutDescription": "Use image-only TV cards with actor names overlaid",
     "focusGlow": "Focus Glow",
@@ -847,6 +849,19 @@
     "hint": "Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.",
     "noResults": "No matching episodes",
     "failed": "Find isn't available right now"
+  },
+  "detailActions": {
+    "shuffle": "Shuffle",
+    "find": "Find",
+    "markWatched": "Mark watched",
+    "markUnwatched": "Mark unwatched",
+    "more": "More",
+    "trailer": "Trailer",
+    "simklPicks": "Simkl picks",
+    "notInLibrary": "Not in your library",
+    "episodes": "${count} episodes",
+    "episodeShort": "E${number}",
+    "watchedOf": "${watched} of ${total} watched"
   },
   "tooltips": {
     "findInShow": "Find an episode",

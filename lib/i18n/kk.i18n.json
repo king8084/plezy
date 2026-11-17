@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Бөлім карточкаларында маусым мен бөлім нөмірін көрсету",
     "showSeasonPostersOnTabs": "Қойындыларда маусым постерлерін көрсету",
     "showSeasonPostersOnTabsDescription": "Әр маусымның постерін өз бөлімінің үстінде көрсету",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Толық TV карточкалары",
     "tvFullCardLayoutDescription": "Актер аттары үстіне жазылған, тек суреттен тұратын TV карточкаларын пайдалану",
     "focusGlow": "Фокус жарқылы",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

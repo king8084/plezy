@@ -92,6 +92,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
             if (PlatformDetector.isTV())
               SettingSwitchTile(
+                pref: SettingsService.classicShowPage,
+                icon: Symbols.history_rounded,
+                title: t.settings.classicShowPage,
+                subtitle: t.settings.classicShowPageDescription,
+              ),
+            if (PlatformDetector.isTV())
+              SettingSwitchTile(
                 pref: SettingsService.tvCornerSpotlightBackdrop,
                 icon: Symbols.picture_in_picture_alt_rounded,
                 title: t.settings.tvCornerSpotlightBackdrop,

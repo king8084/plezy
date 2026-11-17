@@ -461,6 +461,11 @@ class TvBrowseRail extends StatefulWidget {
   /// ([MediaCard.showTitleImplied]).
   final bool Function(MediaHub hub)? showTitleImpliedForHub;
 
+  /// Rows whose heading is drawn by the host instead (the show page's season
+  /// tabs name the season row). The heading's space is kept, so layout and
+  /// height estimates are unchanged.
+  final bool Function(MediaHub hub)? hideHeaderForHub;
+
   /// Explicit background bleed override. When null, the bleed target is read
   /// from [MainScreenFocusScope] (offset aspect) inside the bleed widget
   /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
@@ -497,6 +502,7 @@ class TvBrowseRail extends StatefulWidget {
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
     this.showTitleImpliedForHub,
+    this.hideHeaderForHub,
     this.backgroundBleedLeft,
     this.fitActiveHub = false,
     this.showNextHubPeek = true,
@@ -1667,6 +1673,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     required bool isActive,
     required double scale,
   }) {
+    if (widget.hideHeaderForHub?.call(hub) ?? false) {
+      return SizedBox(height: TvBrowseRailLayout.hubStripHeightForScale(scale));
+    }
     final colorScheme = Theme.of(context).colorScheme;
     final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
     final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);

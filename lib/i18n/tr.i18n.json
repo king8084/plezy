@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Bölüm kartlarında sezon ve bölüm numarasını göster",
     "showSeasonPostersOnTabs": "Sekmelerde Sezon Afişlerini Göster",
     "showSeasonPostersOnTabsDescription": "Her sezonun afişini sekmesinin üzerinde göster",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Tam TV Kartları",
     "tvFullCardLayoutDescription": "Oyuncu isimleri üzerinde katmanlanmış yalnızca görsel içeren TV kartları kullan",
     "focusGlow": "Odak Parıltısı",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

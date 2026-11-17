@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "Seriya kartlarında mövsüm və seriya nömrəsini göstər",
     "showSeasonPostersOnTabs": "Mərhələlərdə mövsüm posterlərini göstər",
     "showSeasonPostersOnTabsDescription": "Hər mövsümün posterini öz bölməsinin üstündə göstər",
+    "classicShowPage": "",
+    "classicShowPageDescription": "",
     "tvFullCardLayout": "Tam TV kartları",
     "tvFullCardLayoutDescription": "Aktyor adları üstündə olan yalnız şəkil tərkibli TV kartları istifadə et",
     "focusGlow": "Fokus parıltısı",
@@ -847,6 +849,19 @@
     "hint": "",
     "noResults": "",
     "failed": ""
+  },
+  "detailActions": {
+    "shuffle": "",
+    "find": "",
+    "markWatched": "",
+    "markUnwatched": "",
+    "more": "",
+    "trailer": "",
+    "simklPicks": "",
+    "notInLibrary": "",
+    "episodes": "",
+    "episodeShort": "",
+    "watchedOf": ""
   },
   "tooltips": {
     "findInShow": "",

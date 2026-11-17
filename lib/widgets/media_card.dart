@@ -710,7 +710,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         ),
       if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
-      if (item is MediaItem && item.isEpisode && item.index != null)
+      if (item is MediaItem && item.isEpisode && item.index != null && !TvDetailCardStyle.isActive(context))
         Positioned(
           top: item.isWatched ? 36 : 6,
           right: 6,
@@ -1399,6 +1399,17 @@ class _MediaCardHelpers {
       );
     }
 
+    if (catalogMetadata.isEmpty && showTitleImplied && mi.isEpisode && TvDetailCardStyle.isActive(context)) {
+      // Redesigned show page: the season tabs name the season, so the card
+      // says only which episode and how long (plus what is left mid-watch).
+      final parts = [
+        if (mi.index != null) t.detailActions.episodeShort(number: mi.index!),
+        if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs),
+        if (mi.hasActiveProgress)
+          t.discover.durationLeft(duration: formatDurationTextual(mi.durationMs! - mi.viewOffsetMs!)),
+      ];
+      if (parts.isNotEmpty) return _caption(context, parts.join(' · '));
+    }
     final text = _metadataSubtitleText(mi, catalogMetadata: catalogMetadata, showTitleImplied: showTitleImplied);
     return text == null ? _emptyCaption(context) : _caption(context, text);
   }
@@ -1881,4 +1892,16 @@ class _SeerrCardMetadataState extends State<_SeerrCardMetadata> {
       ),
     ),
   );
+}
+
+/// Card style for the redesigned TV show page: episodes drop the corner "E#"
+/// badge and carry their number in the subtitle instead. Absent everywhere
+/// else, so Home, libraries and the classic show page are unchanged.
+class TvDetailCardStyle extends InheritedWidget {
+  const TvDetailCardStyle({super.key, required super.child});
+
+  static bool isActive(BuildContext context) => context.dependOnInheritedWidgetOfExactType<TvDetailCardStyle>() != null;
+
+  @override
+  bool updateShouldNotify(TvDetailCardStyle oldWidget) => false;
 }

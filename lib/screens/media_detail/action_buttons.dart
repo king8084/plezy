@@ -234,8 +234,22 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       required Widget icon,
       required VoidCallback? onPressed,
       String? tooltip,
+      String? label,
       Color? foregroundColor,
     }) {
+      if (label != null && isTv && _tvModernLayoutActive) {
+        return _tvLabeledActionButton(
+          icon: icon,
+          label: label,
+          onPressed: onPressed,
+          style: actionButtonStyle(
+            foregroundColor: foregroundColor,
+            showFocus: state.showFocus,
+            padding: EdgeInsets.symmetric(horizontal: 20 * tvScale),
+          ),
+          tvScale: tvScale,
+        );
+      }
       return IconButton.filledTonal(
         onPressed: onPressed,
         icon: icon,
@@ -272,6 +286,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               onPressed: onPlayTrailer,
               icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
               tooltip: t.tooltips.playTrailer,
+              label: t.detailActions.trailer,
             ),
           );
 
@@ -288,6 +303,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               },
               icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
               tooltip: t.tooltips.shufflePlay,
+              label: t.detailActions.shuffle,
             ),
           )
         : null;
@@ -309,6 +325,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               onPressed: openFind,
               icon: const AppIcon(Symbols.manage_search_rounded, fill: 1),
               tooltip: t.tooltips.findInShow,
+              label: t.detailActions.find,
             ),
           )
         : null;
@@ -556,6 +573,18 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     double tvScale, {
     bool showFocus = false,
   }) {
+    if (PlatformDetector.isTV() && _tvModernLayoutActive) {
+      return _tvLabeledActionButton(
+        icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
+        label: metadata.isWatched ? t.detailActions.markUnwatched : t.detailActions.markWatched,
+        onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
+        style: actionButtonStyle(
+          showFocus: showFocus,
+          padding: EdgeInsets.symmetric(horizontal: 20 * tvScale),
+        ),
+        tvScale: tvScale,
+      );
+    }
     return IconButton.filledTonal(
       onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
       icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
@@ -579,19 +608,35 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       onRefresh: (source) => unawaited(_refreshItemInPlace(source)),
       onPlayTrailer: onPlayTrailer,
       child: Builder(
-        builder: (buttonContext) => IconButton.filledTonal(
-          onPressed: () {
+        builder: (buttonContext) {
+          void openMenu() {
             if (!_canUseDetail) return;
             final renderBox = buttonContext.findRenderObject() as RenderBox?;
             if (renderBox != null) {
               final position = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
               _contextMenuKey.currentState?.showContextMenu(buttonContext, position: position);
             }
-          },
-          icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-          iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
-          style: actionButtonStyle(showFocus: showFocus),
-        ),
+          }
+
+          if (PlatformDetector.isTV() && _tvModernLayoutActive) {
+            return _tvLabeledActionButton(
+              icon: const AppIcon(Symbols.more_horiz_rounded, fill: 1),
+              label: t.detailActions.more,
+              onPressed: openMenu,
+              style: actionButtonStyle(
+                showFocus: showFocus,
+                padding: EdgeInsets.symmetric(horizontal: 20 * tvScale),
+              ),
+              tvScale: tvScale,
+            );
+          }
+          return IconButton.filledTonal(
+            onPressed: openMenu,
+            icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+            iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
+            style: actionButtonStyle(showFocus: showFocus),
+          );
+        },
       ),
     );
   }
@@ -889,6 +934,30 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         if (!mounted || _findInShowCheckedFor != checkedFor || available == _findInShowAvailable) return;
         setStateIfMounted(() => _findInShowAvailable = available);
       }),
+    );
+  }
+
+  /// The redesigned TV show page's pill: icon plus a short label, same height
+  /// and focus colors as the icon-only buttons.
+  Widget _tvLabeledActionButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback? onPressed,
+    required ButtonStyle style,
+    required double tvScale,
+  }) {
+    return FilledButton.tonalIcon(
+      onPressed: onPressed,
+      icon: IconTheme.merge(
+        data: IconThemeData(size: 21 * tvScale),
+        child: icon,
+      ),
+      label: Text(
+        label,
+        maxLines: 1,
+        style: TextStyle(fontSize: 17 * tvScale, fontWeight: FontWeight.w600),
+      ),
+      style: style,
     );
   }
 }
