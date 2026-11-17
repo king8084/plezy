@@ -187,6 +187,22 @@ class Engine:
             out['score'] = round(float(score), 4)
         return out
 
+    def _with_libraries(self, results):
+        """Attach library ids (episodes inherit their show's) so the app can honour hidden libraries."""
+        if not results:
+            return results
+        owners = {r['id']: r.get('series_id') or r['id'] for r in results}
+        ids = sorted(set(owners.values()) | {x for r in results for x in r.get('other_ids', [])})
+        libs = {}
+        for item_id, library_id in self.db.execute(
+                f"SELECT item_id, library_id FROM item_libraries WHERE item_id IN ({','.join('?' * len(ids))})", ids):
+            libs.setdefault(item_id, []).append(library_id)
+        for r in results:
+            r['libraries'] = sorted(libs.get(owners[r['id']], []))
+            if r.get('other_ids'):
+                r['copies'] = [{'id': x, 'libraries': sorted(libs.get(x, []))} for x in r['other_ids']]
+        return results
+
     # -- ranking helpers ----------------------------------------------------------
     FLAVOUR = {
         'scifi': {'science fiction', 'sci fi', 'hard sci fi', 'space', 'space opera', 'space travel', 'spaceship',
@@ -419,7 +435,7 @@ class Engine:
                         (_match_expr(words, prefix_last=False, op=' OR '), limit)).fetchall()
                     add(self._row(r, 'some words') for r in rows)
         return {'query': raw, 'understood': p.understood, 'filters': p.has_filters,
-                'results': self._dedupe(results)[:limit], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
+                'results': self._with_libraries(self._dedupe(results)[:limit]), 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
     # -- smart --------------------------------------------------------------------
     def query_vector(self, text):
@@ -541,6 +557,7 @@ class Engine:
         for r in results:
             if r['id'] in recalled:
                 r['recalled'] = True
+        results = self._with_libraries(results)
         return {'query': raw, 'understood': p.understood, 'results': results, 'query_vector_cached': cached,
                 'verify_ms': checked_ms,
                 'embed_ms': round((t_embed - start) * 1000, 1),

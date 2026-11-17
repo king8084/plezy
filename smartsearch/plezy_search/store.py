@@ -40,6 +40,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_text USING fts5(
   title, series, people, labels, overview,
   tokenize="unicode61 remove_diacritics 2", prefix='2 3 4');
 CREATE VIRTUAL TABLE IF NOT EXISTS title_trigram USING fts5(title, tokenize='trigram');
+CREATE TABLE IF NOT EXISTS item_libraries(
+  item_id TEXT NOT NULL, library_id TEXT NOT NULL, PRIMARY KEY(item_id, library_id));
+CREATE INDEX IF NOT EXISTS item_libraries_lib ON item_libraries(library_id);
+CREATE TABLE IF NOT EXISTS libraries(
+  library_id TEXT PRIMARY KEY, name TEXT NOT NULL, collection_type TEXT, tagged_utc TEXT);
 CREATE TABLE IF NOT EXISTS pending_changes(
   item_id TEXT PRIMARY KEY, action TEXT NOT NULL, seen_utc TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS description_rechecks(

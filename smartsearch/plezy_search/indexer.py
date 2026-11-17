@@ -129,6 +129,7 @@ class Indexer:
         """
         if not self.sweep('reconcile'):
             return
+        self.tag_libraries()
         state = store.get(self.db, 'reconcile')
         seen = dict(self.db.execute('SELECT kind, count(*) FROM items WHERE seen_generation=? GROUP BY kind',
                                     (state['generation'],)))
@@ -142,6 +143,38 @@ class Indexer:
                                                      'totals': state['totals'], 'finished': utc()})
         self.db.execute("DELETE FROM meta WHERE key='reconcile'")  # our own checkpoint row
         self.db.commit()
+
+    def tag_libraries(self):
+        """Record which libraries hold each movie/show (episodes use their show's).
+
+        The app hides results from libraries the user has hidden; Jellyfin's
+        Ids= lookup ignores library scope, so the index has to know. Only our
+        own mapping rows are replaced; nothing in Jellyfin changes.
+        """
+        views = self.jf.views()
+        for view in views:
+            ids, start = [], 0
+            while not self.stopping:
+                page, total = self.jf.library_item_ids(view['id'], start, 500)
+                ids += page
+                start += len(page)
+                if not page or start >= total:
+                    break
+            if self.stopping:
+                return False
+            self.db.execute('DELETE FROM item_libraries WHERE library_id=?', (view['id'],))  # our own rows
+            self.db.executemany('INSERT OR IGNORE INTO item_libraries VALUES(?,?)', [(i, view['id']) for i in ids])
+            self.db.execute('INSERT INTO libraries VALUES(?,?,?,?) ON CONFLICT(library_id) DO UPDATE SET '
+                            'name=excluded.name, collection_type=excluded.collection_type, tagged_utc=excluded.tagged_utc',
+                            (view['id'], view['name'], view['type'], utc()))
+            self.db.commit()
+        store.put(self.db, 'last_library_tagging', utc())
+        self.db.commit()
+        return True
+
+    def untagged(self):
+        return self.db.execute("SELECT count(*) FROM items i WHERE i.active=1 AND i.kind IN ('Movie','Series') "
+                               "AND NOT EXISTS (SELECT 1 FROM item_libraries l WHERE l.item_id=i.item_id)").fetchone()[0]
 
     def catchup(self):
         """Pick up anything saved in Jellyfin since the last successful pass."""
@@ -343,6 +376,10 @@ class Indexer:
                 if now - timers['catchup'] > CATCHUP_SECONDS:
                     self.catchup()
                     timers['catchup'] = now
+                if store.get(self.db, 'last_library_tagging') is None or (
+                        now - timers['libraries'] > RECHECK_SECONDS and self.untagged()):
+                    self.tag_libraries()
+                    timers['libraries'] = now
                 if now - timers['recheck'] > RECHECK_SECONDS:
                     while self.rechecks() == RECHECK_BATCH and not self.stopping:
                         pass

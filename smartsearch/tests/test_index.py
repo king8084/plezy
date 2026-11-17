@@ -58,6 +58,15 @@ class FakeJellyfin:
         rows = sorted((x for x in self.items.values() if x['Type'] == kind), key=lambda x: x['Name'])
         return rows[start:start + limit], len(rows)
 
+    def views(self):
+        return [{'id': 'lib-movies', 'name': 'Movies', 'type': 'movies'},
+                {'id': 'lib-tv', 'name': 'TV Shows', 'type': 'tvshows'}]
+
+    def library_item_ids(self, library_id, start, limit):
+        kind = 'Movie' if library_id == 'lib-movies' else 'Series'
+        ids = sorted(x['Id'] for x in self.items.values() if x['Type'] == kind)
+        return ids[start:start + limit], len(ids)
+
     def by_ids(self, ids):
         return [self.items[i] for i in ids if i in self.items]
 
@@ -211,6 +220,16 @@ class IndexBehaviour(unittest.TestCase):
         self.w.reconcile()
         self.assertEqual(self.w.db.execute("SELECT active FROM items WHERE title='Heat'").fetchone()[0], 0)
         self.assertEqual(self.w.db.execute("SELECT count(*) FROM items").fetchone()[0], 6)  # nothing deleted
+
+    def test_library_membership_is_recorded_for_hidden_library_filtering(self):
+        self.w.initial_import()
+        self.assertTrue(self.w.tag_libraries())
+        self.assertEqual(self.w.untagged(), 0)
+        from plezy_search.search import Engine
+        e = Engine(Path(self.tmp.name) / 'index.sqlite')
+        got = {r['title']: r['libraries'] for r in e.instant('serenity')['results'] + e.instant('heat')['results']}
+        self.assertEqual(got['Serenity'], ['lib-tv'])     # episode inherits its show's library
+        self.assertEqual(got['Heat'], ['lib-movies'])
 
     def test_events_queue_and_apply(self):
         from plezy_search.events import queue_changes

@@ -66,6 +66,20 @@ class Jellyfin:
                            Fields=records.PEOPLE_FIELDS)
         return data.get('Items', [])
 
+    UNSEARCHED_VIEWS = {'boxsets', 'playlists', 'music', 'musicvideos', 'livetv', 'books', 'photos'}
+
+    def views(self):
+        """The account's libraries (CollectionFolders), minus types search never shows."""
+        data, _ = api(self.base, f'/Users/{self.user_id}/Views', self.headers, timeout=30)
+        return [{'id': v['Id'], 'name': v.get('Name') or '', 'type': v.get('CollectionType')}
+                for v in data.get('Items', []) if v.get('Id') and v.get('CollectionType') not in self.UNSEARCHED_VIEWS]
+
+    def library_item_ids(self, library_id, start, limit):
+        """Movie/Series ids under one library. (ParentId is honoured here, unlike with Ids=.)"""
+        data = self._items(ParentId=library_id, IncludeItemTypes='Movie,Series', SortBy='SortName,Id',
+                           StartIndex=start, Limit=limit, Fields='', EnableTotalRecordCount='true')
+        return [r['Id'] for r in data.get('Items', []) if r.get('Id')], data.get('TotalRecordCount', 0)
+
     def socket_url(self, device_id):
         parts = urllib.parse.urlsplit(self.base)
         scheme = 'wss' if parts.scheme == 'https' else 'ws'
