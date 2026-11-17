@@ -51,6 +51,18 @@ void main() {
         jellyfinRequests.add(request.url);
         final q = request.url.queryParameters;
         if (request.url.path.endsWith('/Views')) return jsonResponse({'Items': _views});
+        if (request.url.path == '/Items' && q['SortBy'] == 'DatePlayed') {
+          return jsonResponse({
+            'Items': [
+              {
+                'Id': 'last-played',
+                'Type': 'Movie',
+                'Name': 'Last Played',
+                'UserData': {'Played': true, 'PlayCount': 1, 'LastPlayedDate': '2026-11-16T20:00:00Z'},
+              },
+            ],
+          });
+        }
         if (request.url.path == '/Items' && q['Ids'] != null) {
           return jsonResponse({
             'Items': [
@@ -246,5 +258,97 @@ void main() {
 
     expect(titleIds(result), contains('server-title-hit'));
     expect(await service.smartSuggestions('anything'), isEmpty);
+  });
+
+  group('smart Home rows', () {
+    final similarRequests = <Uri>[];
+    SmartSearchClient homeSmart() => SmartSearchClient(
+      httpClientFactory: () => MockClient((request) async {
+        final path = request.url.path;
+        if (path == '/v1/ping') return jsonResponse({'ok': true, 'server_id': 'srv-1'});
+        if (path == '/v1/top') {
+          return jsonResponse({
+            'results': [
+              {
+                'id': 'watched-film',
+                'kind': 'Movie',
+                'title': 'Already Seen',
+                'libraries': ['lib-movies'],
+              },
+              {
+                'id': 'dark',
+                'kind': 'Series',
+                'title': 'Dark',
+                'libraries': ['lib-tv'],
+              },
+              {
+                'id': 'kids-movie',
+                'kind': 'Movie',
+                'title': 'Kids Space Movie',
+                'libraries': ['lib-movies'],
+              },
+            ],
+          });
+        }
+        if (path == '/v1/similar') {
+          similarRequests.add(request.url);
+          return jsonResponse({
+            'source': {'id': 'last-played', 'kind': 'Movie', 'title': 'Last Played'},
+            'results': [
+              {
+                'id': 'firefly',
+                'kind': 'Series',
+                'title': 'Firefly',
+                'libraries': ['lib-tv'],
+              },
+              {
+                'id': 'watched-film',
+                'kind': 'Movie',
+                'title': 'Already Seen',
+                'libraries': ['lib-movies'],
+              },
+            ],
+          });
+        }
+        return http.Response('not found', 404);
+      }),
+    );
+
+    setUp(similarRequests.clear);
+
+    test('top rated and because-you-watched rows drop watched titles', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+
+      final hubs = await service.smartHomeHubs();
+
+      expect([for (final hub in hubs) hub.id], [smartTopRatedHubId, smartBecauseWatchedHubId]);
+      expect([for (final item in hubs[0].items) item.id], ['dark', 'kids-movie']);
+      expect(hubs[1].title, contains('Last Played'));
+      expect([for (final item in hubs[1].items) item.id], ['firefly']);
+      expect(similarRequests.single.queryParameters['id'], 'last-played');
+      expect(hubs.every((hub) => hub.serverId == '${client.serverId}'), isTrue);
+    });
+
+    test('a hidden library is left out of the rows', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+
+      final hubs = await service.smartHomeHubs(hiddenLibraryKeys: {'${client.serverId}:lib-tv'});
+
+      expect([for (final item in hubs.single.items) item.id], ['kids-movie']);
+    });
+
+    test('no index means no rows', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: smart(failSearch: true));
+      final unreachable = SmartSearchClient(httpClientFactory: () => MockClient((_) async => http.Response('', 404)));
+
+      expect(await DataAggregationService(manager, smartSearch: unreachable).smartHomeHubs(), isEmpty);
+      expect(await service.smartHomeHubs(), isEmpty);
+    });
   });
 }

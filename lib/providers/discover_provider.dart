@@ -470,6 +470,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
       final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, _multiServer.onlineServerIds.toSet());
+      final smartHubsFuture = _fetchSmartHomeHubs(aggregation);
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -544,9 +545,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
 
       final pinnedHubs = await pinnedHubsFuture;
+      final smartHubs = await smartHubsFuture;
       if (isDisposed) return;
       final filteredHubs = _filterDiscoverHubs([...fetchedHubs.hubs, ...pinnedHubs]);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
+      filteredHubs.insertAll(
+        0,
+        (smartHubs ?? const <MediaHub>[]).where((hub) => fetchedHubs.succeededServerIds.contains(hub.serverId)),
+      );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
       _replaceHubs(filteredHubs);
@@ -663,10 +669,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               serverIds: hubIds,
             );
       final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, hubIds.toSet());
+      final smartHubsFuture = hubIds.isEmpty
+          ? Future<List<MediaHub>?>.value(const [])
+          : _fetchSmartHomeHubs(aggregation, serverIds: hubIds.toSet());
 
       final freshOnDeck = await onDeckFuture;
       final freshHubs = await hubsFuture;
       final freshPinnedHubs = await pinnedHubsFuture;
+      final freshSmartHubs = await smartHubsFuture;
       if (isDisposed) return;
       // Staged, not recorded here: the merge below can still throw, and the
       // catch keeps the previous rows. Suppressing patches against rows that
@@ -697,12 +707,21 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       if (freshHubs != null) {
         final succeededHubIds = freshHubs.succeededServerIds;
+        final keptHubs = _hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId));
         final mergedHubs = [
-          ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
+          ...keptHubs.where((hub) => !_isSmartHomeHub(hub)),
           ..._filterDiscoverHubs(freshHubs.hubs),
           ...freshPinnedHubs.where((hub) => succeededHubIds.contains(hub.serverId)),
         ];
         sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
+        // A smart-row miss keeps the rows already on screen.
+        final smartHubs = [
+          ..._hubs
+              .where(_isSmartHomeHub)
+              .where((hub) => freshSmartHubs == null || !succeededHubIds.contains(hub.serverId)),
+          if (freshSmartHubs != null) ...freshSmartHubs.where((hub) => succeededHubIds.contains(hub.serverId)),
+        ];
+        mergedHubs.insertAll(0, smartHubs);
         _replaceHubs(mergedHubs);
         _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds}
           ..removeAll(freshHubs.failedServerIds)
@@ -735,6 +754,25 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         serverIds: serverIds,
         clientForServer: _multiServer.getClientForServer,
       );
+
+  /// Smart-index rows ("Top rated you haven't watched", "Because you
+  /// watched …"). Bounded so a slow index never holds up Home; a miss simply
+  /// leaves the rows out of this pass.
+  /// Null when the rows could not be fetched (versus an empty answer).
+  Future<List<MediaHub>?> _fetchSmartHomeHubs(DataAggregationService aggregation, {Set<String>? serverIds}) async {
+    try {
+      return await aggregation
+          .smartHomeHubs(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys, serverIds: serverIds)
+          .timeout(_smartHomeRowsCeiling);
+    } catch (e) {
+      appLogger.d('DiscoverProvider: smart Home rows skipped', error: e);
+      return null;
+    }
+  }
+
+  static const Duration _smartHomeRowsCeiling = Duration(seconds: 4);
+
+  static bool _isSmartHomeHub(MediaHub hub) => hub.id == smartTopRatedHubId || hub.id == smartBecauseWatchedHubId;
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {

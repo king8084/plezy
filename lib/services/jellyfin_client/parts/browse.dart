@@ -1479,6 +1479,26 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return [for (final id in ids) ?byId[id]];
   }
 
+  /// The user's most recently played movies and episodes, newest first
+  /// (finished or in progress). Seeds Home's "Because you watched" row.
+  Future<List<MediaItem>> fetchRecentlyPlayed({int limit = 3, AbortController? abort}) async {
+    final rows = await _fetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'Recursive': 'true',
+      'IncludeItemTypes': 'Movie,Episode',
+      'SortBy': 'DatePlayed',
+      'SortOrder': 'Descending',
+      'Limit': '$limit',
+      'Fields': _browseFields,
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    }, abort: abort);
+    abort?.throwIfAborted();
+    return _mapItems(
+      rows,
+    ).where((item) => item.lastViewedAt != null || item.isWatched || (item.viewOffsetMs ?? 0) > 0).toList();
+  }
+
   /// Search a single library. Results are stamped with it, which is the only
   /// way a Jellyfin search hit ever learns which library it came from.
   Future<List<MediaItem>> _searchLibrary(

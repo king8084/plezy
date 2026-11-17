@@ -3391,6 +3391,12 @@ class Translations$discover$en {
 
 	// Translations
 
+	/// en: 'Top rated you haven't watched'
+	String get topRatedUnwatched => 'Top rated you haven\'t watched';
+
+	/// en: 'Because you watched ${title}'
+	String becauseYouWatched({required Object title}) => 'Because you watched ${title}';
+
 	/// en: 'Move up'
 	String get moveRowUp => 'Move up';
 
@@ -9439,6 +9445,8 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
+			'discover.topRatedUnwatched' => 'Top rated you haven\'t watched',
+			'discover.becauseYouWatched' => ({required Object title}) => 'Because you watched ${title}',
 			'discover.moveRowUp' => 'Move up',
 			'discover.moveRowDown' => 'Move down',
 			'discover.readFullDescription' => 'Read full description',
@@ -9837,10 +9845,10 @@ extension on Translations {
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.premiereBadge' => 'NEW',
-			'liveTv.reloadGuide' => 'Reload Guide',
-			'liveTv.searchGuide' => 'Search Guide',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.reloadGuide' => 'Reload Guide',
+			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
 			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.channelsSection' => 'Channels',
@@ -10351,10 +10359,10 @@ extension on Translations {
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
 			'videoSettings.zoom' => 'Zoom',
-			'videoSettings.sleepTimer' => 'Sleep Timer',
-			'videoSettings.audioSync' => 'Audio Sync',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.sleepTimer' => 'Sleep Timer',
+			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',

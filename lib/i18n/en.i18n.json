@@ -1227,6 +1227,8 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "Top rated you haven't watched",
+    "becauseYouWatched": "Because you watched ${title}",
     "moveRowUp": "Move up",
     "moveRowDown": "Move down",
     "readFullDescription": "Read full description",

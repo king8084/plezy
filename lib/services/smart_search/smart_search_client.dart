@@ -112,7 +112,34 @@ class SmartSearchClient {
     bool recall = true,
   }) => _get(connection, '/v1/smart', {'q': query, 'limit': '$limit', 'recall': recall ? '1' : '0'}, smartTimeout);
 
+  /// The highest IMDb-rated movies and shows in the index (Home's "Top rated
+  /// you haven't watched"; the caller removes what the viewer has watched).
+  Future<SmartSearchResponse> topRated(JellyfinConnection connection, {double minRating = 7.5, int limit = 80}) =>
+      _get(connection, '/v1/top', {'min_rating': '$minRating', 'limit': '$limit'}, instantTimeout);
+
+  /// Titles closest in meaning to [itemId] (an episode counts as its show),
+  /// with the title of the show or movie they were matched against.
+  Future<({String? sourceTitle, SmartSearchResponse response})> similar(
+    JellyfinConnection connection,
+    String itemId, {
+    int limit = 40,
+  }) async {
+    final json = await _getJson(connection, '/v1/similar', {'id': itemId, 'limit': '$limit'}, instantTimeout);
+    final source = json is Map ? json['source'] : null;
+    return (
+      sourceTitle: source is Map && source['title'] is String ? source['title'] as String : null,
+      response: SmartSearchResponse.fromJson(json),
+    );
+  }
+
   Future<SmartSearchResponse> _get(
+    JellyfinConnection connection,
+    String path,
+    Map<String, String> parameters,
+    Duration timeout,
+  ) async => SmartSearchResponse.fromJson(await _getJson(connection, path, parameters, timeout));
+
+  Future<Object?> _getJson(
     JellyfinConnection connection,
     String path,
     Map<String, String> parameters,
@@ -131,7 +158,7 @@ class SmartSearchClient {
       if (response.statusCode != 200) {
         throw SmartSearchUnavailable('smart search returned HTTP ${response.statusCode}');
       }
-      return SmartSearchResponse.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } on SmartSearchUnavailable {
       rethrow;
     } catch (error) {

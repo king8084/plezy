@@ -11,6 +11,7 @@ import '../media/media_server_client.dart';
 import '../media/search_hit.dart';
 import '../media/title_copies.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
@@ -141,6 +142,13 @@ Set<String> _hiddenLibraryIdsOn(String serverId, Set<String>? hiddenLibraryKeys)
   }
   return ids;
 }
+
+/// Stable ids of Home's smart-index rows (also their saved order/visibility keys).
+const String smartTopRatedHubId = 'plezy.smart.top_rated_unwatched';
+const String smartBecauseWatchedHubId = 'plezy.smart.because_you_watched';
+
+/// Titles per smart Home row.
+const int smartHomeRowLimit = 30;
 
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
@@ -991,6 +999,95 @@ class DataAggregationService {
         if (_isCancellation(e)) rethrow;
         appLogger.w('Smart suggestions unavailable on $serverId', error: e);
         smart.markUnavailable(connection);
+      }
+    }
+    return const [];
+  }
+
+  /// Home rows built from the household smart-search index: "Top rated you
+  /// haven't watched" and "Because you watched <title>" (seeded by the user's
+  /// most recent play). Watched titles are removed for this viewer. Empty when
+  /// no connected server has an index; never throws except on cancellation.
+  Future<List<MediaHub>> smartHomeHubs({
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    if (smart == null) return const [];
+    for (final MapEntry(key: serverId, value: client) in _clientsFor(serverIds).entries) {
+      if (client is! JellyfinClient) continue;
+      final connection = client.connection;
+      try {
+        if (!await smart.isAvailable(connection)) continue;
+        abort?.throwIfAborted();
+        final hidden = _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys);
+
+        Future<List<MediaItem>> unwatched(SmartSearchResponse response) async {
+          final wanted = response.visibleIds(hidden);
+          final loaded = await client.fetchItemsInOrder([for (final w in wanted) w.id], abort: abort);
+          final libraryOf = {for (final w in wanted) w.id: w.libraryId};
+          return [
+            for (final item in loaded)
+              if (!item.isWatched)
+                if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+          ].take(smartHomeRowLimit).toList();
+        }
+
+        Future<MediaHub?> topRated() async {
+          final items = await unwatched(await smart.topRated(connection));
+          if (items.isEmpty) return null;
+          return MediaHub(
+            id: smartTopRatedHubId,
+            identifier: smartTopRatedHubId,
+            title: t.discover.topRatedUnwatched,
+            type: 'mixed',
+            items: items,
+            size: items.length,
+            serverId: serverId,
+            serverName: client.serverName,
+          );
+        }
+
+        Future<MediaHub?> becauseYouWatched() async {
+          final recent = await client.fetchRecentlyPlayed(limit: 1, abort: abort);
+          if (recent.isEmpty) return null;
+          final similar = await smart.similar(connection, recent.first.id);
+          final title = similar.sourceTitle;
+          if (title == null || title.isEmpty) return null;
+          final items = await unwatched(similar.response);
+          if (items.isEmpty) return null;
+          return MediaHub(
+            id: smartBecauseWatchedHubId,
+            identifier: smartBecauseWatchedHubId,
+            title: t.discover.becauseYouWatched(title: title),
+            type: 'mixed',
+            items: items,
+            size: items.length,
+            serverId: serverId,
+            serverName: client.serverName,
+          );
+        }
+
+        Future<MediaHub?> bestEffort(Future<MediaHub?> Function() build, String name) async {
+          try {
+            return await build();
+          } catch (e) {
+            if (_isCancellation(e)) rethrow;
+            appLogger.w('Smart Home row "$name" unavailable on $serverId', error: e);
+            return null;
+          }
+        }
+
+        final rows = await Future.wait([
+          bestEffort(topRated, 'top rated'),
+          bestEffort(becauseYouWatched, 'because you watched'),
+        ]);
+        abort?.throwIfAborted();
+        return [...rows.nonNulls];
+      } catch (e) {
+        if (_isCancellation(e)) rethrow;
+        appLogger.w('Smart Home rows unavailable on $serverId', error: e);
       }
     }
     return const [];

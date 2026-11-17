@@ -1235,6 +1235,8 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",
