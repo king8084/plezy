@@ -20,6 +20,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/native_tv_search.dart';
 import '../services/settings_service.dart';
 import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
@@ -312,6 +313,55 @@ class _SearchScreenState extends State<SearchScreen>
 
   bool get _usesDockedKeyboard =>
       !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
+
+  /// Apple's native search keyboard (Settings > Appearance > Apple search
+  /// keyboard, on by default on Apple TV). Falls back to the docked keyboard
+  /// for the rest of the session if it cannot be shown.
+  bool get _usesNativeKeyboard =>
+      PlatformDetector.isAppleTV() &&
+      !_nativeKeyboardUnavailable &&
+      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay &&
+      SettingsService.instance.read(SettingsService.appleSearchKeyboard);
+  bool _nativeKeyboardUnavailable = false;
+
+  Future<void> _openNativeKeyboard() async {
+    final shown = await NativeTvSearch.instance.open(
+      text: searchController.text,
+      placeholder: t.search.hint,
+      onChanged: (text) {
+        if (!mounted || searchController.text == text) return;
+        searchController.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      },
+      onEnded: (text, end) {
+        if (!mounted) return;
+        if (searchController.text != text) {
+          searchController.value = TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          );
+        }
+        if (end == NativeTvSearchEnd.dismissed || text.trim().isEmpty) {
+          searchFocusNode.requestFocus();
+        } else {
+          handleSearchSubmit();
+        }
+      },
+    );
+    if (shown || !mounted) return;
+    setState(() => _nativeKeyboardUnavailable = true);
+    // After the rebuild that removes the native hook, so this opens Plezy's
+    // docked keyboard rather than asking Apple's keyboard again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _tvTextInputController.focusAndOpenTextInput();
+      // The keyboard opens after one more frame; an idle screen has none.
+      WidgetsBinding.instance.scheduleFrame();
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
 
   void _onSearchFocusChanged() {
     if (!searchFocusNode.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
@@ -717,9 +767,12 @@ class _SearchScreenState extends State<SearchScreen>
                 // docked keyboard replaced it (Apple TV).
                 onVoiceInput:
                     PlatformDetector.isAppleTV() &&
+                        !_usesNativeKeyboard &&
                         SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
                     ? _startVoiceInput
                     : null,
+                // Apple's keyboard dictates itself (hold the remote's mic).
+                onTvSelectOverride: _usesNativeKeyboard ? () => unawaited(_openNativeKeyboard()) : null,
                 voiceInputTooltip: t.search.voiceSearch,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: searchResults.isNotEmpty && !isSearching

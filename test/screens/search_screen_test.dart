@@ -24,6 +24,7 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
+import 'package:plezy/services/native_tv_search.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/smart_search/smart_search_client.dart';
@@ -224,7 +225,10 @@ void main() {
 
   group('docked search keyboard', () {
     const panel = Key('tv_virtual_keyboard_panel');
-    setUp(() => SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay);
+    setUp(() async {
+      SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay;
+      await (await SettingsService.getInstance()).write(SettingsService.appleSearchKeyboard, false);
+    });
 
     Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> openKeyboard(WidgetTester tester) async {
       final pumped = await _pumpTvSearchScreen(tester);
@@ -287,6 +291,74 @@ void main() {
       expect(find.byKey(panel), findsNothing);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
       expect(client.queries, ['movie']);
+    });
+  });
+
+  group('Apple search keyboard', () {
+    const panel = Key('tv_virtual_keyboard_panel');
+    final calls = <MethodCall>[];
+    var openResult = true;
+
+    setUp(() async {
+      SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay;
+      await (await SettingsService.getInstance()).write(SettingsService.appleSearchKeyboard, true);
+      calls.clear();
+      openResult = true;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        NativeTvSearch.channel,
+        (call) async {
+          calls.add(call);
+          return call.method == 'open' ? openResult : null;
+        },
+      );
+    });
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        NativeTvSearch.channel,
+        null,
+      );
+    });
+
+    Future<void> fromNative(WidgetTester tester, String method, Object? arguments) async {
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+        NativeTvSearch.channel.name,
+        NativeTvSearch.channel.codec.encodeMethodCall(MethodCall(method, arguments)),
+        (_) {},
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Select opens it, typed or dictated text searches live, Down lands on the results', (tester) async {
+      final (client, _) = await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip(t.search.voiceSearch), findsNothing, reason: 'Apple\'s keyboard dictates itself');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(calls.single.method, 'open');
+      expect(find.byKey(panel), findsNothing, reason: 'Plezy\'s keyboard stays closed');
+
+      await fromNative(tester, 'changed', 'movie');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(client.queries, contains('movie'));
+
+      await fromNative(tester, 'ended', {'event': 'down', 'text': 'movie'});
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    });
+
+    testWidgets('Menu returns to the field; a failed open falls back to Plezy\'s keyboard', (tester) async {
+      await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      await fromNative(tester, 'ended', {'event': 'dismissed', 'text': ''});
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+
+      openResult = false;
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(find.byKey(panel), findsOneWidget);
     });
   });
 

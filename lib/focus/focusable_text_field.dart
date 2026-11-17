@@ -632,6 +632,10 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onEditingComplete;
+
+  /// TV only: Select runs this instead of opening Plezy's keyboard overlay
+  /// (the search field uses it to open Apple's native search keyboard).
+  final VoidCallback? onTvSelectOverride;
   final VoidCallback? onSelect;
   final VoidCallback? onBack;
   final bool autofocus;
@@ -666,6 +670,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.onEditingComplete,
+    this.onTvSelectOverride,
     this.onSelect,
     this.onBack,
     this.autofocus = false,
@@ -1257,6 +1262,11 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
   }
 
   void _openTvKeyboard() {
+    final override = widget.input.onTvSelectOverride;
+    if (override != null && mounted && widget.input.enabled) {
+      override();
+      return;
+    }
     if (!mounted || !widget.input.enabled || !widget.input._hasTvKeyboard || !_canShowTvKeyboard || _tvKeyboardOpen) {
       return;
     }
@@ -1559,6 +1569,7 @@ class FocusableTextField extends _FocusableTextInputBase {
     super.onChanged,
     super.onSubmitted,
     super.onEditingComplete,
+    super.onTvSelectOverride,
     super.onSelect,
     super.onBack,
     super.autofocus,
@@ -1648,6 +1659,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
     super.onChanged,
     this.onFieldSubmitted,
     super.onEditingComplete,
+    super.onTvSelectOverride,
     super.onSelect,
     super.onBack,
     this.validator,

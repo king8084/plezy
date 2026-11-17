@@ -313,9 +313,20 @@ from the logs) is already fast enough, so it was left alone.
   recommendation row names; cards keep IMDb rating, votes, year and badges.
   Restore points: git tag `show-page-classic` (83066b1b4) and Settings >
   Appearance > Classic show page (old layout, still fully tested).
-  Not done from the mockup: creators/directors in the cast row, stacked rows
-  with a collapsing header, wider 96 px margins, request-badge restyle and the
-  season poster header; candidates for a later pass.
+  Second pass (owner: "everything we discussed" in the next release): Resume/
+  Play label + time-left note, creators/directors first in Cast & crew,
+  inset rail for wider margins, Request/Requested/In library pills, focused
+  episode still as backdrop (650 ms rest, not for spoiler-hidden episodes),
+  season poster header, next-row heading peek and a one-line header on lower
+  rows. The rail still shows one active row (Home's component); full
+  multi-row stacking would need a shared-rail rewrite.
+- Apple search keyboard (Settings > Appearance, on by default on Apple TV):
+  `tvos/Runner/NativeSearchPlugin.swift` presents UISearchController in a
+  UISearchContainerViewController over Search and Find (channel
+  `plezy/native_search`); typed or dictated text streams back live, Down
+  hands focus to Plezy's results, Menu returns to the field. If it cannot be
+  shown, the docked keyboard opens instead for the session. Native code is
+  compiled only on Codemagic (no Mac here): first device build is its test.
 - Owner (Nov 17): animated shows in normal TV libraries stay in results; only
   the anime/cartoon libraries are excluded unless asked for (unchanged).
 - Search: "unwatched"/"haven't seen" requests filter by the viewer's own watch

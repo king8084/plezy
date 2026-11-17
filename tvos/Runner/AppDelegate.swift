@@ -176,6 +176,9 @@ import wakelock_plus
     if let r = pluginRegistry.registrar(forPlugin: "SystemShelfPlugin") {
       SystemShelfPlugin.register(with: r)
     }
+    if let r = pluginRegistry.registrar(forPlugin: "NativeSearchPlugin") {
+      NativeSearchPlugin.register(with: r)
+    }
     if let r = pluginRegistry.registrar(forPlugin: "DeepLinkPlugin") {
       DeepLinkPlugin.register(with: r)
     }

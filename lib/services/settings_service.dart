@@ -1062,6 +1062,10 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// TV show and season pages use the previous (pre-redesign) layout.
   static const classicShowPage = BoolPref('classic_show_page');
+
+  /// Apple TV Search uses Apple's native search keyboard (with Siri dictation)
+  /// instead of Plezy's docked keyboard.
+  static const appleSearchKeyboard = BoolPref('apple_search_keyboard', defaultValue: true);
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1691,6 +1695,7 @@ class SettingsService extends BaseSharedPreferencesService {
     homeRowOrder,
     homeRowHidden,
     classicShowPage,
+    appleSearchKeyboard,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

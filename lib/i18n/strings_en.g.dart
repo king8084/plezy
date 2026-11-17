@@ -691,6 +691,12 @@ class Translations$settings$en {
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
 
+	/// en: 'Apple search keyboard'
+	String get appleSearchKeyboard => 'Apple search keyboard';
+
+	/// en: 'Search with Apple's keyboard and hold the remote's mic to dictate. Off uses Plezy's on-screen keyboard'
+	String get appleSearchKeyboardDescription => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard';
+
 	/// en: 'Classic show page'
 	String get classicShowPage => 'Classic show page';
 
@@ -8625,6 +8631,8 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.appleSearchKeyboard' => 'Apple search keyboard',
+			'settings.appleSearchKeyboardDescription' => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard',
 			'settings.classicShowPage' => 'Classic show page',
 			'settings.classicShowPageDescription' => 'Use the previous layout for show and season pages',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
@@ -8910,10 +8918,10 @@ extension on Translations {
 			'settings.customizeSidebar' => 'Customize sidebar',
 			'settings.customizeSidebarDescription' => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.',
 			'settings.pinToSidebar' => 'Pin to sidebar',
-			'settings.unpinFromSidebar' => 'Unpin from sidebar',
-			'settings.sidebarMoveUp' => 'Move up',
 			_ => null,
 		} ?? switch (path) {
+			'settings.unpinFromSidebar' => 'Unpin from sidebar',
+			'settings.sidebarMoveUp' => 'Move up',
 			'settings.sidebarMoveDown' => 'Move down',
 			'settings.homeAndSidebar' => 'Home & Sidebar',
 			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
@@ -9424,10 +9432,10 @@ extension on Translations {
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
-			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
-			'mpvConfig.lineHint' => 'option=value',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
@@ -9938,10 +9946,10 @@ extension on Translations {
 			'explore.detail.watchTrailer' => 'Watch trailer',
 			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
 			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
-			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
-			'explore.detail.crew' => 'Crew',
 			_ => null,
 		} ?? switch (path) {
+			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
+			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
 			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
@@ -10452,10 +10460,10 @@ extension on Translations {
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
-			'companionRemote.remote.tabSettings' => 'Settings',
-			'companionRemote.remote.previous' => 'Previous',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Settings',
+			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',

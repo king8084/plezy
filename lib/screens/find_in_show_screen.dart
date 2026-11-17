@@ -9,6 +9,8 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
+import '../services/native_tv_search.dart';
+import '../services/settings_service.dart';
 import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -59,13 +61,58 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
   bool get _usesDockedKeyboard =>
       !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
+  /// Apple's native search keyboard, as on the Search screen.
+  bool get _usesNativeKeyboard =>
+      PlatformDetector.isAppleTV() &&
+      !_nativeKeyboardUnavailable &&
+      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay &&
+      SettingsService.instance.read(SettingsService.appleSearchKeyboard);
+  bool _nativeKeyboardUnavailable = false;
+
+  Future<void> _openNativeKeyboard() async {
+    void setText(String text) {
+      if (_controller.text == text) return;
+      _controller.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    }
+
+    final shown = await NativeTvSearch.instance.open(
+      text: _controller.text,
+      placeholder: t.findInShow.fieldHint,
+      onChanged: (text) {
+        if (mounted) setText(text);
+      },
+      onEnded: (text, end) {
+        if (!mounted) return;
+        setText(text);
+        if (end == NativeTvSearchEnd.dismissed || text.trim().isEmpty) {
+          _fieldFocus.requestFocus();
+        } else {
+          _submit();
+        }
+      },
+    );
+    if (shown || !mounted) return;
+    setState(() => _nativeKeyboardUnavailable = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _tvTextInput.focusAndOpenTextInput();
+      WidgetsBinding.instance.scheduleFrame();
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onChanged);
     // Arriving focuses the field, which opens the keyboard: Find is for typing.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _fieldFocus.requestFocus();
+      if (!mounted) return;
+      _fieldFocus.requestFocus();
+      if (_usesNativeKeyboard) unawaited(_openNativeKeyboard());
     });
     _fieldFocus.addListener(() {
       if (!_fieldFocus.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
@@ -212,11 +259,16 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
                 tvTextInputPresentation: _voiceInputActive
                     ? TvTextInputPresentation.platform
                     : SearchScreen.keyboardPresentation,
+                tvTextInputAutoOpenBehavior: _usesNativeKeyboard
+                    ? TvTextInputAutoOpenBehavior.never
+                    : TvTextInputAutoOpenBehavior.automatic,
                 onVoiceInput:
                     PlatformDetector.isAppleTV() &&
+                        !_usesNativeKeyboard &&
                         SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
                     ? _startVoiceInput
                     : null,
+                onTvSelectOverride: _usesNativeKeyboard ? () => unawaited(_openNativeKeyboard()) : null,
                 voiceInputTooltip: t.search.voiceSearch,
                 onNavigateDown: _results.isEmpty ? null : _firstResultFocus.requestFocus,
                 onEditingComplete: _submit,

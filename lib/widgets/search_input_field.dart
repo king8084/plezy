@@ -37,6 +37,9 @@ class SearchInputField extends StatefulWidget {
   final VoidCallback? onVoiceInput;
   final String? voiceInputTooltip;
 
+  /// TV only: Select opens this instead of Plezy's keyboard overlay.
+  final VoidCallback? onTvSelectOverride;
+
   const SearchInputField({
     super.key,
     required this.controller,
@@ -52,6 +55,7 @@ class SearchInputField extends StatefulWidget {
     this.onBack,
     this.onVoiceInput,
     this.voiceInputTooltip,
+    this.onTvSelectOverride,
   });
 
   @override
@@ -100,6 +104,7 @@ class _SearchInputFieldState extends State<SearchInputField> {
             onNavigateDown: widget.onNavigateDown,
             onEditingComplete: widget.onEditingComplete,
             onBack: widget.onBack,
+            onTvSelectOverride: widget.onTvSelectOverride,
             decoration: pillInputDecoration(
               context,
               hintText: widget.hintText,

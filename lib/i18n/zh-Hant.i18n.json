@@ -247,6 +247,8 @@
     "showEpisodeNumberOnCardsDescription": "在單集卡片上顯示季和集編號",
     "showSeasonPostersOnTabs": "在索引標籤上顯示單季海報",
     "showSeasonPostersOnTabsDescription": "在每季標籤上方顯示該季海報",
+    "appleSearchKeyboard": "",
+    "appleSearchKeyboardDescription": "",
     "classicShowPage": "",
     "classicShowPageDescription": "",
     "tvFullCardLayout": "完整 TV 卡片版面配置",
