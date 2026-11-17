@@ -4066,6 +4066,84 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('play label, creators first in Cast & crew, compact header on lower rows', (tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final show =
+          testMediaItem(
+            id: 'mf',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.show,
+            title: 'Modern Family',
+            serverId: 'server_1',
+            roles: const [MediaRole(id: 'a1', tag: 'Ty Burrell', role: 'Phil Dunphy')],
+          ).copyWith(
+            raw: {
+              'People': [
+                {'Id': 'd1', 'Name': 'Jason Winer', 'Type': 'Director'},
+                {'Id': 'c1', 'Name': 'Steven Levitan', 'Type': 'Creator'},
+                {'Id': 'a1', 'Name': 'Ty Burrell', 'Type': 'Actor', 'Role': 'Phil Dunphy'},
+              ],
+            },
+          );
+      final episodes = [
+        for (var i = 1; i <= 3; i++)
+          testMediaItem(
+            id: 'mf$i',
+            backend: show.backend,
+            kind: MediaKind.episode,
+            title: 'Episode $i',
+            index: i,
+            parentIndex: 1,
+            parentId: 'mfs1',
+            grandparentId: show.id,
+            serverId: show.serverId,
+            durationMs: 1320000,
+          ),
+      ];
+      final season = testMediaItem(
+        id: 'mfs1',
+        backend: show.backend,
+        kind: MediaKind.season,
+        title: 'Season 1',
+        index: 1,
+        parentId: show.id,
+        serverId: show.serverId,
+      );
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season],
+          season.id: episodes,
+        },
+      );
+      final provider = testMultiServer(clients: [client]).provider;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Play S1 · E1'), findsOneWidget);
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      expect(find.byKey(const ValueKey('tv_modern_compact_header')), findsOneWidget);
+      expect(find.byKey(const ValueKey('tv_detail_actions')), findsNothing);
+      double x(String name) => tester.getTopLeft(find.text(name).first).dx;
+      expect(x('Steven Levitan'), lessThan(x('Jason Winer')));
+      expect(x('Jason Winer'), lessThan(x('Ty Burrell')));
+      expect(find.text('Creator'), findsOneWidget);
+      expect(find.text('Cast & crew'), findsOneWidget);
+      await press(tester, LogicalKeyboardKey.arrowUp);
+      expect(find.byKey(const ValueKey('tv_detail_actions')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('Classic show page setting brings the old layout back', (tester) async {
       await (await SettingsService.getInstance()).write(SettingsService.classicShowPage, true);
       await pumpShow(tester);

@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/rating_bottom_sheet.dart';
 
+import '../focus/focus_theme.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_action_bar.dart';
@@ -39,6 +40,7 @@ import '../media/media_kind.dart';
 import '../media/media_source_info.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
+import '../services/jellyfin_mappers.dart';
 import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
@@ -468,6 +470,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// media_detail/tv_modern_layout.dart); off for movies, episodes and the
   /// Classic show page setting.
   bool _tvModernLayoutActive = false;
+
+  /// Redesigned page backdrop: the focused episode's still once focus rests
+  /// on it (see _MediaDetailTvModernLayout._syncTvModernBackdrop).
+  final ValueNotifier<MediaItem?> _tvModernBackdropItem = ValueNotifier(null);
+  Timer? _tvModernBackdropTimer;
+  bool _tvModernBackdropListening = false;
   String? _findInShowCheckedFor;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
@@ -1170,6 +1178,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
+    _tvModernBackdropTimer?.cancel();
+    _tvModernBackdropItem.dispose();
     _libraryContentSubscription?.cancel();
     unawaited(_communityRatingsSubscription?.cancel());
     for (final source in _watchlistListenedSources) {
@@ -4666,7 +4676,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final actors = _tvDetailActorItems(metadata);
     if (actors.isNotEmpty) {
       hubs.add(
-        MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
+        MediaHub(
+          id: _tvDetailActorsHubId,
+          title: _tvModernLayoutActive ? t.detailActions.castAndCrew : t.discover.cast,
+          type: 'person',
+          items: actors,
+          size: actors.length,
+        ),
       );
     }
     if (_extras != null && _extras!.isNotEmpty) {
@@ -4727,26 +4743,43 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // Cached per metadata object: the TV rail memoizes cards by item identity,
   // so rebuilding identical cast items on every Detail build would rebuild
   // every cast card with them.
-  (MediaItem, List<MediaItem>)? _tvDetailActorItemsCache;
+  (MediaItem, bool, List<MediaItem>)? _tvDetailActorItemsCache;
 
   List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
     final cached = _tvDetailActorItemsCache;
-    if (cached != null && identical(cached.$1, metadata)) return cached.$2;
-    final roles = metadata.roles;
-    final items = roles == null || roles.isEmpty
-        ? const <MediaItem>[]
-        : [
-            for (var i = 0; i < roles.length; i++)
-              if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
-          ];
-    _tvDetailActorItemsCache = (metadata, items);
+    if (cached != null && identical(cached.$1, metadata) && cached.$2 == _tvModernLayoutActive) return cached.$3;
+    final roles = metadata.roles ?? const <MediaRole>[];
+    // Redesigned page: creators and directors lead the row ("Cast & crew"),
+    // labelled by their job instead of a character.
+    final crew = _tvModernLayoutActive && metadata.backend == MediaBackend.jellyfin
+        ? JellyfinMappers.crew(metadata.raw?['People'])
+        : const <MediaRole>[];
+    final items = [
+      for (var i = 0; i < crew.length; i++)
+        _tvDetailActorItem(
+          metadata,
+          MediaRole(
+            id: crew[i].id,
+            tag: crew[i].tag,
+            role: crew[i].role == 'Creator' ? t.detailActions.creator : t.discover.director,
+            thumbPath: crew[i].thumbPath,
+          ),
+          i,
+          idPrefix: 'crew',
+        ),
+      for (var i = 0; i < roles.length; i++)
+        if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
+    ];
+    _tvDetailActorItemsCache = (metadata, _tvModernLayoutActive, items);
     return items;
   }
 
-  MediaItem _tvDetailActorItem(MediaItem metadata, MediaRole actor, int index) {
+  MediaItem _tvDetailActorItem(MediaItem metadata, MediaRole actor, int index, {String idPrefix = 'actor'}) {
     final personId = actor.id?.trim();
     return MediaItem(
-      id: personId != null && personId.isNotEmpty ? '${metadata.id}_actor_$personId' : '${metadata.id}_actor_$index',
+      id: personId != null && personId.isNotEmpty
+          ? '${metadata.id}_${idPrefix}_$personId'
+          : '${metadata.id}_${idPrefix}_$index',
       backend: metadata.backend,
       kind: MediaKind.unknown,
       title: actor.tag,
@@ -5308,6 +5341,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   MediaItem? _showPlayEpisode() => _tvDetailFocusedEpisode.value ?? _onDeckEpisode;
 
   String _getPlayButtonLabel(MediaItem metadata) {
+    // Redesigned TV show page: say what the button does ("Resume S1 · E3").
+    if (metadata.isShow && _tvModernLayoutActive && PlatformDetector.isTV()) {
+      final episode = _showPlayEpisode();
+      final season = '${episode?.parentIndex ?? defaultPlaybackSeason(_seasons)?.index ?? 1}';
+      final number = '${episode?.index ?? 1}';
+      final resume = episode != null && (_fresh(episode).viewOffsetMs ?? 0) > 0;
+      return resume
+          ? t.detailActions.resumeEpisode(season: season, episode: number)
+          : t.detailActions.playEpisode(season: season, episode: number);
+    }
     // For TV shows - use compact S1E1 format
     if (metadata.isShow) {
       final episode = _showPlayEpisode();

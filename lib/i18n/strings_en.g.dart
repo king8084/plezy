@@ -2404,6 +2404,27 @@ class Translations$detailActions$en {
 	/// en: 'Trailer'
 	String get trailer => 'Trailer';
 
+	/// en: 'Creator'
+	String get creator => 'Creator';
+
+	/// en: 'Cast & crew'
+	String get castAndCrew => 'Cast & crew';
+
+	/// en: 'Resume S${season} · E${episode}'
+	String resumeEpisode({required Object season, required Object episode}) => 'Resume S${season} · E${episode}';
+
+	/// en: 'Play S${season} · E${episode}'
+	String playEpisode({required Object season, required Object episode}) => 'Play S${season} · E${episode}';
+
+	/// en: '${time} left in “${title}”'
+	String timeLeftIn({required Object time, required Object title}) => '${time} left in “${title}”';
+
+	/// en: 'Request'
+	String get request => 'Request';
+
+	/// en: '✓ In library'
+	String get inLibrary => '✓ In library';
+
 	/// en: 'Simkl picks'
 	String get simklPicks => 'Simkl picks';
 
@@ -9183,6 +9204,13 @@ extension on Translations {
 			'detailActions.markUnwatched' => 'Mark unwatched',
 			'detailActions.more' => 'More',
 			'detailActions.trailer' => 'Trailer',
+			'detailActions.creator' => 'Creator',
+			'detailActions.castAndCrew' => 'Cast & crew',
+			'detailActions.resumeEpisode' => ({required Object season, required Object episode}) => 'Resume S${season} · E${episode}',
+			'detailActions.playEpisode' => ({required Object season, required Object episode}) => 'Play S${season} · E${episode}',
+			'detailActions.timeLeftIn' => ({required Object time, required Object title}) => '${time} left in “${title}”',
+			'detailActions.request' => 'Request',
+			'detailActions.inLibrary' => '✓ In library',
 			'detailActions.simklPicks' => 'Simkl picks',
 			'detailActions.notInLibrary' => 'Not in your library',
 			'detailActions.episodeShort' => ({required Object number}) => 'E${number}',
@@ -9398,6 +9426,8 @@ extension on Translations {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'mpvConfig.lineHint' => 'option=value',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
@@ -9405,8 +9435,6 @@ extension on Translations {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
@@ -9912,6 +9940,8 @@ extension on Translations {
 			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
 			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
 			'explore.detail.crew' => 'Crew',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
 			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
@@ -9919,8 +9949,6 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
@@ -10426,6 +10454,8 @@ extension on Translations {
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',
@@ -10433,8 +10463,6 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',

@@ -22,6 +22,32 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
     return active == null || active.startsWith(_tvDetailSeasonHubIdPrefix);
   }
 
+  /// The focused episode's still becomes the backdrop once focus rests on it
+  /// for a moment (no image request per card while scrolling). Spoiler-hidden
+  /// episodes and episodes without a still keep the show's backdrop.
+  void _syncTvModernBackdrop() {
+    _tvModernBackdropTimer?.cancel();
+    final episode = _tvDetailFocusedEpisode.value;
+    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
+    final still = episode?.thumbPath;
+    if (episode == null || still == null || still.isEmpty || (hideSpoilers && episode.shouldHideSpoiler)) {
+      _tvModernBackdropItem.value = null;
+      return;
+    }
+    _tvModernBackdropTimer = Timer(const Duration(milliseconds: 650), () {
+      if (!mounted || _tvDetailFocusedEpisode.value != episode) return;
+      _tvModernBackdropItem.value = MediaItem(
+        id: '${episode.id}_still',
+        backend: episode.backend,
+        kind: MediaKind.unknown,
+        title: episode.title,
+        artPath: still,
+        serverId: episode.serverId,
+        serverName: episode.serverName,
+      );
+    });
+  }
+
   /// Focus is on a row below the episodes (cast, extras, recommendations).
   bool get _tvModernBrowsingLowerRow {
     final active = _tvDetailActiveHubId.value;
@@ -37,6 +63,10 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
     MediaItem metadata,
     KeyEventResult Function(FocusNode, KeyEvent) handleBack,
   ) {
+    if (!_tvModernBackdropListening) {
+      _tvModernBackdropListening = true;
+      _tvDetailFocusedEpisode.addListener(_syncTvModernBackdrop);
+    }
     final size = MediaQuery.sizeOf(context);
     final detailHubs = _tvDetailHubs(metadata);
     if (widget.initialEpisodeId != null && !_initialEpisodePagingDone) {
@@ -44,11 +74,25 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
     }
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final scale = TvLayoutConstants.scaleForSize(size);
-    final railHeight = _estimateTvDetailRailHeight(size, detailHubs);
+    final scaleForInset = TvLayoutConstants.scaleForSize(size);
+    // Wider TV margins: the rail is inset as a whole (its cards are not
+    // clipped, so scrolled cards still slide out to the screen edge) and the
+    // text above lines up with the first card.
+    final railInset = 48 * scaleForInset;
+    final railEdge = FocusTheme.focusBorderWidth * 2 * scaleForInset + 12 * scaleForInset;
+    // The next row's heading peeks under the active one, like Home, so the
+    // page reads as stacked rows.
+    final activeIndex = detailHubs.indexWhere(
+      (hub) => hub.id == (_tvDetailActiveHubId.value ?? _tvDetailInitialHubId(metadata)),
+    );
+    final hasNextRow = activeIndex >= 0 && activeIndex < detailHubs.length - 1;
+    final railHeight =
+        _estimateTvDetailRailHeight(Size(size.width - railInset, size.height), detailHubs) +
+        (hasNextRow ? TvBrowseRailLayout.nextHubPeekHeightForScale(scaleForInset) : 0);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
       _scheduleTvDetailReveal(railHeight, focusPrimaryAction: false);
     }
-    final edge = (32 * scale).clamp(24.0, 64.0).toDouble();
+    final edge = railInset + railEdge;
     final tabsHeight = _hasTvSeasonTabs ? 48 * scale : 0.0;
     final tabsGap = 6 * scale;
     final buildHiddenContent = _tvDetailRevealed || _tvDetailRouteSettled;
@@ -61,7 +105,7 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
           left: edge,
           // Upper-middle, so it reads together with the episodes below
           // instead of floating at the top; fixed, so it never slides.
-          top: MediaQuery.paddingOf(context).top + size.height * 0.26,
+          top: MediaQuery.paddingOf(context).top + (_tvModernBrowsingLowerRow ? 40 * scale : size.height * 0.26),
           width: (size.width * 0.52).clamp(0.0, 920 * scale).toDouble(),
           bottom: topBlockBottom,
           child: buildHiddenContent
@@ -88,7 +132,7 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
           ),
         if (buildHiddenContent && detailHubs.isNotEmpty)
           Positioned(
-            left: 0,
+            left: railInset,
             right: 0,
             bottom: 0,
             child: TvDetailCardStyle(
@@ -97,7 +141,7 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
                 child: TvBrowseRail(
                   key: _tvDetailRailKey,
                   fitActiveHub: true,
-                  showNextHubPeek: false,
+                  showNextHubPeek: true,
                   hubs: detailHubs,
                   focusMemory: _hubFocusMemory,
                   iconForHub: _getTvDetailHubIcon,
@@ -139,14 +183,17 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
         child: Scaffold(
           body: Stack(
             children: [
-              TvSpotlightBackground(
-                item: metadata,
-                client: _getArtworkMediaClient(context),
-                showInfo: false,
-                localArtworkPathResolver: widget.isOffline
-                    ? (path) => _offlineArtworkCandidatePath(context, path)
-                    : null,
-                allowNetwork: !widget.isOffline,
+              ValueListenableBuilder<MediaItem?>(
+                valueListenable: _tvModernBackdropItem,
+                builder: (context, still, _) => TvSpotlightBackground(
+                  item: still ?? metadata,
+                  client: _getArtworkMediaClient(context),
+                  showInfo: false,
+                  localArtworkPathResolver: widget.isOffline
+                      ? (path) => _offlineArtworkCandidatePath(context, path)
+                      : null,
+                  allowNetwork: !widget.isOffline,
+                ),
               ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
@@ -168,6 +215,39 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
     final theme = Theme.of(context);
     final foreground = _tvDetailForegroundColor(context);
     final muted = foreground.withValues(alpha: 0.78);
+    if (_tvModernBrowsingLowerRow) {
+      // Lower rows get the room: the header collapses to one line.
+      return Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          key: const ValueKey('tv_modern_compact_header'),
+          height: 48 * scale,
+          child: Row(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 560 * scale),
+                child: Text(
+                  metadata.displayTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 34 * scale,
+                    fontWeight: FontWeight.w800,
+                    shadows: TvLayoutConstants.heroTextShadows,
+                  ),
+                ),
+              ),
+              SizedBox(width: 20 * scale),
+              Expanded(
+                child: SizedBox(height: 26 * scale, child: _buildTvDetailMetadataLine(context, metadata, scale)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
     final focusedEpisode = _tvDetailFocusedEpisode.value;
     final genres = metadata.genres ?? const <String>[];
@@ -285,34 +365,120 @@ extension _MediaDetailTvModernLayout on _MediaDetailScreenState {
     // moves the actions below it.
     final slotHeight = (36 + 6 + 26 + 12 + 3 * 19 * 1.4 + (metadata.isSeason ? 18 : 0)) * scale;
 
+    final posterPath = metadata.isSeason ? metadata.thumbPath : null;
+    final hasPoster = posterPath != null && posterPath.isNotEmpty;
+
     // A taller lower row (cast, recommendations) shortens this area; the
     // block keeps its place and is clipped at the bottom instead of moving.
     return ClipRect(
       child: OverflowBox(
         alignment: Alignment.topLeft,
         maxHeight: double.infinity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            heading,
-            SizedBox(height: 16 * scale),
-            SizedBox(
-              height: slotHeight,
-              child: Align(alignment: Alignment.topLeft, child: info),
-            ),
-            // On a lower row (cast, extras, recommendations) the taller row
-            // needs the room; the actions come back on the way up.
-            if (!_tvModernBrowsingLowerRow) ...[
-              SizedBox(height: 18 * scale),
-              SizedBox(
-                key: const ValueKey('tv_detail_actions'),
-                height: _tvDetailActionSize * scale,
-                child: _buildActionButtons(metadata),
-              ),
+            if (hasPoster) ...[
+              _tvModernSeasonPoster(context, posterPath, width: 150 * scale, height: 225 * scale),
+              SizedBox(width: 32 * scale),
             ],
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  heading,
+                  SizedBox(height: 16 * scale),
+                  SizedBox(
+                    height: slotHeight,
+                    child: Align(alignment: Alignment.topLeft, child: info),
+                  ),
+                  // On a lower row (cast, extras, recommendations) the taller row
+                  // needs the room; the actions come back on the way up.
+                  if (!_tvModernBrowsingLowerRow) ...[
+                    SizedBox(height: 18 * scale),
+                    SizedBox(
+                      key: const ValueKey('tv_detail_actions'),
+                      height: _tvDetailActionSize * scale,
+                      child: _buildActionButtons(metadata),
+                    ),
+                    ?_tvModernResumeNote(metadata, scale, muted),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The season page's poster beside its heading.
+  Widget _tvModernSeasonPoster(
+    BuildContext context,
+    String posterPath, {
+    required double width,
+    required double height,
+  }) {
+    final local = _buildOfflineArtworkIfAvailable(
+      context,
+      artworkPaths: [posterPath],
+      fit: BoxFit.cover,
+      imageType: ImageType.poster,
+      placeholder: (context, url) => const PlaceholderContainer(),
+      errorWidget: (context, url, error) => const PlaceholderContainer(),
+    );
+    final Widget image;
+    if (local != null) {
+      image = local;
+    } else if (widget.isOffline) {
+      image = const PlaceholderContainer();
+    } else {
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context);
+      final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+        client: _getMediaClientForMetadata(context),
+        thumbPath: posterPath,
+        maxWidth: width,
+        maxHeight: height,
+        pixelRatio: pixelRatio,
+        imageType: ImageType.poster,
+      );
+      final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+        displayWidth: (width * pixelRatio).round(),
+        displayHeight: (height * pixelRatio).round(),
+        imageType: ImageType.poster,
+      );
+      image = Image(
+        image: MediaImageHelper.serverArtworkProvider(imageUrl: imageUrl, memWidth: memWidth, memHeight: memHeight),
+        fit: BoxFit.cover,
+        filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.poster),
+        errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+      );
+    }
+    return ClipRRect(
+      key: const ValueKey('tv_modern_season_poster'),
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(width: width, height: height, child: image),
+    );
+  }
+
+  /// "12m left in “Come Fly with Me”" under the actions while the show has an
+  /// episode in progress.
+  Widget? _tvModernResumeNote(MediaItem metadata, double scale, Color color) {
+    if (!metadata.isShow) return null;
+    final episode = _showPlayEpisode();
+    if (episode == null) return null;
+    final fresh = _fresh(episode);
+    final duration = fresh.durationMs;
+    final offset = fresh.viewOffsetMs;
+    if (duration == null || offset == null || offset <= 0 || offset >= duration) return null;
+    return Padding(
+      key: const ValueKey('tv_modern_resume_note'),
+      padding: EdgeInsets.only(top: 12 * scale),
+      child: Text(
+        t.detailActions.timeLeftIn(time: formatDurationTextual(duration - offset), title: fresh.title ?? ''),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: color, fontSize: 16 * scale),
       ),
     );
   }

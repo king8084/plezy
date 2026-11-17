@@ -682,12 +682,46 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       artworkDim: widget.artworkDim,
     );
     final recommendation = item is MediaItem ? RecommendationCardData.fromItem(item) : null;
-    final banner = switch (recommendation?.availability) {
-      RecommendationAvailability.missing => t.discover.needRequest,
-      RecommendationAvailability.requested => t.explore.badge.requested,
-      _ => null,
-    };
+    // Redesigned TV show page: a small pill per card instead of a full-width
+    // band, and owned picks say so.
+    final pillBadges = recommendation != null && TvDetailCardStyle.isActive(context);
+    final banner = pillBadges
+        ? null
+        : switch (recommendation?.availability) {
+            RecommendationAvailability.missing => t.discover.needRequest,
+            RecommendationAvailability.requested => t.explore.badge.requested,
+            _ => null,
+          };
+    final pill = !pillBadges
+        ? null
+        : switch (recommendation.availability) {
+            RecommendationAvailability.missing => (t.detailActions.request, Colors.white, Colors.black),
+            RecommendationAvailability.requested => (
+              t.explore.badge.requested,
+              const Color(0xFFF59E0B),
+              const Color(0xFF111111),
+            ),
+            RecommendationAvailability.owned => (t.detailActions.inLibrary, const Color(0xCC0B0C0F), Colors.white),
+            _ => null,
+          };
     final overlays = <Widget>[
+      if (pill != null)
+        Positioned(
+          left: 8,
+          bottom: 8,
+          child: DecoratedBox(
+            key: const ValueKey('recommendation_pill'),
+            decoration: BoxDecoration(color: pill.$2, borderRadius: BorderRadius.circular(999)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              child: Text(
+                pill.$1,
+                maxLines: 1,
+                style: TextStyle(color: pill.$3, fontSize: 12, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ),
       if (banner != null)
         Positioned(
           bottom: 0,
