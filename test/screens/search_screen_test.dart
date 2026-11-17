@@ -297,7 +297,6 @@ void main() {
   });
 
   group('Apple search keyboard', () {
-    const panel = Key('tv_virtual_keyboard_panel');
     final calls = <MethodCall>[];
     var openResult = true;
 
