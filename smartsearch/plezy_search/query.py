@@ -136,6 +136,7 @@ class Parsed:
     status: str = None
     people: list = field(default_factory=list)       # normalised names; all must match
     sort: str = None
+    unwatched: bool = False        # applied by the app with the viewer's own watch state
     soft_genres: list = field(default_factory=list)  # genre words inside a description: ranking hints only
     understood: list = field(default_factory=list)   # human-readable chips for the UI
 
@@ -170,6 +171,20 @@ def _take(text, phrase):
     if re.search(pattern, text):
         return True, re.sub(pattern, ' ', text, count=1)
     return False, text
+
+
+_UNWATCHED = re.compile(
+    r"(?<!\w)(?:un-?watched|unseen|not (?:yet )?(?:watched|seen)|(?:i )?(?:have ?n'?t|have not|did ?n'?t|never) "
+    r"(?:watched|seen)(?: yet)?|new to me|i have not seen|(?:that )?i ?(?:'ve|have) not (?:watched|seen))(?!\w)")
+
+
+def _unwatched(text, p):
+    m = _UNWATCHED.search(text)
+    if not m:
+        return text
+    p.unwatched = True
+    p.understood.append('Unwatched')
+    return text[:m.start()] + ' ' + text[m.end():]
 
 
 def _rating(text, p):
@@ -257,6 +272,7 @@ def parse(query, vocab=None, today=None):
     today = today or dt.date.today()
     p = Parsed(text='', original=query)
     text = ' ' + str(query or '').casefold().replace('’', "'") + ' '
+    text = _unwatched(text, p)
     text = _runtime(text, p)
     text = _rating(text, p)
     text = _years(text, p, today)
@@ -311,7 +327,7 @@ def parse(query, vocab=None, today=None):
     # A sentence describing a plot ("a cop teams up with a detective to ...") often
     # contains genre words by accident. Only list-style requests make them filters.
     explicit = (p.kinds or p.rating_min is not None or p.rating_max is not None or p.year_min or p.year_max
-                or p.people or p.studios or p.status or p.runtime_max or p.runtime_min)
+                or p.people or p.studios or p.status or p.runtime_max or p.runtime_min or p.unwatched)
     if len(words) >= 3:
         # Describing a plot: genre words are hints ("a poor family" is not the Family genre).
         if p.genres:

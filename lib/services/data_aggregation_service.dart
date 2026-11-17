@@ -979,12 +979,13 @@ class DataAggregationService {
         };
         return [
           for (final item in loaded)
-            if (matchOf[item.id] case final hit?)
-              SmartSuggestion(
-                item: libraryOf[item.id] == null ? item : item.copyWith(libraryId: libraryOf[item.id]),
-                match: hit.match,
-                recalled: hit.recalled,
-              ),
+            if (!(response.unwatchedOnly && item.isWatched))
+              if (matchOf[item.id] case final hit?)
+                SmartSuggestion(
+                  item: libraryOf[item.id] == null ? item : item.copyWith(libraryId: libraryOf[item.id]),
+                  match: hit.match,
+                  recalled: hit.recalled,
+                ),
         ];
       } catch (e) {
         if (_isCancellation(e)) rethrow;
@@ -1068,7 +1069,8 @@ class DataAggregationService {
       final libraryOf = {for (final w in wanted) w.id: w.libraryId};
       final items = [
         for (final item in loaded)
-          if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+          if (!(response.unwatchedOnly && item.isWatched))
+            if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
       ];
       appLogger.i('Smart search on $serverId: ${items.length} titles in ${stopwatch.elapsedMilliseconds}ms');
       return (items: items, indexed: response.indexedLibraries);

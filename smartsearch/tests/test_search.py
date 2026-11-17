@@ -49,6 +49,14 @@ class ParserTest(unittest.TestCase):
         self.assertEqual((p.kinds, p.languages, p.genres), ({'Movie'}, {'ko'}, []))
         self.assertIn('family', p.soft_genres)
 
+    def test_unwatched_phrases(self):
+        for q in ('sci fi shows i haven\'t watched', 'unwatched sci fi shows', 'sci fi shows not seen yet',
+                  'new to me sci fi shows'):
+            p = parse(q, today=TODAY)
+            self.assertTrue(p.unwatched, q)
+            self.assertEqual((p.kinds, p.genres), ({'Series'}, ['scifi']), q)
+        self.assertFalse(parse('watched it twice', today=TODAY).unwatched)
+
     def test_list_style_requests_keep_filters(self):
         p = parse('best korean thriller movies', today=TODAY)
         self.assertEqual((p.languages, p.genres, p.sort), ({'ko'}, ['thriller'], 'rating'))

@@ -20,6 +20,12 @@ const _views = [
 ];
 
 const _rows = {
+  'watched-film': {
+    'Id': 'watched-film',
+    'Type': 'Movie',
+    'Name': 'Already Seen',
+    'UserData': {'Played': true, 'PlayCount': 1},
+  },
   'dark': {'Id': 'dark', 'Type': 'Series', 'Name': 'Dark'},
   'firefly': {'Id': 'firefly', 'Type': 'Series', 'Name': 'Firefly'},
   'kids-movie': {'Id': 'kids-movie', 'Type': 'Movie', 'Name': 'Kids Space Movie'},
@@ -193,6 +199,42 @@ void main() {
       ('firefly', SmartSearchMatch.possible, true),
     ]);
     expect(suggestions.first.item.libraryId, 'lib-tv');
+  });
+
+  test('an unwatched request drops what this profile has already watched', () async {
+    final client = jellyfin();
+    manager.debugRegisterClientForTesting(client);
+    final service = DataAggregationService(
+      manager,
+      smartSearch: SmartSearchClient(
+        httpClientFactory: () => MockClient((request) async {
+          if (request.url.path == '/v1/ping') return jsonResponse({'ok': true, 'server_id': 'srv-1'});
+          return jsonResponse({
+            'unwatched': true,
+            'results': [
+              {
+                'id': 'watched-film',
+                'kind': 'Movie',
+                'title': 'Already Seen',
+                'libraries': ['lib-movies'],
+              },
+              {
+                'id': 'kids-movie',
+                'kind': 'Movie',
+                'title': 'Kids Space Movie',
+                'libraries': ['lib-movies'],
+              },
+            ],
+            'indexed_libraries': ['lib-movies', 'lib-tv'],
+          });
+        }),
+      ),
+    );
+
+    final result = await service.searchAcrossServers('sci fi movies i have not watched');
+
+    expect(titleIds(result), contains('kids-movie'));
+    expect(titleIds(result), isNot(contains('watched-film')));
   });
 
   test('without an index nothing changes', () async {

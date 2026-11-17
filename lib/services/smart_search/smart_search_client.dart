@@ -226,7 +226,16 @@ class SmartSearchHit {
 }
 
 class SmartSearchResponse {
-  const SmartSearchResponse({required this.results, this.understood = const [], this.indexedLibraries = const {}});
+  const SmartSearchResponse({
+    required this.results,
+    this.understood = const [],
+    this.indexedLibraries = const {},
+    this.unwatchedOnly = false,
+  });
+
+  /// The request asked for unwatched titles ("sci fi I haven't watched"). The
+  /// index has no per-viewer watch state, so the app drops watched items.
+  final bool unwatchedOnly;
 
   final List<SmartSearchHit> results;
 
@@ -246,6 +255,7 @@ class SmartSearchResponse {
       ],
       understood: SmartSearchHit._strings(json['understood']),
       indexedLibraries: SmartSearchHit._strings(json['indexed_libraries']).toSet(),
+      unwatchedOnly: json['unwatched'] == true,
     );
   }
 

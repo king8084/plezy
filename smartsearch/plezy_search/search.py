@@ -476,7 +476,7 @@ class Engine:
                         f'ORDER BY bm25(search_text, 8.0, 4.0, 3.0, 2.0, 1.0) LIMIT ?',
                         [_match_expr(words, prefix_last=False, op=' OR ')] + scope_args + [limit]).fetchall()
                     add(self._row(r, 'some words') for r in rows)
-        return {'query': raw, 'understood': p.understood, 'filters': p.has_filters,
+        return {'query': raw, 'understood': p.understood, 'filters': p.has_filters, 'unwatched': p.unwatched,
                 'results': self._with_libraries(self._dedupe(results)[:limit]),
                 'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
@@ -618,6 +618,7 @@ class Engine:
                 r['recalled'] = True
         results = self._with_libraries(results)
         return {'query': raw, 'understood': p.understood, 'results': results, 'query_vector_cached': cached,
+                'unwatched': p.unwatched,
                 'verify_ms': checked_ms,
                 'embed_ms': round((t_embed - start) * 1000, 1),
                 'took_ms': round((time.perf_counter() - start) * 1000, 1)}
