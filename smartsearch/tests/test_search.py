@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from plezy_search.query import parse  # noqa: E402
 from plezy_search.search import Engine  # noqa: E402
-from test_index import episode, make_indexer, movie, series  # noqa: E402
+from test_index import MODEL, FakeOllama, episode, make_indexer, movie, series  # noqa: E402
 
 TODAY = dt.date(2026, 11, 16)
 
@@ -210,3 +210,32 @@ class ResolveTest(unittest.TestCase):
             self.assertEqual(engine.resolve(['show:imdb:tt9999999'])['results'], [])
             jellyfin_ids = engine.resolve([f'item:{2:032x}', 'item:unknown', f'item:{4:032x}'], seed=f'{1:032x}')
             self.assertEqual([r['title'] for r in jellyfin_ids['results']], ['Better Call Saul'])
+
+
+class FindInShowTest(unittest.TestCase):
+    """The show page's Find box: only that show's episodes."""
+
+    def test_series_scope_returns_only_its_episodes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            mf, other = f'{1:032x}', f'{2:032x}'
+            items = [series(1, 'Modern Family', genres=('Comedy',)),
+                     series(2, 'Hoop Dreams Show', genres=('Comedy',)),
+                     episode(10, mf, 'Modern Family', 4, 8, 'Party Crasher', overview='Phil plays basketball with Luke.'),
+                     episode(11, mf, 'Modern Family', 2, 3, 'Dinner Date', overview='Claire plans a dinner.'),
+                     episode(12, other, 'Hoop Dreams Show', 1, 1, 'Basketball', overview='Phil plays basketball.')]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            while w.embed_step():
+                pass
+            w.db.close()
+            class QueryOllama(FakeOllama):
+                def embed(self, texts, **_):
+                    return super().embed(texts)
+
+            engine = Engine(Path(tmp) / 'index.sqlite', QueryOllama(), MODEL)
+            got = engine.smart('phil basketball', series=mf, verify=False, recall=False)['results']
+            self.assertTrue(got)
+            self.assertTrue(all(r['kind'] == 'Episode' and r['series_id'] == mf for r in got))
+            self.assertEqual(got[0]['title'], 'Party Crasher')
+            self.assertEqual(engine.smart('phil', series='missing', verify=False, recall=False)['results'], [])
+

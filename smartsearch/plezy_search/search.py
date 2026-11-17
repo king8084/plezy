@@ -601,21 +601,34 @@ class Engine:
                 self._query_vectors.popitem(last=False)
         return vector, False
 
-    def smart(self, raw, limit=20, verify=True, verify_top=8, confirm=False, recall=True):
+    def smart(self, raw, limit=20, verify=True, verify_top=8, confirm=False, recall=True, series=None):
+        """Meaning-based search. [series] (a show's item id) searches only that
+        show's episodes: the show's "Find" box ("phil basketball" inside Modern Family)."""
         start = time.perf_counter()
-        p = Q.parse(raw, self.vocab)
         if self.vectors is None:
             raise SearchError('index has no embeddings yet')
+        forced = None
+        if series:
+            row = self.db.execute("SELECT title FROM items WHERE item_id=? AND kind='Series'", (series,)).fetchone()
+            if not row:
+                return {'query': raw, 'understood': [], 'results': [], 'unwatched': False}
+            forced = (norm(row[0]), [series])
+            # Read as "<show> episode <request>" so the checker and the language
+            # model know which show the characters belong to.
+            raw = f'{row[0]} episode {raw}'
+        p = Q.parse(raw, self.vocab)
         # Embed the whole request: words the parser turns into filters ("tv show",
         # "anime") still carry meaning. Filters are applied separately below.
         scoped = self._series_in(p)
+        if forced:
+            scoped = (forced[0], forced[1], norm(raw).split())
         text = raw
         vec, cached = self.query_vector(text)
         t_embed = time.perf_counter()
         matrix, ids, index = self.vectors
         scores = matrix @ vec
         restrict = None
-        if scoped and len(scoped[2]) >= 2:
+        if forced or (scoped and len(scoped[2]) >= 2):
             # A show named inside a descriptive request: search its episodes.
             restrict = ("i.kind='Episode' AND i.active=1 AND i.series_id IN (%s)" % ','.join('?' * len(scoped[1])),
                         scoped[1])
@@ -640,6 +653,8 @@ class Engine:
         for rank, (item_id, _) in enumerate(semantic):
             fused[item_id] = fused.get(item_id, 0) + 1 / (60 + rank)
         instant = self.instant(raw, 30)['results']
+        if forced:
+            instant = [r for r in instant if r.get('series_id') in forced[1]]
         for rank, r in enumerate(instant):
             fused[r['id']] = fused.get(r['id'], 0) + 1 / (60 + rank)
         tokens = _fts_tokens(text)
@@ -668,7 +683,13 @@ class Engine:
             for item_id in fused:
                 if kinds.get(item_id) == 'Episode':
                     fused[item_id] *= 0.6
-        order = sorted(fused, key=lambda x: -fused[x])[:limit]
+        order = sorted(fused, key=lambda x: -fused[x])
+        if forced:
+            in_show = {r[0] for r in self.db.execute(
+                f"SELECT item_id FROM items WHERE kind='Episode' AND series_id IN "
+                f"({','.join('?' * len(forced[1]))})", forced[1])}
+            order = [x for x in order if x in in_show]
+        order = order[:limit]
         sim = dict(semantic)
         rows = {r[0]: r for r in self.db.execute(
             f'SELECT {self.COLUMNS} FROM items i WHERE i.item_id IN ({",".join("?" * len(order))})', order)}
