@@ -3,23 +3,14 @@ import 'package:flutter/services.dart';
 
 import '../utils/app_logger.dart';
 
-/// How Apple's native search keyboard was left.
-enum NativeTvSearchEnd {
-  /// The keyboard's Search key.
-  submitted,
-
-  /// Down from the keyboard toward the results.
-  movedDown,
-
-  /// Menu/Back (or closed by Plezy).
-  dismissed,
-}
-
-/// Apple's own tvOS search keyboard (a UISearchController in a
-/// UISearchContainerViewController, tvos/Runner/NativeSearchPlugin.swift):
-/// one row of letters at the top of the screen, hold the Siri Remote's mic to
-/// dictate. Plezy's results stay visible underneath; every change streams back
-/// through [open]'s `onChanged`.
+/// Apple's own tvOS search keyboard docked into Plezy's Search page
+/// (tvos/Runner/NativeSearchPlugin.swift), the way Neptune and Apple's apps
+/// show it: the big query line and the one-row keyboard at the top, results
+/// underneath, hold the Siri Remote's mic to dictate.
+///
+/// The keyboard is a native child view placed in the rectangle passed to
+/// [dock]. Focus moves between it and Flutter: Down from the keyboard calls
+/// `onDown` (focus the first result); [focus] gives the keyboard focus back.
 class NativeTvSearch {
   NativeTvSearch._();
 
@@ -29,67 +20,92 @@ class NativeTvSearch {
   static const MethodChannel channel = MethodChannel('plezy/native_search');
 
   ValueChanged<String>? _onChanged;
-  void Function(String text, NativeTvSearchEnd end)? _onEnded;
+  VoidCallback? _onDown;
+  ValueChanged<String>? _onSubmit;
   bool _handlerInstalled = false;
-  bool _active = false;
+  bool _docked = false;
 
-  bool get isActive => _active;
+  bool get isDocked => _docked;
 
-  /// Shows the keyboard with [text]. False when it cannot be shown (no native
-  /// side, or already open); callers then fall back to Plezy's keyboard.
-  Future<bool> open({
+  /// Shows the keyboard in [rect] (logical pixels, which are tvOS points).
+  /// False when it cannot be shown; callers then use Plezy's own keyboard.
+  Future<bool> dock({
+    required Rect rect,
     required String text,
     required String placeholder,
     required ValueChanged<String> onChanged,
-    required void Function(String text, NativeTvSearchEnd end) onEnded,
+    required VoidCallback onDown,
+    required ValueChanged<String> onSubmit,
   }) async {
-    if (_active) return false;
     if (!_handlerInstalled) {
       channel.setMethodCallHandler(_handle);
       _handlerInstalled = true;
     }
     _onChanged = onChanged;
-    _onEnded = onEnded;
+    _onDown = onDown;
+    _onSubmit = onSubmit;
     try {
-      final shown = await channel.invokeMethod<bool>('open', {'text': text, 'placeholder': placeholder}) ?? false;
-      _active = shown;
-      return shown;
+      final docked =
+          await channel.invokeMethod<bool>('dock', {
+            'x': rect.left,
+            'y': rect.top,
+            'width': rect.width,
+            'height': rect.height,
+            'text': text,
+            'placeholder': placeholder,
+          }) ??
+          false;
+      _docked = docked;
+      return docked;
     } on MissingPluginException {
       return false;
     } on PlatformException catch (error) {
-      appLogger.w('Native search keyboard unavailable', error: error);
+      appLogger.w('Apple search keyboard unavailable', error: error);
       return false;
     }
   }
 
-  Future<void> close() async {
-    if (!_active) return;
+  /// Gives the keyboard the remote's focus (typing).
+  Future<void> focus() => _invoke('focus');
+
+  /// Keeps the keyboard visible but lets Plezy's own views take focus.
+  Future<void> blur() => _invoke('blur');
+
+  Future<void> setText(String text) => _invoke('setText', {'text': text});
+
+  /// Hides the keyboard while Plezy draws over its area (the expanded
+  /// sidebar, sheets); a native view always sits above Flutter's drawing.
+  Future<void> setVisible(bool visible) => _invoke('setVisible', {'visible': visible});
+
+  Future<void> undock() async {
+    if (!_docked) return;
+    _docked = false;
+    _onChanged = null;
+    _onDown = null;
+    _onSubmit = null;
+    await _invoke('undock');
+  }
+
+  Future<void> _invoke(String method, [Object? arguments]) async {
+    if (!_docked && method != 'undock') return;
     try {
-      await channel.invokeMethod<void>('close');
+      await channel.invokeMethod<void>(method, arguments);
     } on MissingPluginException {
-      _active = false;
-    } on PlatformException {
-      _active = false;
+      _docked = false;
+    } on PlatformException catch (error) {
+      appLogger.w('Apple search keyboard: $method failed', error: error);
     }
   }
 
   Future<void> _handle(MethodCall call) async {
+    final text = call.arguments is String ? call.arguments as String : '';
     switch (call.method) {
       case 'changed':
-        _onChanged?.call(call.arguments is String ? call.arguments as String : '');
-      case 'ended':
-        final arguments = call.arguments is Map ? call.arguments as Map : const {};
-        final text = arguments['text'] is String ? arguments['text'] as String : '';
-        final end = switch (arguments['event']) {
-          'submit' => NativeTvSearchEnd.submitted,
-          'down' => NativeTvSearchEnd.movedDown,
-          _ => NativeTvSearchEnd.dismissed,
-        };
-        _active = false;
-        final onEnded = _onEnded;
-        _onChanged = null;
-        _onEnded = null;
-        onEnded?.call(text, end);
+        _onChanged?.call(text);
+      case 'down':
+        _onDown?.call();
+      case 'submit':
+        _onSubmit?.call(text);
     }
   }
 }

@@ -30,6 +30,7 @@ import '../utils/media_server_http_client.dart';
 import '../utils/search_relevance.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../widgets/native_search_dock.dart';
 import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
@@ -314,9 +315,9 @@ class _SearchScreenState extends State<SearchScreen>
   bool get _usesDockedKeyboard =>
       !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
-  /// Apple's native search keyboard (Settings > Appearance > Apple search
-  /// keyboard, on by default on Apple TV). Falls back to the docked keyboard
-  /// for the rest of the session if it cannot be shown.
+  /// Apple's native search keyboard docked at the top of the page
+  /// (Settings > Appearance > Apple search keyboard, on by default on Apple
+  /// TV). Falls back to Plezy's docked keyboard if it cannot be shown.
   bool get _usesNativeKeyboard =>
       PlatformDetector.isAppleTV() &&
       !_nativeKeyboardUnavailable &&
@@ -324,43 +325,41 @@ class _SearchScreenState extends State<SearchScreen>
       SettingsService.instance.read(SettingsService.appleSearchKeyboard);
   bool _nativeKeyboardUnavailable = false;
 
-  Future<void> _openNativeKeyboard() async {
-    final shown = await NativeTvSearch.instance.open(
-      text: searchController.text,
+  /// Down from Apple's keyboard: into the filters or the first result; with
+  /// nothing to show yet, the keyboard keeps the remote.
+  void _focusResultsFromNativeKeyboard() {
+    if (searchResults.isEmpty || isSearching) {
+      unawaited(NativeTvSearch.instance.focus());
+      return;
+    }
+    if (_showFilterChips) {
+      _focusFilterChips();
+    } else {
+      firstResultFocusNode.requestFocus();
+    }
+  }
+
+  Widget _buildNativeSearchHeader(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).height / 1080;
+    return NativeSearchDock(
+      controller: searchController,
+      focusNode: searchFocusNode,
       placeholder: t.search.hint,
-      onChanged: (text) {
-        if (!mounted || searchController.text == text) return;
-        searchController.value = TextEditingValue(
-          text: text,
-          selection: TextSelection.collapsed(offset: text.length),
-        );
+      height: 300 * scale,
+      onDown: _focusResultsFromNativeKeyboard,
+      onSubmit: (_) => handleSearchSubmit(),
+      onUnavailable: () {
+        if (mounted) setState(() => _nativeKeyboardUnavailable = true);
       },
-      onEnded: (text, end) {
-        if (!mounted) return;
-        if (searchController.text != text) {
-          searchController.value = TextEditingValue(
-            text: text,
-            selection: TextSelection.collapsed(offset: text.length),
-          );
-        }
-        if (end == NativeTvSearchEnd.dismissed || text.trim().isEmpty) {
-          searchFocusNode.requestFocus();
+      onNavigateLeft: _navigateToSidebar,
+      onBack: () {
+        if (searchController.text.isNotEmpty) {
+          searchController.clear();
         } else {
-          handleSearchSubmit();
+          _navigateToSidebar();
         }
       },
     );
-    if (shown || !mounted) return;
-    setState(() => _nativeKeyboardUnavailable = true);
-    // After the rebuild that removes the native hook, so this opens Plezy's
-    // docked keyboard rather than asking Apple's keyboard again.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _tvTextInputController.focusAndOpenTextInput();
-      // The keyboard opens after one more frame; an idle screen has none.
-      WidgetsBinding.instance.scheduleFrame();
-    });
-    WidgetsBinding.instance.scheduleFrame();
   }
 
   void _onSearchFocusChanged() {
@@ -742,83 +741,93 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   Widget build(BuildContext context) {
+    final nativeHeader = _usesNativeKeyboard;
+    final results = CustomScrollView(
+      primary: false,
+      slivers: [
+        if (!nativeHeader) DesktopSliverAppBar(title: Text(t.common.search), floating: true),
+        if (!nativeHeader)
+          SliverToBoxAdapter(
+            child: SearchInputField(
+              controller: searchController,
+              focusNode: searchFocusNode,
+              debugLabel: searchDebugLabel,
+              hintText: t.search.hint,
+              tvTextInputController: _tvTextInputController,
+              tvTextInputPresentation: _voiceInputActive
+                  ? TvTextInputPresentation.platform
+                  : SearchScreen.keyboardPresentation,
+              // The docked keyboard opens on Select, not merely on arriving at
+              // the tab, so landing on Search never hides the screen.
+              tvTextInputAutoOpenBehavior: _usesDockedKeyboard
+                  ? TvTextInputAutoOpenBehavior.never
+                  : TvTextInputAutoOpenBehavior.automatic,
+              // Dictation needs the system keyboard; only offered where the
+              // docked keyboard replaced it (Apple TV).
+              onVoiceInput:
+                  PlatformDetector.isAppleTV() && SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
+                  ? _startVoiceInput
+                  : null,
+              voiceInputTooltip: t.search.voiceSearch,
+              onNavigateLeft: _navigateToSidebar,
+              onNavigateDown: searchResults.isNotEmpty && !isSearching
+                  ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
+                  : null,
+              onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
+              onBack: () {
+                if (searchController.text.isNotEmpty) {
+                  searchController.clear();
+                } else {
+                  _navigateToSidebar();
+                }
+              },
+            ),
+          ),
+        if (isSearching)
+          LoadingIndicatorBox.sliver
+        else if (!hasSearched && nativeHeader)
+          // Apple's keyboard above is the whole invitation; nothing else.
+          const SliverToBoxAdapter(child: SizedBox.shrink())
+        else if (!hasSearched)
+          SliverFillRemaining(
+            child: StateMessageWidget(
+              message: t.search.searchYourMedia,
+              subtitle: t.search.enterTitleActorOrKeyword,
+              icon: Symbols.search_rounded,
+              iconSize: 80,
+            ),
+          )
+        else if (lastSearchFailed)
+          SliverFillRemaining(
+            child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
+          )
+        else if (searchResults.isEmpty && !_smartLoading && _smartSuggestions.isEmpty)
+          SliverFillRemaining(
+            child: StateMessageWidget(
+              message: t.messages.noResultsFound,
+              subtitle: t.search.tryDifferentTerm,
+              icon: Symbols.search_off_rounded,
+              iconSize: 80,
+            ),
+          )
+        else ...[
+          if (_showFilterChips) _buildFilterChips(),
+          _buildResultsList(context),
+          ..._buildSmartSuggestions(context),
+        ],
+      ],
+    );
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          primary: false,
-          slivers: [
-            DesktopSliverAppBar(title: Text(t.common.search), floating: true),
-            SliverToBoxAdapter(
-              child: SearchInputField(
-                controller: searchController,
-                focusNode: searchFocusNode,
-                debugLabel: searchDebugLabel,
-                hintText: t.search.hint,
-                tvTextInputController: _tvTextInputController,
-                tvTextInputPresentation: _voiceInputActive
-                    ? TvTextInputPresentation.platform
-                    : SearchScreen.keyboardPresentation,
-                // The docked keyboard opens on Select, not merely on arriving at
-                // the tab, so landing on Search never hides the screen.
-                tvTextInputAutoOpenBehavior: _usesDockedKeyboard
-                    ? TvTextInputAutoOpenBehavior.never
-                    : TvTextInputAutoOpenBehavior.automatic,
-                // Dictation needs the system keyboard; only offered where the
-                // docked keyboard replaced it (Apple TV).
-                onVoiceInput:
-                    PlatformDetector.isAppleTV() &&
-                        !_usesNativeKeyboard &&
-                        SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
-                    ? _startVoiceInput
-                    : null,
-                // Apple's keyboard dictates itself (hold the remote's mic).
-                onTvSelectOverride: _usesNativeKeyboard ? () => unawaited(_openNativeKeyboard()) : null,
-                voiceInputTooltip: t.search.voiceSearch,
-                onNavigateLeft: _navigateToSidebar,
-                onNavigateDown: searchResults.isNotEmpty && !isSearching
-                    ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
-                    : null,
-                onEditingComplete: PlatformDetector.isTV() ? handleSearchSubmit : null,
-                onBack: () {
-                  if (searchController.text.isNotEmpty) {
-                    searchController.clear();
-                  } else {
-                    _navigateToSidebar();
-                  }
-                },
-              ),
-            ),
-            if (isSearching)
-              LoadingIndicatorBox.sliver
-            else if (!hasSearched)
-              SliverFillRemaining(
-                child: StateMessageWidget(
-                  message: t.search.searchYourMedia,
-                  subtitle: t.search.enterTitleActorOrKeyword,
-                  icon: Symbols.search_rounded,
-                  iconSize: 80,
-                ),
+        child: nativeHeader
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildNativeSearchHeader(context),
+                  Expanded(child: results),
+                ],
               )
-            else if (lastSearchFailed)
-              SliverFillRemaining(
-                child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
-              )
-            else if (searchResults.isEmpty && !_smartLoading && _smartSuggestions.isEmpty)
-              SliverFillRemaining(
-                child: StateMessageWidget(
-                  message: t.messages.noResultsFound,
-                  subtitle: t.search.tryDifferentTerm,
-                  icon: Symbols.search_off_rounded,
-                  iconSize: 80,
-                ),
-              )
-            else ...[
-              if (_showFilterChips) _buildFilterChips(),
-              _buildResultsList(context),
-              ..._buildSmartSuggestions(context),
-            ],
-          ],
-        ),
+            : results,
       ),
     );
   }

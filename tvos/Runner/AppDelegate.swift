@@ -16,6 +16,17 @@ import wakelock_plus
     true
   }
 
+  /// While Apple's search keyboard is docked and typing (NativeSearchPlugin),
+  /// the focus engine is pointed at it; otherwise default focus.
+  var nativeSearchFocusEnvironment: UIFocusEnvironment?
+
+  override var preferredFocusEnvironments: [UIFocusEnvironment] {
+    if let environment = nativeSearchFocusEnvironment {
+      return [environment]
+    }
+    return super.preferredFocusEnvironments
+  }
+
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
     becomeFirstResponder()

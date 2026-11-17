@@ -18,6 +18,7 @@ import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/native_search_dock.dart';
 import '../widgets/search_input_field.dart';
 import 'search_screen.dart';
 
@@ -69,39 +70,26 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
       SettingsService.instance.read(SettingsService.appleSearchKeyboard);
   bool _nativeKeyboardUnavailable = false;
 
-  Future<void> _openNativeKeyboard() async {
-    void setText(String text) {
-      if (_controller.text == text) return;
-      _controller.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
-    }
-
-    final shown = await NativeTvSearch.instance.open(
-      text: _controller.text,
+  Widget _buildNativeHeader(BuildContext context) {
+    final scale = MediaQuery.sizeOf(context).height / 1080;
+    return NativeSearchDock(
+      controller: _controller,
+      focusNode: _fieldFocus,
       placeholder: t.findInShow.fieldHint,
-      onChanged: (text) {
-        if (mounted) setText(text);
-      },
-      onEnded: (text, end) {
-        if (!mounted) return;
-        setText(text);
-        if (end == NativeTvSearchEnd.dismissed || text.trim().isEmpty) {
-          _fieldFocus.requestFocus();
+      height: 280 * scale,
+      onDown: () {
+        if (_results.isNotEmpty) {
+          _firstResultFocus.requestFocus();
         } else {
-          _submit();
+          unawaited(NativeTvSearch.instance.focus());
         }
       },
+      onSubmit: (_) => _submit(),
+      onUnavailable: () {
+        if (mounted) setState(() => _nativeKeyboardUnavailable = true);
+      },
+      onBack: () => Navigator.of(context).maybePop(),
     );
-    if (shown || !mounted) return;
-    setState(() => _nativeKeyboardUnavailable = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _tvTextInput.focusAndOpenTextInput();
-      WidgetsBinding.instance.scheduleFrame();
-    });
-    WidgetsBinding.instance.scheduleFrame();
   }
 
   @override
@@ -112,7 +100,6 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _fieldFocus.requestFocus();
-      if (_usesNativeKeyboard) unawaited(_openNativeKeyboard());
     });
     _fieldFocus.addListener(() {
       if (!_fieldFocus.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
@@ -250,30 +237,28 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SearchInputField(
-                controller: _controller,
-                focusNode: _fieldFocus,
-                hintText: t.findInShow.fieldHint,
-                debugLabel: 'find_in_show',
-                tvTextInputController: _tvTextInput,
-                tvTextInputPresentation: _voiceInputActive
-                    ? TvTextInputPresentation.platform
-                    : SearchScreen.keyboardPresentation,
-                tvTextInputAutoOpenBehavior: _usesNativeKeyboard
-                    ? TvTextInputAutoOpenBehavior.never
-                    : TvTextInputAutoOpenBehavior.automatic,
-                onVoiceInput:
-                    PlatformDetector.isAppleTV() &&
-                        !_usesNativeKeyboard &&
-                        SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
-                    ? _startVoiceInput
-                    : null,
-                onTvSelectOverride: _usesNativeKeyboard ? () => unawaited(_openNativeKeyboard()) : null,
-                voiceInputTooltip: t.search.voiceSearch,
-                onNavigateDown: _results.isEmpty ? null : _firstResultFocus.requestFocus,
-                onEditingComplete: _submit,
-                onBack: () => Navigator.of(context).maybePop(),
-              ),
+              if (_usesNativeKeyboard)
+                _buildNativeHeader(context)
+              else
+                SearchInputField(
+                  controller: _controller,
+                  focusNode: _fieldFocus,
+                  hintText: t.findInShow.fieldHint,
+                  debugLabel: 'find_in_show',
+                  tvTextInputController: _tvTextInput,
+                  tvTextInputPresentation: _voiceInputActive
+                      ? TvTextInputPresentation.platform
+                      : SearchScreen.keyboardPresentation,
+                  onVoiceInput:
+                      PlatformDetector.isAppleTV() &&
+                          SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
+                      ? _startVoiceInput
+                      : null,
+                  voiceInputTooltip: t.search.voiceSearch,
+                  onNavigateDown: _results.isEmpty ? null : _firstResultFocus.requestFocus,
+                  onEditingComplete: _submit,
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
               if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
               Expanded(child: body),
             ],

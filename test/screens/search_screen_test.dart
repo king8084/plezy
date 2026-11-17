@@ -25,6 +25,8 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
 import 'package:plezy/services/native_tv_search.dart';
+import 'package:plezy/widgets/native_search_dock.dart';
+import 'package:plezy/widgets/search_input_field.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/smart_search/smart_search_client.dart';
@@ -308,7 +310,7 @@ void main() {
         NativeTvSearch.channel,
         (call) async {
           calls.add(call);
-          return call.method == 'open' ? openResult : null;
+          return call.method == 'dock' ? openResult : null;
         },
       );
     });
@@ -319,6 +321,9 @@ void main() {
       );
     });
 
+    FocusNode searchFocusNodeOf(WidgetTester tester) =>
+        tester.widget<NativeSearchDock>(find.byType(NativeSearchDock)).focusNode;
+
     Future<void> fromNative(WidgetTester tester, String method, Object? arguments) async {
       await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
         NativeTvSearch.channel.name,
@@ -328,37 +333,49 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('Select opens it, typed or dictated text searches live, Down lands on the results', (tester) async {
+    testWidgets('docks at the top of Search, types live, Down to results and Up back', (tester) async {
       final (client, _) = await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      expect(find.byTooltip(t.search.voiceSearch), findsNothing, reason: 'Apple\'s keyboard dictates itself');
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      final dock = calls.firstWhere((call) => call.method == 'dock');
+      final arguments = dock.arguments as Map;
+      expect(arguments['y'], lessThan(80), reason: 'docked at the top of the page');
+      expect(arguments['height'], greaterThan(150));
+      expect(find.byType(SearchInputField), findsNothing, reason: 'no second search field under Apple\'s');
+      expect(find.text(t.search.searchYourMedia), findsNothing);
+
+      searchFocusNodeOf(tester).requestFocus();
       await tester.pumpAndSettle();
-      expect(calls.single.method, 'open');
-      expect(find.byKey(panel), findsNothing, reason: 'Plezy\'s keyboard stays closed');
+      expect(calls.last.method, 'focus');
 
       await fromNative(tester, 'changed', 'movie');
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       expect(client.queries, contains('movie'));
+      expect(calls.where((call) => call.method == 'setText'), isEmpty, reason: 'no echo back to the keyboard');
 
-      await fromNative(tester, 'ended', {'event': 'down', 'text': 'movie'});
+      await fromNative(tester, 'down', null);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+      expect(calls.last.method, 'blur');
+
+      searchFocusNodeOf(tester).requestFocus();
+      await tester.pumpAndSettle();
+      expect(calls.last.method, 'focus', reason: 'Up from the results gives the keyboard the remote again');
     });
 
-    testWidgets('Menu returns to the field; a failed open falls back to Plezy\'s keyboard', (tester) async {
+    testWidgets('falls back to Plezy\'s search field when Apple\'s keyboard cannot dock', (tester) async {
+      openResult = false;
       await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      await tester.sendKeyEvent(LogicalKeyboardKey.select);
-      await tester.pumpAndSettle();
-      await fromNative(tester, 'ended', {'event': 'dismissed', 'text': ''});
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+      expect(find.byType(SearchInputField), findsOneWidget);
+    });
 
-      openResult = false;
-      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    testWidgets('leaving Search removes the keyboard', (tester) async {
+      await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      expect(find.byKey(panel), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      expect(calls.last.method, 'undock');
     });
   });
 

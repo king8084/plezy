@@ -375,6 +375,16 @@ from the logs) is already fast enough, so it was left alone.
   attached to the rail, text block takes the remaining space, actions always
   visible) plus app-log diagnostics of real sizes to confirm on the device.
 
+- Fixes made (not built yet): show page is now a measured column (text block
+  fits itself above the tabs; tabs attached to the rail; rail capped to an
+  explicit box) and logs `TV show page layout: ...` to the app log. Search docks
+  Apple's keyboard as a child view in a rectangle reserved at the top of
+  Search/Find (`NativeSearchDock`), hides Plezy's own field, starts
+  unfocusable, takes the remote only while the hidden focus stand-in is
+  focused, hands Down to the results and gets Up back, hides while focus is
+  outside the page (expanded sidebar), and is removed when the tab or route
+  is not current. Fallback: Plezy's docked keyboard if docking fails.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid

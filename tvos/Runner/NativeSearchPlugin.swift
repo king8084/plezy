@@ -2,19 +2,27 @@ import Flutter
 import UIKit
 
 #if os(tvOS)
-  /// Apple's own search keyboard for Plezy's Search screen: the single row of
-  /// letters at the top of the screen, with "hold the mic to dictate" from the
-  /// Siri Remote. Presented over the Flutter view, so Plezy's results stay
-  /// visible underneath and update as the text changes.
+  /// Apple's own search keyboard docked into Plezy's Search page, the way
+  /// Neptune and Apple's apps show it: the big query line and the one-row
+  /// keyboard at the top of the page, results underneath, hold the Siri
+  /// Remote's mic to dictate. The keyboard is a child view of the Flutter
+  /// view controller placed in a rectangle the Search page reserves; it is not
+  /// presented over the page.
+  ///
+  /// Focus is handed back and forth: Down from the keyboard focuses a thin
+  /// strip below it, which tells Flutter to focus its first result and makes
+  /// the keyboard unfocusable; Flutter's `focus` call makes it focusable again
+  /// and moves the focus engine onto it.
   ///
   /// Channel `plezy/native_search`:
-  /// - `open {text, placeholder}` -> Bool (false when it cannot be shown)
-  /// - `close`
-  /// - callbacks: `changed(text)`, `ended {event: submit|down|dismissed, text}`
+  /// - `dock {x, y, width, height, text, placeholder}` -> Bool
+  /// - `focus`, `blur`, `undock`, `setText {text}`, `setVisible {visible}`
+  /// - callbacks: `changed(text)`, `down`, `submit(text)`
   final class NativeSearchPlugin: NSObject, FlutterPlugin, UISearchResultsUpdating, UISearchBarDelegate {
     private let channel: FlutterMethodChannel
-    private var container: NativeSearchContainerViewController?
-    private var ended = false
+    private var container: UISearchContainerViewController?
+    private var results: NativeSearchResultsViewController?
+    private var suppressChanges = false
 
     static func register(with registrar: FlutterPluginRegistrar) {
       let channel = FlutterMethodChannel(name: "plezy/native_search", binaryMessenger: registrar.messenger())
@@ -28,97 +36,120 @@ import UIKit
     }
 
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+      let arguments = call.arguments as? [String: Any] ?? [:]
       switch call.method {
-      case "open":
-        let arguments = call.arguments as? [String: Any]
-        open(
-          text: arguments?["text"] as? String ?? "",
-          placeholder: arguments?["placeholder"] as? String ?? "",
-          result: result
-        )
-      case "close":
-        end(event: "dismissed", animated: false)
+      case "dock":
+        result(dock(arguments))
+      case "focus":
+        setFocused(true)
+        result(nil)
+      case "blur":
+        setFocused(false)
+        result(nil)
+      case "setVisible":
+        container?.view.isHidden = !((arguments["visible"] as? Bool) ?? true)
+        result(nil)
+      case "setText":
+        if let search = container?.searchController {
+          suppressChanges = true
+          search.searchBar.text = arguments["text"] as? String ?? ""
+          suppressChanges = false
+        }
+        result(nil)
+      case "undock":
+        undock()
         result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
     }
 
-    private func open(text: String, placeholder: String, result: @escaping FlutterResult) {
-      guard container == nil, let presenter = Self.topViewController() else {
-        result(false)
-        return
+    private static func number(_ value: Any?) -> CGFloat {
+      if let number = value as? NSNumber { return CGFloat(truncating: number) }
+      return 0
+    }
+
+    private func dock(_ arguments: [String: Any]) -> Bool {
+      guard let root = Self.rootViewController() else { return false }
+      let frame = CGRect(
+        x: Self.number(arguments["x"]),
+        y: Self.number(arguments["y"]),
+        width: Self.number(arguments["width"]),
+        height: Self.number(arguments["height"])
+      )
+      if let existing = container {
+        existing.view.frame = frame
+        return true
       }
-      let results = NativeSearchResultsViewController()
-      let search = UISearchController(searchResultsController: results)
+      let resultsController = NativeSearchResultsViewController()
+      resultsController.onFocused = { [weak self] in
+        guard let self = self else { return }
+        self.setFocused(false)
+        self.channel.invokeMethod("down", arguments: nil)
+      }
+      let search = UISearchController(searchResultsController: resultsController)
       search.searchResultsUpdater = self
       search.obscuresBackgroundDuringPresentation = false
       search.searchBar.delegate = self
-      search.searchBar.placeholder = placeholder
-      search.searchBar.text = text
+      search.searchBar.placeholder = arguments["placeholder"] as? String ?? ""
+      search.searchBar.text = arguments["text"] as? String ?? ""
 
-      let containerController = NativeSearchContainerViewController(searchController: search)
-      containerController.modalPresentationStyle = .overFullScreen
+      let containerController = UISearchContainerViewController(searchController: search)
       containerController.view.backgroundColor = .clear
-      results.onFocused = { [weak self] in
-        self?.end(event: "down", animated: true)
-      }
-      containerController.onDisappear = { [weak self] in
-        self?.end(event: "dismissed", animated: false)
-      }
-
-      ended = false
+      containerController.view.frame = frame
+      // Unfocusable until Plezy hands it the remote (`focus`), so docking
+      // never steals focus from wherever the user is on the page.
+      containerController.view.isUserInteractionEnabled = false
+      root.addChild(containerController)
+      root.view.addSubview(containerController.view)
+      containerController.didMove(toParent: root)
       container = containerController
-      presenter.present(containerController, animated: true) {
-        result(true)
-      }
+      results = resultsController
+      return true
     }
 
-    /// Reports how the keyboard was left and dismisses it once.
-    private func end(event: String, animated: Bool) {
-      guard let containerController = container, !ended else { return }
-      ended = true
+    private func undock() {
+      guard let containerController = container else { return }
+      setFocused(false)
+      containerController.willMove(toParent: nil)
+      containerController.view.removeFromSuperview()
+      containerController.removeFromParent()
       container = nil
-      let text = containerController.searchController.searchBar.text ?? ""
-      channel.invokeMethod("ended", arguments: ["event": event, "text": text])
-      if containerController.presentingViewController != nil && !containerController.isBeingDismissed {
-        containerController.dismiss(animated: animated)
+      results = nil
+    }
+
+    /// Focusable keyboard (typing) or not (Flutter's results have focus; the
+    /// keyboard stays visible but takes no presses).
+    private func setFocused(_ focused: Bool) {
+      guard let containerController = container, let root = Self.rootViewController() else { return }
+      containerController.view.isUserInteractionEnabled = focused
+      if let plezyRoot = root as? PlezyFlutterViewController {
+        plezyRoot.nativeSearchFocusEnvironment = focused ? containerController : nil
       }
+      root.setNeedsFocusUpdate()
+      root.updateFocusIfNeeded()
     }
 
     func updateSearchResults(for searchController: UISearchController) {
-      guard !ended else { return }
+      guard !suppressChanges else { return }
       channel.invokeMethod("changed", arguments: searchController.searchBar.text ?? "")
     }
 
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-      end(event: "submit", animated: true)
+      channel.invokeMethod("submit", arguments: searchBar.text ?? "")
     }
 
-    private static func topViewController() -> UIViewController? {
+    private static func rootViewController() -> UIViewController? {
       let windows = UIApplication.shared.connectedScenes
         .compactMap { $0 as? UIWindowScene }
         .flatMap { $0.windows }
-      var top = (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
-      while let presented = top?.presentedViewController {
-        top = presented
-      }
-      return top
+      return (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
     }
   }
 
-  /// Reports a dismissal the user made with the Menu button.
-  final class NativeSearchContainerViewController: UISearchContainerViewController {
-    var onDisappear: (() -> Void)?
-
-    override func viewDidDisappear(_ animated: Bool) {
-      super.viewDidDisappear(animated)
-      onDisappear?()
-    }
-  }
-
-  /// A transparent results area holding one thin focusable strip: moving down
-  /// from the keyboard focuses it, which hands focus back to Plezy's results.
+  /// The results area below the keyboard: transparent, with one thin
+  /// focusable strip at its top. Moving down from the keyboard focuses it,
+  /// which hands focus to Plezy's own results.
   final class NativeSearchResultsViewController: UIViewController {
     var onFocused: (() -> Void)?
     private let focusTarget = NativeSearchFocusTarget()
@@ -131,8 +162,8 @@ import UIKit
       NSLayoutConstraint.activate([
         focusTarget.leadingAnchor.constraint(equalTo: view.leadingAnchor),
         focusTarget.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        focusTarget.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
-        focusTarget.heightAnchor.constraint(equalToConstant: 10),
+        focusTarget.topAnchor.constraint(equalTo: view.topAnchor, constant: 2),
+        focusTarget.heightAnchor.constraint(equalToConstant: 8),
       ])
     }
 
