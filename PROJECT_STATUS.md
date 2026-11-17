@@ -2,8 +2,12 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `6f20266637f85e08a48aff983f55ff0d10b3cae8` (build 22).
-  Analysis, unit and tvOS native CI, release gate, archive and install passed.
+- Installed app source: `d92d0d90e8e95b7ee11cda4c2f7cad9879680cb3` (Codemagic build 24,
+  Nov 17 06:11 local, in place via tvsign Renew). Local gate and Codemagic gate
+  passed; fork GitHub Actions is disabled, so fork CI did not run for this build.
+  Build 23 failed on a Codemagic DNS error while fetching the engine; one
+  justified retry. Owner checks of Search, Home Back, Mark played and playback
+  are pending. Build 22 (`6f2026663`) IPAs are backed up as `*-before-d92d0d9`.
 - Draft release PR into the owner's fork: https://github.com/king8084/plezy/pull/1.
   Both branches belong to `king8084/plezy`; upstream is untouched.
 - Previous installed sources `73439a226` (build 21), `d627ca4c7` and `22f5fc8bb`, with
@@ -241,8 +245,8 @@ Implemented and source/native CI validated:
   Back on the TV rows returns to the first item of the first row before the
   sidebar; player "Mark as played" button after Next (an episode plays the
   next and marks the one left played; a movie or last episode is marked played
-  and the player closes; the stop report goes first). Movie behaviour (close
-  vs keep playing) awaits owner confirmation.
+  and the player closes; the stop report goes first). The owner confirmed
+  that the player closes after marking a movie played.
 - TV waking investigation: tvsign's log shows overnight installs (Nov 15 04:07,
   04:43, 05:44; Nov 16 04:05 local). Each install wakes the Apple TV, which
   turns the TV on via HDMI-CEC. tvsign does no automatic device contact

@@ -19,7 +19,8 @@ candidate in the owner's fork before starting its device archive.
 Keep personal addresses, device names and installation receipts out of tracked
 files. Preserve private installation history under `.git/plezy-private/`.
 
-Do not start an Apple TV build until the owner explicitly says “build apple tv”.
+Do not start an Apple TV build until the owner explicitly says “build apple tv”
+or, equivalently (owner, Nov 17), “build app”.
 Do not delete or uninstall the owner's Apple TV app as an update workaround.
 Preserve the installed app and its data; investigate a non-destructive update.
 Never change anything on the owner's Unraid server without their explicit
@@ -76,6 +77,13 @@ Cache raw checks by source/input/model identity, reapply the current policy,
 and preserve failed evaluations. Verification work must not re-embed unchanged
 library items or hold up ordinary search results.
 
+For installs the owner allows adding and editing files only inside the tvsign
+appdata folder (`/mnt/unraid_appdata/docker/tvsign/` on this PC's mount):
+back up `original.ipa`/`signed.ipa` as new `*-before-<sha>.ipa` files, add
+`Plezy-<sha>.ipa`, replace `original.ipa`, then Renew through tvsign's API
+using the private, git-ignored `.env.plezy-release-access.json`. Never open
+tvsign's live database across the mount. Fork Actions are currently disabled;
+note when CI could not run.
 Before installing an Apple TV update, keep the TV awake in Apple TV Settings
 with Plezy closed. On November 13, an in-place update stalled on Home despite
 the app being closed, then completed when the owner entered Settings. Home /
