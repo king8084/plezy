@@ -305,6 +305,17 @@ from the logs) is already fast enough, so it was left alone.
   language model and focuses the results; Select plays the episode. Live
   check in Modern Family: "phil basketball" -> S1E20 Benched, S8E16 Basketball;
   "haley goes to college" -> S4E2 Schooled.
+- Show/season page redesign (owner approved the mockup, Nov 17): new TV layout
+  for shows and seasons in `media_detail/tv_modern_layout.dart`. Fixed
+  top-anchored block (title/logo, one info slot showing the show or the
+  focused episode, labeled actions), "Season N" tabs right above the episodes,
+  no on-screen back arrow, episode cards without the E# corner badge, plain
+  recommendation row names; cards keep IMDb rating, votes, year and badges.
+  Restore points: git tag `show-page-classic` (83066b1b4) and Settings >
+  Appearance > Classic show page (old layout, still fully tested).
+  Not done from the mockup: creators/directors in the cast row, stacked rows
+  with a collapsing header, wider 96 px margins, request-badge restyle and the
+  season poster header; candidates for a later pass.
 - Owner (Nov 17): animated shows in normal TV libraries stay in results; only
   the anime/cartoon libraries are excluded unless asked for (unchanged).
 - Search: "unwatched"/"haven't seen" requests filter by the viewer's own watch

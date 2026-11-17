@@ -859,7 +859,6 @@
     "trailer": "Trailer",
     "simklPicks": "Simkl picks",
     "notInLibrary": "Not in your library",
-    "episodes": "${count} episodes",
     "episodeShort": "E${number}",
     "watchedOf": "${watched} of ${total} watched"
   },

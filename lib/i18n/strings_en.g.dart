@@ -2410,9 +2410,6 @@ class Translations$detailActions$en {
 	/// en: 'Not in your library'
 	String get notInLibrary => 'Not in your library';
 
-	/// en: '${count} episodes'
-	String episodes({required Object count}) => '${count} episodes';
-
 	/// en: 'E${number}'
 	String episodeShort({required Object number}) => 'E${number}';
 
@@ -9188,7 +9185,6 @@ extension on Translations {
 			'detailActions.trailer' => 'Trailer',
 			'detailActions.simklPicks' => 'Simkl picks',
 			'detailActions.notInLibrary' => 'Not in your library',
-			'detailActions.episodes' => ({required Object count}) => '${count} episodes',
 			'detailActions.episodeShort' => ({required Object number}) => 'E${number}',
 			'detailActions.watchedOf' => ({required Object watched, required Object total}) => '${watched} of ${total} watched',
 			'tooltips.findInShow' => 'Find an episode',
@@ -9408,9 +9404,9 @@ extension on Translations {
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
+			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			_ => null,
 		} ?? switch (path) {
-			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
@@ -9922,9 +9918,9 @@ extension on Translations {
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
+			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
 			_ => null,
 		} ?? switch (path) {
-			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
@@ -10436,9 +10432,9 @@ extension on Translations {
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
+			'companionRemote.remote.volumeDown' => 'Down',
 			_ => null,
 		} ?? switch (path) {
-			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',
