@@ -269,6 +269,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         ? _navigateToNextItem
                         : null;
                     final onPrevious = _hasPreviousItem && canNavigateItems ? _navigateToPreviousItem : null;
+                    // Stays mounted while it works (a vanishing focused button would
+                    // strand D-pad focus); the action itself ignores repeat presses.
+                    final onMarkPlayed = !widget.isLive && canNavigateItems
+                        ? () => unawaited(_markPlayedAndContinue())
+                        : null;
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
                     final sourceSubtitleSidecars = _sourceSubtitleSidecarsForControls();
@@ -283,6 +288,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         metadata: _currentMetadata,
                         onNext: onNext,
                         onPrevious: onPrevious,
+                        onMarkPlayed: onMarkPlayed,
+                        markPlayedPlaysNext: _episode.next != null,
                         availableVersions: _availableVersions,
                         selectedMediaIndex: _effectiveSelectedMediaIndex,
                         selectedQualityPreset: _selectedQualityPreset,

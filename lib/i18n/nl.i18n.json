@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Geforceerd)",
     "osdSubtitlesOff": "Ondertitels: uit",
     "osdSubtitles": "Ondertitels: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

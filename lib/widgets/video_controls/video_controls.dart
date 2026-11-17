@@ -563,6 +563,8 @@ class PlexVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
   final MediaItem metadata;
+  final VoidCallback? onMarkPlayed;
+  final bool markPlayedPlaysNext;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
   final List<MediaVersion> availableVersions;
@@ -706,6 +708,8 @@ class PlexVideoControls extends StatefulWidget {
     this.initialChapters,
     this.initialMarkers,
     this.onNext,
+    this.onMarkPlayed,
+    this.markPlayedPlaysNext = false,
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,

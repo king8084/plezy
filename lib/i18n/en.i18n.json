@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Forced)",
     "osdSubtitlesOff": "Subtitles: Off",
     "osdSubtitles": "Subtitles: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "markPlayedButton": "Mark as played",
+    "markPlayedAndNextButton": "Mark as played and play next",
+    "markPlayedFailed": "Could not mark as played"
   },
   "userStatus": {},
   "messages": {

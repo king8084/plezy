@@ -932,7 +932,10 @@
     "forcedTrack": "${label}（强制）",
     "osdSubtitlesOff": "字幕：关闭",
     "osdSubtitles": "字幕：${track}",
-    "osdAudio": "音频：${track}"
+    "osdAudio": "音频：${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Мәжбүрлі)",
     "osdSubtitlesOff": "Субтитр: өшірулі",
     "osdSubtitles": "Субтитр: ${track}",
-    "osdAudio": "Дыбыс: ${track}"
+    "osdAudio": "Дыбыс: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

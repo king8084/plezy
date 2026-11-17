@@ -932,7 +932,10 @@
     "forcedTrack": "${label} (강제)",
     "osdSubtitlesOff": "자막: 꺼짐",
     "osdSubtitles": "자막: ${track}",
-    "osdAudio": "오디오: ${track}"
+    "osdAudio": "오디오: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

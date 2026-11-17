@@ -42,6 +42,13 @@ class DesktopVideoControls extends StatefulWidget {
   final bool showPerformanceOverlay;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+
+  /// Mark the current item played (and, for an episode, play the next one).
+  /// Null hides the button.
+  final VoidCallback? onMarkPlayed;
+
+  /// Whether [onMarkPlayed] also starts the next episode (labels the button).
+  final bool markPlayedPlaysNext;
   final VoidCallback onPlayPause;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
@@ -124,6 +131,8 @@ class DesktopVideoControls extends StatefulWidget {
     this.showPerformanceOverlay = false,
     this.onNext,
     this.onPrevious,
+    this.onMarkPlayed,
+    this.markPlayedPlaysNext = false,
     required this.onPlayPause,
     required this.chapters,
     required this.chaptersLoaded,
@@ -183,6 +192,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   late final FocusNode _skipForwardFocusNode;
   late final FocusNode _nextChapterFocusNode;
   late final FocusNode _nextItemFocusNode;
+  late final FocusNode _markPlayedFocusNode;
   late final FocusNode _goToLiveFocusNode;
   late final FocusNode _timelineFocusNode;
 
@@ -221,6 +231,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _skipForwardFocusNode = FocusNode(debugLabel: 'SkipForward');
     _nextChapterFocusNode = FocusNode(debugLabel: 'NextChapter');
     _nextItemFocusNode = FocusNode(debugLabel: 'NextItem');
+    _markPlayedFocusNode = FocusNode(debugLabel: 'MarkPlayed');
     _goToLiveFocusNode = FocusNode(debugLabel: 'GoToLive');
     _timelineFocusNode = FocusNode(debugLabel: 'Timeline');
     _volumeFocusNode = FocusNode(debugLabel: 'Volume');
@@ -236,6 +247,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       _skipForwardFocusNode,
       _nextChapterFocusNode,
       _nextItemFocusNode,
+      _markPlayedFocusNode,
       _goToLiveFocusNode,
     ];
     _bindChapterLabelStreams();
@@ -293,6 +305,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _skipForwardFocusNode.dispose();
     _nextChapterFocusNode.dispose();
     _nextItemFocusNode.dispose();
+    _markPlayedFocusNode.dispose();
     _goToLiveFocusNode.dispose();
     _timelineFocusNode.dispose();
     _volumeFocusNode.dispose();
@@ -496,7 +509,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   KeyEventResult _handleVolumeKeyEvent(FocusNode _, KeyEvent event) {
     return _handleDirectionalNavigation(
       event,
-      leftTarget: _nextItemFocusNode,
+      leftTarget: _markPlayedFocusNode.context != null ? _markPlayedFocusNode : _nextItemFocusNode,
       rightTarget: _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null,
     );
   }
@@ -887,6 +900,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       semanticLabel: t.videoControls.nextButton,
                     ),
                   ),
+                  // Mark played (and play the next episode)
+                  if (widget.onMarkPlayed != null)
+                    Opacity(
+                      opacity: _canControl ? 1.0 : 0.5,
+                      child: _buildFocusableButton(
+                        focusNode: _markPlayedFocusNode,
+                        index: 7,
+                        icon: Symbols.task_alt_rounded,
+                        onPressed: _canControl ? widget.onMarkPlayed : null,
+                        semanticLabel: widget.markPlayedPlaysNext
+                            ? t.videoControls.markPlayedAndNextButton
+                            : t.videoControls.markPlayedButton,
+                        tooltip: widget.markPlayedPlaysNext
+                            ? t.videoControls.markPlayedAndNextButton
+                            : t.videoControls.markPlayedButton,
+                      ),
+                    ),
                 ],
                 // Live TV: Go to Live, only while time-shifted behind the live
                 // edge. A labelled pill, since no glyph names this action and
@@ -901,7 +931,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                             alignment: AlignmentDirectional.centerStart,
                             child: _buildFocusableButton(
                               focusNode: _goToLiveFocusNode,
-                              index: 7,
+                              index: 8,
                               icon: Symbols.fiber_manual_record_rounded,
                               iconSize: 12,
                               label: t.liveTv.goToLive,

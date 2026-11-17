@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Forçada)",
     "osdSubtitlesOff": "Legendas: desativadas",
     "osdSubtitles": "Legendas: ${track}",
-    "osdAudio": "Áudio: ${track}"
+    "osdAudio": "Áudio: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

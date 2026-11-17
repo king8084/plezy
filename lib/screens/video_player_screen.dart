@@ -94,6 +94,7 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../services/watch_actions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
@@ -829,6 +830,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   TrackManager? _trackManager;
   StreamSubscription<void>? _sleepTimerSubscription;
   bool _isHandlingBack = false;
+
+  /// A "mark played" command is in flight (see [_markPlayedAndContinue]).
+  bool _isMarkingPlayed = false;
 
   /// Cancel scope for the screen's player-driven stream subscriptions — the
   /// single authority consumed by [_wirePlayerStreams] (re-wire:

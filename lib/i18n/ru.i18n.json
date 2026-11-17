@@ -941,7 +941,10 @@
     "forcedTrack": "${label} (принудительная)",
     "osdSubtitlesOff": "Субтитры: выкл.",
     "osdSubtitles": "Субтитры: ${track}",
-    "osdAudio": "Аудио: ${track}"
+    "osdAudio": "Аудио: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

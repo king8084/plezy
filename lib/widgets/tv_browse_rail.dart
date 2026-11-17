@@ -596,6 +596,20 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _focusNode.requestFocus();
   }
 
+  /// Whether focus sits on the first item of the first row.
+  bool get isOnFirstItemOfFirstHub {
+    if (widget.hubs.isEmpty) return true;
+    return _hubIndex == 0 && _itemIndex == _defaultSlotFor(widget.hubs.first);
+  }
+
+  /// Back on the home rail: go to the first row's first item when elsewhere.
+  /// Returns false when already there, so the caller can move on (sidebar).
+  bool focusFirstItemOfFirstHubIfElsewhere() {
+    if (isOnFirstItemOfFirstHub) return false;
+    focusFirstItemInHub(widget.hubs.first.id);
+    return true;
+  }
+
   /// [requestFocus] as the screen's first focus: held, not dropped, while a
   /// root route covers the session ([CoveredRouteFocusBoundary.requestInitialFocus]).
   void requestInitialFocus() {

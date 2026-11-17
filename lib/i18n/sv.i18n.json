@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Forcerad)",
     "osdSubtitlesOff": "Undertexter: Av",
     "osdSubtitles": "Undertexter: ${track}",
-    "osdAudio": "Ljud: ${track}"
+    "osdAudio": "Ljud: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

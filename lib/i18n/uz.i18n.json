@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Majburiy)",
     "osdSubtitlesOff": "Subtitr: Oʻchirilgan",
     "osdSubtitles": "Subtitr: ${track}",
-    "osdAudio": "Ovoz: ${track}"
+    "osdAudio": "Ovoz: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

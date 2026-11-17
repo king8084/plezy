@@ -23,6 +23,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
             : null,
         showPerformanceOverlay: _showPerformanceOverlay,
         onNext: _abandoningBurst(widget.onNext),
+        onMarkPlayed: _abandoningBurst(widget.onMarkPlayed),
+        markPlayedPlaysNext: widget.markPlayedPlaysNext,
         onPrevious: _abandoningBurst(widget.onPrevious),
         onPlayPause: () => unawaited(_playOrPause()),
         chapters: _chapters,

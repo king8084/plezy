@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Zorunlu)",
     "osdSubtitlesOff": "Altyazı: Kapalı",
     "osdSubtitles": "Altyazı: ${track}",
-    "osdAudio": "Ses: ${track}"
+    "osdAudio": "Ses: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

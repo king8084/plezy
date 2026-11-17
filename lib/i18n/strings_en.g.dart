@@ -2613,6 +2613,15 @@ class Translations$videoControls$en {
 
 	/// en: 'Audio: ${track}'
 	String osdAudio({required Object track}) => 'Audio: ${track}';
+
+	/// en: 'Mark as played'
+	String get markPlayedButton => 'Mark as played';
+
+	/// en: 'Mark as played and play next'
+	String get markPlayedAndNextButton => 'Mark as played and play next';
+
+	/// en: 'Could not mark as played'
+	String get markPlayedFailed => 'Could not mark as played';
 }
 
 // Path: messages
@@ -9142,6 +9151,9 @@ extension on Translations {
 			'videoControls.osdSubtitlesOff' => 'Subtitles: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Subtitles: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.markPlayedButton' => 'Mark as played',
+			'videoControls.markPlayedAndNextButton' => 'Mark as played and play next',
+			'videoControls.markPlayedFailed' => 'Could not mark as played',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -9286,11 +9298,11 @@ extension on Translations {
 			'profiles.pinSet' => 'PIN set',
 			'profiles.changePin' => 'Change',
 			'profiles.removePin' => 'Remove',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
@@ -9800,11 +9812,11 @@ extension on Translations {
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
@@ -10314,11 +10326,11 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayer' => 'Player',
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',

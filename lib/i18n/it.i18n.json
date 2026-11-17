@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Forzato)",
     "osdSubtitlesOff": "Sottotitoli: Disattivati",
     "osdSubtitles": "Sottotitoli: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

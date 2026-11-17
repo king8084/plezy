@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (tvunget)",
     "osdSubtitlesOff": "Undertekster: Fra",
     "osdSubtitles": "Undertekster: ${track}",
-    "osdAudio": "Lyd: ${track}"
+    "osdAudio": "Lyd: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (Məcburi)",
     "osdSubtitlesOff": "Altyazı: Söndürülüb",
     "osdSubtitles": "Altyazı: ${track}",
-    "osdAudio": "Səs: ${track}"
+    "osdAudio": "Səs: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

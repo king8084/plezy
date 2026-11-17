@@ -935,7 +935,10 @@
     "forcedTrack": "${label} (kényszerített)",
     "osdSubtitlesOff": "Feliratok: ki",
     "osdSubtitles": "Feliratok: ${track}",
-    "osdAudio": "Hang: ${track}"
+    "osdAudio": "Hang: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {

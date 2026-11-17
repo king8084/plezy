@@ -554,6 +554,70 @@ void main() {
     expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isFalse);
   });
 
+  testWidgets('Back returns to the first item of the first row before leaving the rail', (tester) async {
+    final serverManager = MultiServerManager();
+    MediaItem movie(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: id);
+    final first = MediaHub(
+      id: 'continue_watching',
+      title: 'Continue',
+      type: 'movie',
+      items: [movie('a'), movie('b')],
+      size: 2,
+    );
+    final second = MediaHub(id: 'recent', title: 'Recent', type: 'movie', items: [movie('c'), movie('d')], size: 2);
+    final key = GlobalKey<TvBrowseRailState>();
+    var leftRail = 0;
+
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => testMultiServerProvider(serverManager),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  key: key,
+                  focusMemory: focusMemory,
+                  hubs: [first, second],
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                  onBack: () {
+                    if (!key.currentState!.focusFirstItemOfFirstHubIfElsewhere()) leftRail++;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final rail = key.currentState!;
+    rail.requestFocus();
+    await tester.pump();
+    expect(rail.isOnFirstItemOfFirstHub, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(rail.isOnFirstItemOfFirstHub, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(rail.isOnFirstItemOfFirstHub, isTrue, reason: 'first Back goes to the first item');
+    expect(leftRail, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(leftRail, 1, reason: 'second Back leaves for the sidebar');
+  });
+
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {
     final serverManager = MultiServerManager();
     final theme = monoTheme(MonoPalette.light);

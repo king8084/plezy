@@ -451,6 +451,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
+  /// Back on the home rows: first return to the first item of the first row,
+  /// and only from there move on to the sidebar.
+  void _handleTvRailBack() {
+    if (_tvBrowseRailKey.currentState?.focusFirstItemOfFirstHubIfElsewhere() ?? false) return;
+    _navigateToSidebar();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1242,6 +1249,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       loadMoreItems: _loadHubItems,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
+      onBack: _handleTvRailBack,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
       widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
