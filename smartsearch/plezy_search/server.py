@@ -95,6 +95,9 @@ class Handler(BaseHTTPRequestHandler):
                 kinds = tuple(k for k in (args.get('kinds') or 'Movie,Series').split(',') if k in ('Movie', 'Series'))
                 return self._send(200, engine.top_rated(kinds or ('Movie', 'Series'),
                                                         float(args.get('min_rating', 7.5)), min(limit, 100)))
+            if url.path == '/v1/resolve':
+                refs = [x for x in (args.get('refs') or '').split(',') if x][:200]
+                return self._send(200, engine.resolve(refs, args.get('seed') or None, min(limit, 100)))
             if url.path == '/v1/similar':
                 return self._send(200, engine.similar(args.get('id', ''), min(limit, 100)))
             if url.path == '/v1/health':

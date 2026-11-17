@@ -92,6 +92,18 @@ class Engine:
                 "SELECT item_id, kind, title, year FROM items WHERE active=1 AND kind IN ('Movie','Series')"):
             titles.setdefault(norm(title), []).append((item_id, kind, year))
         self.vocab = {'people': people, 'series': series, 'titles': titles}
+        external = {}
+        for item_id, kind, data in db.execute(
+                "SELECT item_id, kind, data_json FROM items WHERE active=1 AND kind IN ('Movie','Series')"):
+            try:
+                ids = json.loads(data).get('provider_ids') or {}
+            except ValueError:
+                continue
+            for provider, value in ids.items():
+                provider = provider.lower()
+                if provider in ('imdb', 'tmdb', 'tvdb') and value:
+                    external.setdefault((kind, provider, str(value).strip().lower()), []).append(item_id)
+        self.external = external
         groups = {'anime': set(), 'cartoon': set()}
         try:
             for library_id, name in db.execute('SELECT library_id, name FROM libraries'):
@@ -118,7 +130,16 @@ class Engine:
     ANIME_WORDS = {'anime', 'animes', 'manga', 'shounen', 'shonen', 'seinen', 'isekai', 'animated', 'animation'}
     CARTOON_WORDS = {'cartoon', 'cartoons', 'kids', 'kid', 'children', 'childrens', 'animated', 'animation'}
 
-    def _library_scope(self, p):
+    def _seed_scope(self, seed_id):
+        """Library scope for rows seeded by a title: a seed in an anime or
+        cartoon library keeps that group (more anime after anime)."""
+        groups = getattr(self, 'library_groups', {})
+        seed_libraries = {r[0] for r in self.db.execute(
+            'SELECT library_id FROM item_libraries WHERE item_id=?', (seed_id,))} if seed_id else set()
+        allowed = {name for name, ids in groups.items() if ids & seed_libraries}
+        return self._library_scope(Q.parse('', self.vocab), allow=allowed) or ('1', [])
+
+    def _library_scope(self, p, allow=()):
         """Owner rule: anime and cartoon libraries only answer when asked for.
 
         Returns (sql, args) keeping items with at least one library outside the
@@ -127,9 +148,9 @@ class Engine:
         words = set(norm(p.original).split())
         excluded = set()
         groups = getattr(self, 'library_groups', {})
-        if not (words & self.ANIME_WORDS or 'anime' in p.genres):
+        if not (words & self.ANIME_WORDS or 'anime' in p.genres or 'anime' in allow):
             excluded |= groups.get('anime', set())
-        if not (words & self.CARTOON_WORDS or 'kids' in p.genres or 'animation' in p.genres):
+        if not (words & self.CARTOON_WORDS or 'kids' in p.genres or 'animation' in p.genres or 'cartoon' in allow):
             excluded |= groups.get('cartoon', set())
         if not excluded:
             return None
@@ -506,8 +527,7 @@ class Engine:
             return {'source': None, 'results': []}
         kind = source[1]
         scores = matrix @ matrix[index[source_id]]
-        p = Q.parse('', self.vocab)
-        scope_sql, scope_args = self._library_scope(p) or ('1', [])
+        scope_sql, scope_args = self._seed_scope(source_id)
         allowed = {r[0] for r in self.db.execute(
             f'SELECT i.item_id FROM items i WHERE i.active=1 AND i.kind=? AND {scope_sql}', [kind] + scope_args)}
         picked = []
@@ -522,6 +542,41 @@ class Engine:
             f"SELECT {self.COLUMNS} FROM items i WHERE i.item_id IN ({','.join('?' * len(picked))})", picked)}
         results = self._dedupe([self._row(rows[i], 'similar') for i in picked if i in rows])[:limit]
         return {'source': self._row(source, 'source'), 'results': self._with_libraries(results)}
+
+    def resolve(self, refs, seed=None, limit=60):
+        """Library titles for outside recommendations, in the given order.
+
+        [refs] are "movie|show:imdb|tmdb|tvdb:value" strings (Simkl, Trakt) or
+        "item:<id>" for Jellyfin's own suggestions. Unknown titles are skipped;
+        the app shows only what the library has.
+        """
+        kinds = {'movie': 'Movie', 'show': 'Series'}
+        wanted = []
+        for ref in refs:
+            if ref.startswith('item:'):
+                if ref[5:] and ref[5:] not in wanted:
+                    wanted.append(ref[5:])
+                continue
+            parts = ref.split(':', 2)
+            if len(parts) != 3 or parts[0] not in kinds or parts[1] not in ('imdb', 'tmdb', 'tvdb'):
+                continue
+            for item_id in self.external.get((kinds[parts[0]], parts[1], parts[2].strip().lower()), []):
+                if item_id not in wanted:
+                    wanted.append(item_id)
+        if not wanted:
+            return {'results': []}
+        seed_id = None
+        if seed:
+            row = self.db.execute('SELECT item_id, kind, series_id FROM items WHERE item_id=?', (seed,)).fetchone()
+            if row:
+                seed_id = row[2] if row[1] == 'Episode' and row[2] else row[0]
+        scope_sql, scope_args = self._seed_scope(seed_id)
+        rows = {r[0]: r for r in self.db.execute(
+            f"SELECT {self.COLUMNS} FROM items i WHERE i.active=1 AND i.kind IN ('Movie','Series') "
+            f"AND i.item_id IN ({','.join('?' * len(wanted))}) AND {scope_sql}", wanted + scope_args)}
+        results = self._dedupe([self._row(rows[i], 'recommended') for i in wanted
+                                if i in rows and i != seed_id])[:limit]
+        return {'results': self._with_libraries(results)}
 
     # -- smart --------------------------------------------------------------------
     def query_vector(self, text):

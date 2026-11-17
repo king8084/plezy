@@ -181,3 +181,32 @@ class HomeRowsTest(unittest.TestCase):
             self.assertEqual(similar['source']['title'], 'Firefly')
             self.assertNotIn('Firefly', [r['title'] for r in similar['results']])
             self.assertTrue(all(r['kind'] == 'Series' for r in similar['results']))
+
+
+class ResolveTest(unittest.TestCase):
+    """Simkl/Trakt recommendations map to library titles by external id."""
+
+    def test_external_ids_map_to_library_items_in_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Breaking Bad', ProviderIds={'Imdb': 'tt0903747', 'Tmdb': '1396'}),
+                     series(2, 'Better Call Saul', ProviderIds={'Imdb': 'tt3032476', 'Tvdb': '273181'}),
+                     movie(3, 'El Camino', ProviderIds={'Tmdb': '559969'}),
+                     series(4, 'Galaxy Blades', ProviderIds={'Imdb': 'tt9999999'})]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.execute("INSERT INTO libraries VALUES('lib-anime','Anime','tvshows',NULL)")
+            w.db.execute('INSERT INTO item_libraries VALUES(?,?)', (f'{4:032x}', 'lib-anime'))
+            w.db.commit()
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            refs = ['movie:tmdb:559969', 'show:tvdb:273181', 'show:imdb:tt0000001', 'show:tmdb:559969',
+                    'show:imdb:TT0903747', 'show:imdb:tt9999999', 'bogus']
+            got = engine.resolve(refs, seed=f'{1:032x}')['results']
+            # Order kept, unknown/mismatched kinds skipped, the seed itself and the
+            # anime library (seed is not anime) left out.
+            self.assertEqual([r['title'] for r in got], ['El Camino', 'Better Call Saul'])
+            anime_seed = engine.resolve(['show:imdb:tt9999999', 'show:imdb:tt0903747'], seed=f'{4:032x}')
+            self.assertEqual([r['title'] for r in anime_seed['results']], ['Breaking Bad'])
+            self.assertEqual(engine.resolve(['show:imdb:tt9999999'])['results'], [])
+            jellyfin_ids = engine.resolve([f'item:{2:032x}', 'item:unknown', f'item:{4:032x}'], seed=f'{1:032x}')
+            self.assertEqual([r['title'] for r in jellyfin_ids['results']], ['Better Call Saul'])
