@@ -272,12 +272,37 @@ Implemented and source/native CI validated:
   which loses Siri dictation and iPhone typing. Not built yet.
 - Diagnostics: the owner allows reading the LAN logs for any debugging they ask for.
 
+## Enhancement batch for the next build (November 17, not built yet)
+Owner asked for improvements before the next build; playback start (~245 ms
+from the logs) is already fast enough, so it was left alone.
+- Home top bar: Search replaces Reorder (Read more stays). Home-row ordering
+  moved to Settings > Home & Sidebar: every Home row with Show/Hide and Up/Down,
+  plus sidebar items/order, pinned collections and libraries in one place.
+  Appearance no longer duplicates the pin/sidebar entries.
+- Smart Home rows from the index: "Top rated you haven't watched" (IMDb) and
+  "Because you watched <title>" (seeded by the viewer's most recent play,
+  episodes count as their show). Watched titles and hidden libraries drop out.
+  Bounded at 4 s per Home pass; a miss keeps rows already shown. Server
+  endpoints `/v1/top` and `/v1/similar` are live in `plezy-smartsearch`.
+- Search: "unwatched"/"haven't seen" requests filter by the viewer's own watch
+  state; a dictation (mic) button opens the system keyboard for Siri.
+- Player: optional "Still watching?" after 2–5 automatic episodes, Off by
+  default (Settings > Playback); remote input resets the count.
+- Logs: `/applog` on the diagnostics endpoint serves the redacted app log.
+- Full local gate at 32e2a51a1: GATE_EXIT=0, 8,682 Flutter tests passed, 7 skipped,
+  plus strict translations, isolated codegen, format, guards and analyzer;
+  smartsearch Python tests 29/29. Two earlier runs failed the codegen check
+  because a batch commit had run `dart format` over 33 generated `.g.dart`
+  files; generator output restored (identical to build 24). Never format them.
+- Not built, not installed. Fork Actions disabled, so fork CI did not run.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
   authorization; app closed, Apple TV awake in Settings before installation.
 - Keep environment addresses, household device names and install receipts private.
 - After strings change: clean translations, regenerate, commit generated outputs.
-- Next: owner visual/settings/playback checks. Build authorization is fulfilled.
+- Next: owner reviews the enhancement batch; build only on "build app".
+  Owner visual/settings/playback checks of build 24 remain open.
   Diagnose inconsistent iOS speed results separately; native behavior unchanged.
   PR #1/main approval remains pending. Recovery receipts/bundles remain private.
