@@ -35,6 +35,7 @@ import 'profiles/plex_home_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
+import 'services/smart_search/smart_search_client.dart';
 import 'services/storage_service.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
@@ -1404,7 +1405,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     });
 
     _serverManager = MultiServerManager();
-    _aggregationService = DataAggregationService(_serverManager);
+    _aggregationService = DataAggregationService(_serverManager, smartSearch: SmartSearchClient());
     _libraryEventService = LibraryEventService(_serverManager);
     _appDatabase = widget.appDatabase;
 

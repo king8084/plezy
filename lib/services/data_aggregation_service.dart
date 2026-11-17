@@ -17,8 +17,10 @@ import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
+import 'jellyfin_client.dart';
 import 'local_playback_history.dart';
 import 'multi_server_manager.dart';
+import 'smart_search/smart_search_client.dart';
 
 /// A row a successful response actually returned, paired with the immutable
 /// cache scope of the client that fetched it.
@@ -149,7 +151,10 @@ Set<String> _hiddenLibraryIdsOn(String serverId, Set<String>? hiddenLibraryKeys)
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
-  DataAggregationService(this._serverManager);
+  /// Household smart-search index; null disables it (tests, other platforms).
+  final SmartSearchClient? _smartSearch;
+
+  DataAggregationService(this._serverManager, {this._smartSearch});
 
   /// Online clients visible to the active profile, or the online clients in
   /// [serverIds]. A supplied set is already profile-scoped: delta refreshes
@@ -842,6 +847,9 @@ class DataAggregationService {
 
     final resultLimit = limit ?? defaultMediaSearchLimit;
     final fetchLimit = resultLimit < defaultMediaSearchLimit ? defaultMediaSearchLimit : resultLimit;
+    // Titles ranked by the smart index keep its order (it already ranked by
+    // meaning, filters and titles); identity, not equality, marks them.
+    final smartRanked = Set<MediaItem>.identity();
 
     final fetched = await _fanOut<SearchHit>(
       clients,
@@ -860,13 +868,29 @@ class DataAggregationService {
           abort: abort,
           excludedLibraryIds: excludedLibraryIds,
         );
-        final items = await _withinServerDeadline(
+        final smart = await _smartSearchTitles(serverId, client, query, excludedLibraryIds, abort);
+        // With the index, the server's own search only covers what the index
+        // does not (music and other libraries); without it, everything.
+        final serverSearchExcluded = smart == null ? excludedLibraryIds : {...excludedLibraryIds, ...smart.indexed};
+        final serverItems = await _withinServerDeadline(
           MediaServerTimeouts.searchServerDeadline,
           operation: 'Search on $serverId',
           parent: abort,
           run: (legAbort) =>
-              client.searchItems(query, limit: fetchLimit, abort: legAbort, excludedLibraryIds: excludedLibraryIds),
+              client.searchItems(query, limit: fetchLimit, abort: legAbort, excludedLibraryIds: serverSearchExcluded),
         );
+        final List<MediaItem> items;
+        if (smart == null) {
+          items = serverItems;
+        } else {
+          smartRanked.addAll(smart.items);
+          final smartIds = {for (final item in smart.items) item.id};
+          items = [
+            ...smart.items,
+            for (final item in serverItems)
+              if (!smartIds.contains(item.id)) item,
+          ];
+        }
         final people = await peopleFuture;
         appLogger.i(
           'Search completed on $serverId in ${stopwatch.elapsedMilliseconds}ms: '
@@ -891,11 +915,16 @@ class DataAggregationService {
     // and silently shrink what the user sees.
     final visible = _withoutHiddenLibraries(titles, hiddenLibraryKeys);
     // Titles first: equal scores keep input order, so a tie goes to the title.
-    final hits = rankSearchHits(
-      [for (final item in visible) MediaSearchHit(item), for (final person in people) PersonSearchHit(person)],
+    final ranked = rankSearchHits(
+      [
+        for (final item in visible)
+          if (!smartRanked.contains(item)) MediaSearchHit(item),
+        for (final person in people) PersonSearchHit(person),
+      ],
       query,
       limit: resultLimit,
     );
+    final hits = smartRanked.isEmpty ? ranked : _withSmartTitlesFirst(visible, smartRanked, ranked, query, resultLimit);
 
     appLogger.i(
       'Search aggregation completed: ${hits.length} results '
@@ -911,6 +940,129 @@ class DataAggregationService {
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
     );
+  }
+
+  /// Meaning-based suggestions from the household smart-search index for
+  /// [query] (the "AI" row): plot descriptions, famous scenes, vague memories.
+  /// Empty when no connected server has an index. Slower than [searchAcrossServers]
+  /// (it may ask the language model), so callers run it after instant results.
+  Future<List<SmartSuggestion>> smartSuggestions(
+    String query, {
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    if (smart == null || query.trim().isEmpty) return const [];
+    for (final MapEntry(key: serverId, value: client) in _serverManager.visibleOnlineClients.entries) {
+      if (client is! JellyfinClient) continue;
+      final connection = client.connection;
+      try {
+        if (!await smart.isAvailable(connection)) continue;
+        abort?.throwIfAborted();
+        final response = await smart.smart(connection, query);
+        abort?.throwIfAborted();
+        final wanted = response.visibleIds(_hiddenLibraryIdsOn(serverId, hiddenLibraryKeys));
+        final loaded = await client.fetchItemsInOrder([for (final w in wanted) w.id], abort: abort);
+        final libraryOf = {for (final w in wanted) w.id: w.libraryId};
+        final matchOf = <String, SmartSearchHit>{
+          for (final hit in response.results) ...{hit.id: hit, for (final copy in hit.copies) copy.id: hit},
+        };
+        return [
+          for (final item in loaded)
+            if (matchOf[item.id] case final hit?)
+              SmartSuggestion(
+                item: libraryOf[item.id] == null ? item : item.copyWith(libraryId: libraryOf[item.id]),
+                match: hit.match,
+                recalled: hit.recalled,
+              ),
+        ];
+      } catch (e) {
+        if (_isCancellation(e)) rethrow;
+        appLogger.w('Smart suggestions unavailable on $serverId', error: e);
+        smart.markUnavailable(connection);
+      }
+    }
+    return const [];
+  }
+
+  /// Smart-index titles in the index's order, preceded only by people whose
+  /// name is exactly the query (an actor search still shows the actor first).
+  static List<SearchHit> _withSmartTitlesFirst(
+    List<MediaItem> visible,
+    Set<MediaItem> smartRanked,
+    List<SearchHit> ranked,
+    String query,
+    int limit,
+  ) {
+    final wanted = normalizeSearchText(query);
+    bool exactPerson(SearchHit hit) => hit is PersonSearchHit && normalizeSearchText(hit.person.name) == wanted;
+    return [
+      ...ranked.where(exactPerson),
+      for (final item in visible)
+        if (smartRanked.contains(item)) MediaSearchHit(item),
+      ...ranked.where((hit) => !exactPerson(hit)),
+    ].take(limit).toList();
+  }
+
+  /// Titles from the household smart-search index for a Jellyfin server, or
+  /// null to use the server's own search (index absent, unreachable, slow or
+  /// failing). Items are loaded through the user's own Jellyfin client.
+  Future<({List<MediaItem> items, Set<String> indexed})?> _smartSearchTitles(
+    String serverId,
+    MediaServerClient client,
+    String query,
+    Set<String> excludedLibraryIds,
+    AbortController? abort,
+  ) async {
+    final smart = _smartSearch;
+    if (smart == null || client is! JellyfinClient) return null;
+    try {
+      // Hard ceiling: whatever happens inside, ordinary search still runs.
+      return await _smartSearchTitlesUnbounded(
+        smart,
+        serverId,
+        client,
+        query,
+        excludedLibraryIds,
+        abort,
+      ).timeout(_smartSearchCeiling);
+    } catch (e) {
+      if (_isCancellation(e)) rethrow;
+      appLogger.w('Smart search unavailable on $serverId; using server search', error: e);
+      smart.markUnavailable(client.connection);
+      return null;
+    }
+  }
+
+  static const Duration _smartSearchCeiling = Duration(seconds: 4);
+
+  Future<({List<MediaItem> items, Set<String> indexed})?> _smartSearchTitlesUnbounded(
+    SmartSearchClient smart,
+    String serverId,
+    JellyfinClient client,
+    String query,
+    Set<String> excludedLibraryIds,
+    AbortController? abort,
+  ) async {
+    final connection = client.connection;
+    {
+      if (!await smart.isAvailable(connection)) return null;
+      abort?.throwIfAborted();
+      final stopwatch = Stopwatch()..start();
+      final response = await smart.instant(connection, query, limit: defaultMediaSearchLimit);
+      abort?.throwIfAborted();
+      final wanted = response.visibleIds(excludedLibraryIds);
+      final loaded = await client
+          .fetchItemsInOrder([for (final w in wanted) w.id], abort: abort)
+          .timeout(MediaServerTimeouts.searchServerDeadline);
+      final libraryOf = {for (final w in wanted) w.id: w.libraryId};
+      final items = [
+        for (final item in loaded)
+          if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+      ];
+      appLogger.i('Smart search on $serverId: ${items.length} titles in ${stopwatch.elapsedMilliseconds}ms');
+      return (items: items, indexed: response.indexedLibraries);
+    }
   }
 
   static const SearchAggregationResult _emptySearchResult = (

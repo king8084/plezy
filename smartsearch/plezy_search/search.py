@@ -435,7 +435,8 @@ class Engine:
                         (_match_expr(words, prefix_last=False, op=' OR '), limit)).fetchall()
                     add(self._row(r, 'some words') for r in rows)
         return {'query': raw, 'understood': p.understood, 'filters': p.has_filters,
-                'results': self._with_libraries(self._dedupe(results)[:limit]), 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
+                'results': self._with_libraries(self._dedupe(results)[:limit]),
+                'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
     # -- smart --------------------------------------------------------------------
     def query_vector(self, text):
