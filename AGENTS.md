@@ -88,6 +88,8 @@ Before installing an Apple TV update, keep the TV awake in Apple TV Settings
 with Plezy closed. On November 13, an in-place update stalled on Home despite
 the app being closed, then completed when the owner entered Settings. Home /
 Top Shelf activity is the likely blocker; do not use deletion as a workaround.
+The owner said (Nov 17) that "build app" itself confirms Plezy is closed and
+the TV is in Settings: install straight after the build without asking again.
 
 The private Apple TV diagnostics URL is saved locally in
 `.git/plezy-diagnostics.json` (0600). The owner allows reading it whenever they

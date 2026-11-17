@@ -2,7 +2,15 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `d92d0d90e8e95b7ee11cda4c2f7cad9879680cb3` (Codemagic build 24,
+- Installed app source: `a85be64aa0fe01b36ebc3fd537a05d54774f3b9e` (Codemagic build 25,
+  Nov 17 18:05 local, in place via tvsign Renew; signing and upload OK). Local
+  gate GATE_EXIT=0 (8,702 tests) and the Codemagic gate passed; fork Actions
+  disabled, so fork CI did not run. Build 25 sat ~30 min in Codemagic's
+  machine queue before starting (minutes were available). Backups
+  `*-before-a85be64.ipa`; private receipt in `.git/plezy-private/`. Owner
+  checks of the redesigned show page, Apple search keyboard (first device
+  run of native code), Find, smart rows and Mark All Previous are pending.
+- Previous install: `d92d0d90e8e95b7ee11cda4c2f7cad9879680cb3` (Codemagic build 24,
   Nov 17 06:11 local, in place via tvsign Renew). Local gate and Codemagic gate
   passed; fork GitHub Actions is disabled, so fork CI did not run for this build.
   Build 23 failed on a Codemagic DNS error while fetching the engine; one
