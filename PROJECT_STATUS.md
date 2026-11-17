@@ -219,9 +219,26 @@ Implemented and source/native CI validated:
   left in place (no deletions). The local end-to-end test of the service
   layout passed (auth, health, instant, smart, indexer up to date, events
   connected).
-- Container not created yet: waiting for the owner to paste the reviewed
-  build/run command. App integration (Search screen instant + AI rows)
-  not started; needs a local Flutter toolchain or CI.
+- Container `plezy-smartsearch` is live on Unraid (host network; bridge
+  networking failed because the restricted account has remote access
+  disabled and Jellyfin saw the Docker address as remote). It runs as
+  99:100, read-only rootfs, caps dropped, writes only to smartsearch/live.
+  Indexer up to date with live events and per-minute catch-up; library
+  membership tagged. LAN round trips: instant ~8-55 ms; AI ~0.1-0.5 s, about
+  1.2 s with generator recall. Code updates hot-reload from smartsearch/code.
+- Nov 17: the owner allowed removing things the agent created on Unraid (the
+  probe file was removed; the first, broken container was replaced).
+- App integration (local only, not built for TV): SmartSearchClient
+  (zero-config, same server id, user's own Jellyfin token), index-ordered
+  instant titles via JellyfinClient.fetchItemsInOrder with hidden-library
+  filtering from index library ids, server search still covers music, quiet
+  fallback with a 4 s ceiling, "Smart matches"/"Possible matches" section
+  appended after results for 3+ word requests, 250 ms debounce on Search
+  only when the index is known reachable. Flutter 3.47.1 installed in
+  ~/development/flutter (analytics off). Full local release gate passed:
+  8,662 tests, 7 skipped, plus all static checks.
+- Next: owner decides on pushing (CI) and says "build apple tv" to try it on
+  the TV. Then owner checks Search, then playback.
 - Committed locally on this branch only (not pushed: avoid triggering CI
   until the owner decides). No Apple TV build; the owner's magic words
   "build apple tv" are still required.
