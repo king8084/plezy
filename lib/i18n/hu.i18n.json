@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Megjelölés megtekintettként",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Megjelölés nem megtekintettként",
     "removeFromContinueWatching": "Eltávolítás a folytatásból",
     "viewDetails": "Részletek megtekintése",

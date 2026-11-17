@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Marcar como Assistido",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Marcar como Não Assistido",
     "removeFromContinueWatching": "Remover de Continuar Assistindo",
     "viewDetails": "Ver detalhes",

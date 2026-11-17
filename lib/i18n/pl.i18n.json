@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Oznacz jako obejrzane",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Oznacz jako nieobejrzane",
     "removeFromContinueWatching": "Usuń z kontynuowania oglądania",
     "viewDetails": "Pokaż szczegóły",

@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "視聴済みにする",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "未視聴にする",
     "removeFromContinueWatching": "視聴中から削除",
     "viewDetails": "詳細を表示",

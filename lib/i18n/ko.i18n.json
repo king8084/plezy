@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "시청 완료로 표시",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "미시청으로 표시",
     "removeFromContinueWatching": "계속 보기에서 제거",
     "viewDetails": "상세 정보 보기",

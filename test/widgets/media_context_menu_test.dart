@@ -8,6 +8,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/watch_actions.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -71,6 +72,56 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  for (final (season, number, offered) in [(2, 3, true), (1, 2, true), (1, 1, false), (0, 4, false)]) {
+    testWidgets('Mark All Previous as Watched on S${season}E$number: $offered', (tester) async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      final key = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: false,
+        item: testMediaItem(
+          id: 'ep',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.episode,
+          grandparentId: 'show',
+          parentIndex: season,
+          index: number,
+          serverId: 'srv-1',
+        ),
+        handler: (request) => Future.value(http.Response('{}', 200)),
+      );
+      key.currentState!.showContextMenu(key.currentContext!);
+      await tester.pumpAndSettle();
+      expect(find.text(t.mediaMenu.markPreviousWatched), offered ? findsOneWidget : findsNothing);
+    });
+  }
+
+  test('previous episodes: earlier seasons and earlier episodes, no specials, no watched ones', () {
+    MediaItem ep(String id, int season, int number, {bool watched = false}) => testMediaItem(
+      id: id,
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      parentIndex: season,
+      index: number,
+      viewCount: watched ? 1 : null,
+    );
+    final episodes = [
+      ep('sp', 0, 1),
+      ep('s1e1', 1, 1),
+      ep('s1e2', 1, 2, watched: true),
+      ep('s1e3', 1, 3),
+      ep('s2e1', 2, 1),
+      ep('s2e2', 2, 2),
+      ep('s2e3', 2, 3),
+      ep('s3e1', 3, 1),
+    ];
+    expect(
+      [for (final e in WatchActions.previousEpisodes(episodes, season: 2, number: 3)) e.id],
+      ['s1e1', 's1e3', 's2e1', 's2e2'],
+    );
+  });
+
   testWidgets('episode menu opens immediately while parent favorite lookup is pending', (tester) async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();

@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Merk som sett",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Merk som usett",
     "removeFromContinueWatching": "Fjern fra Fortsett å se",
     "viewDetails": "Vis detaljer",

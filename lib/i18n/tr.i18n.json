@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "İzlendi Olarak İşaretle",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "İzlenmedi Olarak İşaretle",
     "removeFromContinueWatching": "İzlemeye Devam Et'ten Kaldır",
     "viewDetails": "Detayları görüntüle",

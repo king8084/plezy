@@ -2116,6 +2116,12 @@ class Translations$mediaMenu$en {
 	/// en: 'Mark as Watched'
 	String get markAsWatched => 'Mark as Watched';
 
+	/// en: 'Mark All Previous as Watched'
+	String get markPreviousWatched => 'Mark All Previous as Watched';
+
+	/// en: 'Marked ${count} earlier episodes as watched'
+	String markedPreviousWatched({required Object count}) => 'Marked ${count} earlier episodes as watched';
+
 	/// en: 'Mark as Unwatched'
 	String get markAsUnwatched => 'Mark as Unwatched';
 
@@ -9129,6 +9135,8 @@ extension on Translations {
 			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
+			'mediaMenu.markPreviousWatched' => 'Mark All Previous as Watched',
+			'mediaMenu.markedPreviousWatched' => ({required Object count}) => 'Marked ${count} earlier episodes as watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
 			'mediaMenu.viewDetails' => 'View details',
@@ -9430,10 +9438,10 @@ extension on Translations {
 			'mpvConfig.deletePreset' => 'Delete',
 			'mpvConfig.presetSaved' => 'Preset saved',
 			'mpvConfig.presetLoaded' => 'Preset loaded',
-			'mpvConfig.presetDeleted' => 'Preset deleted',
-			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetDeleted' => 'Preset deleted',
+			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'Add line',
@@ -9944,10 +9952,10 @@ extension on Translations {
 			'explore.detail.links' => 'Links',
 			'explore.detail.watchOn' => 'Watch on',
 			'explore.detail.watchTrailer' => 'Watch trailer',
-			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
-			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
 			_ => null,
 		} ?? switch (path) {
+			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
+			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
 			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
@@ -10458,10 +10466,10 @@ extension on Translations {
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',
-			'companionRemote.remote.tabSearch' => 'Search',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSearch' => 'Search',
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',

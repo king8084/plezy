@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Маркирай като гледано",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Маркирай като негледано",
     "removeFromContinueWatching": "Премахни от продължаване на гледането",
     "viewDetails": "Виж подробности",

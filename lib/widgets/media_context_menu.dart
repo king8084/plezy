@@ -738,6 +738,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress)
         _MenuAction(value: 'unwatch', icon: Symbols.remove_circle_outline_rounded, label: t.mediaMenu.markAsUnwatched),
+      if (mediaKind == MediaKind.episode &&
+          !widget.isOffline &&
+          mediaItem.grandparentId != null &&
+          (mediaItem.parentIndex ?? 0) > 0 &&
+          ((mediaItem.parentIndex ?? 0) > 1 || (mediaItem.index ?? 0) > 1))
+        _MenuAction(value: 'watch_previous', icon: Symbols.done_all_rounded, label: t.mediaMenu.markPreviousWatched),
       if (menu.favoriteLoading)
         _MenuAction(value: 'favorite_loading', icon: Symbols.favorite_rounded, label: t.common.loading, enabled: false),
       if (menu.favoriteItem case final favorite?)
@@ -1044,6 +1050,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       case 'watch' || 'unwatch':
         await _handleSetWatched(context, mediaItem, watched: selected == 'watch');
         break;
+      case 'watch_previous':
+        await _handleMarkPreviousWatched(context, mediaItem);
+        break;
       case 'remove_from_continue_watching':
         await _handleRemoveFromContinueWatching(context, mediaItem);
         break;
@@ -1162,6 +1171,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // client. Report that rather than a success.
         if (outcome == WatchMarkOutcome.skipped) throw const _ItemServerUnavailable();
       }, watched ? t.messages.markedAsWatched : t.messages.markedAsUnwatched);
+    }
+  }
+
+  Future<void> _handleMarkPreviousWatched(BuildContext context, MediaItem episode) async {
+    try {
+      final count = await WatchActions.markPreviousEpisodesWatched(context, episode);
+      if (!context.mounted) return;
+      showSuccessSnackBar(context, t.mediaMenu.markedPreviousWatched(count: count));
+      _notifyRefresh(episode);
+    } catch (e) {
+      if (context.mounted) showErrorSnackBar(context, t.messages.errorLoading(error: localizedErrorReason(e)));
     }
   }
 

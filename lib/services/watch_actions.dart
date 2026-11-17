@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../media/ids.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -76,6 +77,44 @@ class WatchActions {
     );
     return WatchMarkOutcome.marked;
   }
+
+  /// Marks every episode before [episode] in its show as watched, earlier
+  /// seasons included (specials are left alone). For "background" shows the
+  /// viewer skims until something catches their eye. Returns how many were
+  /// marked; already-watched episodes are skipped. Throws when the show's
+  /// episodes cannot be listed.
+  static Future<int> markPreviousEpisodesWatched(BuildContext context, MediaItem episode) async {
+    final serverId = episode.serverId;
+    final seriesId = episode.grandparentId;
+    final season = episode.parentIndex;
+    final number = episode.index;
+    if (serverId == null || seriesId == null || season == null || number == null) return 0;
+    final client = context.tryGetMediaClientForServer(ServerId(serverId));
+    if (client == null) return 0;
+    final episodes = await client.fetchClientSideEpisodeQueue(seriesId);
+    if (episodes == null) throw StateError('episodes unavailable');
+    final earlier = previousEpisodes(episodes, season: season, number: number);
+    var marked = 0;
+    for (final item in earlier) {
+      if (!context.mounted) break;
+      final outcome = await setWatched(context, item, watched: true, offline: false);
+      if (outcome == WatchMarkOutcome.marked) marked++;
+    }
+    return marked;
+  }
+
+  /// The unwatched episodes that come before S[season]E[number]: every
+  /// earlier regular season, plus this season's earlier episodes.
+  @visibleForTesting
+  static List<MediaItem> previousEpisodes(List<MediaItem> episodes, {required int season, required int number}) => [
+    for (final item in episodes)
+      if (item.isEpisode &&
+          !item.isWatched &&
+          (item.parentIndex ?? 0) > 0 &&
+          item.index != null &&
+          ((item.parentIndex! < season) || (item.parentIndex == season && item.index! < number)))
+        item,
+  ];
 
   /// Removes [item] from Continue Watching without touching watch state.
   /// Throws when no client is bound for the item's server (mirrors the

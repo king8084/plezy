@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "标记为已观看",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "标记为未观看",
     "removeFromContinueWatching": "从继续观看中移除",
     "viewDetails": "查看详情",

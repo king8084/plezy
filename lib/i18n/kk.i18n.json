@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Көрілді деп белгілеу",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Көрілмеді деп белгілеу",
     "removeFromContinueWatching": "\"Көруді жалғастыру\" тізімінен өшіру",
     "viewDetails": "Толығырақ көру",

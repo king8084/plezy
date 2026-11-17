@@ -320,6 +320,10 @@ from the logs) is already fast enough, so it was left alone.
   season poster header, next-row heading peek and a one-line header on lower
   rows. The rail still shows one active row (Home's component); full
   multi-row stacking would need a shared-rail rewrite.
+- Episode menu "Mark All Previous as Watched" (owner request for background
+  shows): marks every unwatched episode before the chosen one, earlier
+  seasons included, specials excluded, through the normal watched path
+  (Jellyfin + Trakt/Simkl). Shown for episodes past S1E1, online only.
 - Apple search keyboard (Settings > Appearance, on by default on Apple TV):
   `tvos/Runner/NativeSearchPlugin.swift` presents UISearchController in a
   UISearchContainerViewController over Search and Find (channel

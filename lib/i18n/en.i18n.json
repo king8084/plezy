@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Mark as Watched",
+    "markPreviousWatched": "Mark All Previous as Watched",
+    "markedPreviousWatched": "Marked ${count} earlier episodes as watched",
     "markAsUnwatched": "Mark as Unwatched",
     "removeFromContinueWatching": "Remove from Continue Watching",
     "viewDetails": "View details",

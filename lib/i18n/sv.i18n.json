@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Markera som sedd",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Markera som osedd",
     "removeFromContinueWatching": "Ta bort från Fortsätt titta",
     "viewDetails": "Visa detaljer",

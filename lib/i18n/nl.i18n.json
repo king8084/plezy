@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Als bekeken markeren",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Als ongekeken markeren",
     "removeFromContinueWatching": "Uit 'Doorgaan met kijken' verwijderen",
     "viewDetails": "Details bekijken",

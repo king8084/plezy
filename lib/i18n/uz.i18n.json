@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Koʻrilgan deb belgilash",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Koʻrilmagan deb belgilash",
     "removeFromContinueWatching": "\"Tomoshani davom ettirish\"dan oʻchirish",
     "viewDetails": "Batafsil koʻrish",

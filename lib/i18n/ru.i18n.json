@@ -759,6 +759,8 @@
   },
   "mediaMenu": {
     "markAsWatched": "Отметить как просмотренное",
+    "markPreviousWatched": "",
+    "markedPreviousWatched": "",
     "markAsUnwatched": "Отметить как непросмотренное",
     "removeFromContinueWatching": "Удалить из «Продолжить просмотр»",
     "viewDetails": "Показать сведения",
