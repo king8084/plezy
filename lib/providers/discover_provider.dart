@@ -87,6 +87,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// because nothing pushes library changes to the client (#1646).
   static const Duration staleAfter = Duration(minutes: 15);
 
+  /// Simkl/Trakt suggestions blended into "Because you watched".
+  final ExternalTitleRecommender? externalRecommendations;
+
   DiscoverProvider(
     this._multiServer,
     this._hiddenLibraries,
@@ -102,6 +105,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     this.libraryEventCooldown = const Duration(minutes: 2),
     Future<void> Function(String profileId, List<MediaItem>)? syncSystemShelf,
     Future<void> Function(String profileId, List<MediaServerClient> clients)? syncServerSources,
+    this.externalRecommendations,
     // A private field cannot be a named initializing formal callers can pass.
     // ignore: prefer_initializing_formals
   }) : _watchStateStore = watchStateStore,
@@ -762,7 +766,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<List<MediaHub>?> _fetchSmartHomeHubs(DataAggregationService aggregation, {Set<String>? serverIds}) async {
     try {
       return await aggregation
-          .smartHomeHubs(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys, serverIds: serverIds)
+          .smartHomeHubs(
+            hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+            serverIds: serverIds,
+            externalRecommendations: externalRecommendations,
+          )
           .timeout(_smartHomeRowsCeiling);
     } catch (e) {
       appLogger.d('DiscoverProvider: smart Home rows skipped', error: e);

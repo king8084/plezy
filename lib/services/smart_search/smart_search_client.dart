@@ -132,6 +132,16 @@ class SmartSearchClient {
     );
   }
 
+  /// Library titles for outside suggestions, in the given order: [refs] are
+  /// `movie|show:imdb|tmdb|tvdb:<id>` (Simkl, Trakt) or `item:<id>` (Jellyfin).
+  /// [seedId] keeps anime/cartoon libraries when the seed lives in one.
+  Future<SmartSearchResponse> resolve(JellyfinConnection connection, List<String> refs, {String? seedId}) => _get(
+    connection,
+    '/v1/resolve',
+    {'refs': refs.take(200).join(','), 'seed': ?seedId, 'limit': '100'},
+    instantTimeout,
+  );
+
   Future<SmartSearchResponse> _get(
     JellyfinConnection connection,
     String path,

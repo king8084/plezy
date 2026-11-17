@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/media/search_hit.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
@@ -29,6 +32,13 @@ const _rows = {
   'dark': {'Id': 'dark', 'Type': 'Series', 'Name': 'Dark'},
   'firefly': {'Id': 'firefly', 'Type': 'Series', 'Name': 'Firefly'},
   'kids-movie': {'Id': 'kids-movie', 'Type': 'Movie', 'Name': 'Kids Space Movie'},
+  'half-film': {
+    'Id': 'half-film',
+    'Type': 'Movie',
+    'Name': 'Half Seen',
+    'RunTimeTicks': 72000000000,
+    'UserData': {'Played': false, 'PlaybackPositionTicks': 6000000000},
+  },
 };
 
 void main() {
@@ -51,6 +61,19 @@ void main() {
         jellyfinRequests.add(request.url);
         final q = request.url.queryParameters;
         if (request.url.path.endsWith('/Views')) return jsonResponse({'Items': _views});
+        if (request.url.path.endsWith('/Items/last-played/Similar')) {
+          return jsonResponse({
+            'Items': [_rows['dark'], _rows['firefly']],
+          });
+        }
+        if (request.url.path.endsWith('/Items/last-played')) {
+          return jsonResponse({
+            'Id': 'last-played',
+            'Type': 'Movie',
+            'Name': 'Last Played',
+            'ProviderIds': {'Imdb': 'tt-last'},
+          });
+        }
         if (request.url.path == '/Items' && q['SortBy'] == 'DatePlayed') {
           return jsonResponse({
             'Items': [
@@ -262,6 +285,7 @@ void main() {
 
   group('smart Home rows', () {
     final similarRequests = <Uri>[];
+    final resolveRequests = <Uri>[];
     SmartSearchClient homeSmart() => SmartSearchClient(
       httpClientFactory: () => MockClient((request) async {
         final path = request.url.path;
@@ -282,11 +306,37 @@ void main() {
                 'libraries': ['lib-tv'],
               },
               {
+                'id': 'half-film',
+                'kind': 'Movie',
+                'title': 'Half Seen',
+                'libraries': ['lib-movies'],
+              },
+              {
                 'id': 'kids-movie',
                 'kind': 'Movie',
                 'title': 'Kids Space Movie',
                 'libraries': ['lib-movies'],
               },
+            ],
+          });
+        }
+        if (path == '/v1/resolve') {
+          resolveRequests.add(request.url);
+          const known = {'show:imdb:tt-dark': 'dark', 'movie:imdb:tt-kids': 'kids-movie'};
+          final ids = <String>[];
+          for (final ref in request.url.queryParameters['refs']!.split(',')) {
+            final id = ref.startsWith('item:') ? ref.substring(5) : known[ref];
+            if (id != null && !ids.contains(id)) ids.add(id);
+          }
+          return jsonResponse({
+            'results': [
+              for (final id in ids)
+                {
+                  'id': id,
+                  'kind': 'Movie',
+                  'title': id,
+                  'libraries': [if (id == 'kids-movie') 'lib-movies' else 'lib-tv'],
+                },
             ],
           });
         }
@@ -314,7 +364,10 @@ void main() {
       }),
     );
 
-    setUp(similarRequests.clear);
+    setUp(() {
+      similarRequests.clear();
+      resolveRequests.clear();
+    });
 
     test('top rated and because-you-watched rows drop watched titles', () async {
       final client = jellyfin();
@@ -326,7 +379,7 @@ void main() {
       expect([for (final hub in hubs) hub.id], [smartTopRatedHubId, smartBecauseWatchedHubId]);
       expect([for (final item in hubs[0].items) item.id], ['dark', 'kids-movie']);
       expect(hubs[1].title, contains('Last Played'));
-      expect([for (final item in hubs[1].items) item.id], ['firefly']);
+      expect([for (final item in hubs[1].items) item.id], ['firefly', 'dark']);
       expect(similarRequests.single.queryParameters['id'], 'last-played');
       expect(hubs.every((hub) => hub.serverId == '${client.serverId}'), isTrue);
     });
@@ -339,6 +392,80 @@ void main() {
       final hubs = await service.smartHomeHubs(hiddenLibraryKeys: {'${client.serverId}:lib-tv'});
 
       expect([for (final item in hubs.single.items) item.id], ['kids-movie']);
+    });
+
+    test('because-you-watched blends index, Jellyfin, Simkl and Trakt by agreement', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+      MediaKind? askedKind;
+      ExternalIds? askedIds;
+
+      final hubs = await service.smartHomeHubs(
+        externalRecommendations: (kind, ids) async {
+          askedKind = kind;
+          askedIds = ids;
+          return [
+            [
+              const CatalogItem(
+                source: CatalogSourceId.simkl,
+                kind: MediaKind.movie,
+                title: 'Kids Space Movie',
+                ids: CatalogItemIds(imdb: 'tt-kids'),
+              ),
+              const CatalogItem(
+                source: CatalogSourceId.simkl,
+                kind: MediaKind.movie,
+                title: 'Not In Library',
+                ids: CatalogItemIds(imdb: 'tt-missing', tmdb: 42),
+              ),
+            ],
+            [
+              const CatalogItem(
+                source: CatalogSourceId.trakt,
+                kind: MediaKind.show,
+                title: 'Dark',
+                ids: CatalogItemIds(imdb: 'tt-dark'),
+              ),
+            ],
+          ];
+        },
+      );
+
+      final because = hubs.firstWhere((hub) => hub.id == smartBecauseWatchedHubId);
+      // dark: Jellyfin #1 + Trakt #1; firefly: index #1 + Jellyfin #2;
+      // kids-movie: Simkl only; watched-film: watched, dropped.
+      expect([for (final item in because.items) item.id], ['dark', 'firefly', 'kids-movie']);
+      expect(askedKind, MediaKind.movie);
+      expect(askedIds?.imdb, 'tt-last');
+      expect(resolveRequests.every((uri) => uri.queryParameters['seed'] == 'last-played'), isTrue);
+      expect(
+        resolveRequests.map((uri) => uri.queryParameters['refs']),
+        containsAll(['item:dark,item:firefly', 'movie:imdb:tt-kids,movie:imdb:tt-missing,movie:tmdb:42']),
+      );
+    });
+
+    test('partly watched titles are left out', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+
+      final hubs = await service.smartHomeHubs();
+
+      expect(hubs.first.items.map((item) => item.id), isNot(contains('half-film')));
+      expect(hubs.first.items.map((item) => item.id), contains('kids-movie'));
+    });
+
+    test('blend favours agreement, then each source\'s own order', () {
+      expect(
+        DataAggregationService.blendRecommendations([
+          ['a', 'b', 'c'],
+          ['c', 'd'],
+          ['b'],
+        ]),
+        ['b', 'c', 'a', 'd'],
+      );
+      expect(DataAggregationService.blendRecommendations([]), isEmpty);
     });
 
     test('no index means no rows', () async {

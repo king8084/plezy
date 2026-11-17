@@ -168,6 +168,22 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     return [?MediaRatingSource.fromScale('trakt', rating?.rating, scale: 10, votes: rating?.votes)];
   }
 
+  /// Trakt's related titles for a library movie or show, found by its
+  /// IMDb id (or TMDB/TVDB via Trakt's id lookup). Empty when Trakt does not
+  /// know the title.
+  Future<List<CatalogItem>> fetchRelatedFor(MediaKind kind, ExternalIds external, {int limit = 30}) async {
+    final type = switch (kind) {
+      MediaKind.movie => TraktCatalogType.movies,
+      MediaKind.show => TraktCatalogType.shows,
+      _ => null,
+    };
+    if (type == null) return const [];
+    final ids = CatalogItemIds.fromExternal(external);
+    final id = ids.imdb ?? (await _lookupTraktId(type, ids))?.toString();
+    if (id == null) return const [];
+    return _fromMedia(await _client.getRelated(type, id, limit: limit), kind);
+  }
+
   Future<int?> _lookupTraktId(TraktCatalogType type, CatalogItemIds ids) async {
     if (ids.tmdb case final tmdb?) return _client.lookupTraktId('tmdb', tmdb, type);
     if (ids.tvdb case final tvdb? when type == TraktCatalogType.shows) return _client.lookupTraktId('tvdb', tvdb, type);

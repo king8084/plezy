@@ -251,6 +251,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     // up — same playback-quiet policy as the resume gate.
                     isRefreshBlocked: () => VideoPlayerScreenState.activeGlobalKey != null,
                     profileId: activeId,
+                    // Simkl/Trakt suggestions for "Because you watched"; the
+                    // proxy keeps one CatalogSourcesProvider for this scope.
+                    externalRecommendations: context.read<CatalogSourcesProvider>().titleRecommendations,
                   );
                 },
               ),
