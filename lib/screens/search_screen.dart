@@ -132,9 +132,18 @@ class _SearchScreenState extends State<SearchScreen>
   /// With the household index answering in milliseconds, half the shared
   /// pause keeps typing responsive; plain server search keeps the default.
   @override
-  Duration get searchDebounce => context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable
-      ? const Duration(milliseconds: 250)
-      : super.searchDebounce;
+  Duration get searchDebounce {
+    // A late keystroke callback can outlive the providers (e.g. after
+    // dispose): fall back to the shared pause rather than throwing.
+    if (!mounted) return super.searchDebounce;
+    try {
+      return context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable
+          ? const Duration(milliseconds: 250)
+          : super.searchDebounce;
+    } on ProviderNotFoundException {
+      return super.searchDebounce;
+    }
+  }
 
   @override
   Future<List<SearchHit>> performSearchQuery(String query) async {
