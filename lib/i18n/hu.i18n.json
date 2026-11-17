@@ -540,7 +540,11 @@
     "sidebarAndLibraries": "",
     "hiddenFromHome": "",
     "showRowOnHome": "",
-    "hideRowFromHome": ""
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Beépített",

@@ -923,6 +923,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _showStillWatchingPrompt = false;
   final ValueNotifier<int> _stillWatchingCountdown = ValueNotifier<int>(30);
   Timer? _stillWatchingTimer;
+
+  /// Episodes started automatically in a row with no remote press since
+  /// (see [SettingsService.stillWatchingAfterEpisodes]).
+  int _unattendedAutoAdvances = 0;
+  Timer? _stillWatchingAfterAdvanceTimer;
+
+  bool _noteRemoteInput(KeyEvent event) {
+    if (event is KeyDownEvent) _unattendedAutoAdvances = 0;
+    return false; // observe only; never consumes the key
+  }
+
   late final FocusNode _stillWatchingPauseFocusNode;
   late final FocusNode _stillWatchingContinueFocusNode;
 
@@ -1563,6 +1574,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
       if (mounted) _showStillWatchingDialog();
     });
+    HardwareKeyboard.instance.addHandler(_noteRemoteInput);
 
     if (PlatformDetector.isAutomotive()) {
       unawaited(_startPlayerInitializationOnceVehicleAnswers());
@@ -2558,6 +2570,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _tvSuspend.dispose();
 
     _stillWatchingTimer?.cancel();
+    _stillWatchingAfterAdvanceTimer?.cancel();
+    HardwareKeyboard.instance.removeHandler(_noteRemoteInput);
     _stillWatchingCountdown.dispose();
 
     _liveSeek.dispose();
@@ -2700,6 +2714,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
+    _unattendedAutoAdvances = 0; // a person is here
     appLogger.d(
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
@@ -3010,6 +3025,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _tvSuspend.cancelGrace();
     _episode.autoPlayTimer?.cancel();
     _stillWatchingTimer?.cancel();
+    _stillWatchingAfterAdvanceTimer?.cancel();
     _abortCurrentOpen('playback shutdown');
     _liveSeek.cancel();
     _relativeSkip.cancel();

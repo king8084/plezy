@@ -1570,6 +1570,18 @@ class Translations$settings$en {
 
 	/// en: 'Hide from Home'
 	String get hideRowFromHome => 'Hide from Home';
+
+	/// en: 'Ask "Still watching?"'
+	String get stillWatchingAfterEpisodes => 'Ask "Still watching?"';
+
+	/// en: 'Off'
+	String get stillWatchingAfterEpisodesOff => 'Off';
+
+	/// en: 'After ${count} episodes play on their own (no remote press)'
+	String stillWatchingAfterEpisodesCount({required Object count}) => 'After ${count} episodes play on their own (no remote press)';
+
+	/// en: 'After ${count} episodes'
+	String episodesInARow({required Object count}) => 'After ${count} episodes';
 }
 
 // Path: themeEditor
@@ -8805,6 +8817,10 @@ extension on Translations {
 			'settings.hiddenFromHome' => 'Hidden from Home',
 			'settings.showRowOnHome' => 'Show on Home',
 			'settings.hideRowFromHome' => 'Hide from Home',
+			'settings.stillWatchingAfterEpisodes' => 'Ask "Still watching?"',
+			'settings.stillWatchingAfterEpisodesOff' => 'Off',
+			'settings.stillWatchingAfterEpisodesCount' => ({required Object count}) => 'After ${count} episodes play on their own (no remote press)',
+			'settings.episodesInARow' => ({required Object count}) => 'After ${count} episodes',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -9306,12 +9322,12 @@ extension on Translations {
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.profileNameLabel' => 'Profile name',
 			'profiles.pinProtectionLabel' => 'PIN protection',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
@@ -9820,12 +9836,12 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.channelsSection' => 'Channels',
 			'liveTv.programsSection' => 'Programs',
 			'liveTv.now' => 'Now',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.today' => 'Today',
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
@@ -10334,12 +10350,12 @@ extension on Translations {
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
 			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',
 			'videoSettings.hdrToneMappingCompositor' => 'Compositor',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.hdrToneMappingCompositorDescription' => 'Pass the source\'s HDR metadata through and let the desktop compositor map it.',
 			'videoSettings.hdrToneMappingPlayer' => 'Player',
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',

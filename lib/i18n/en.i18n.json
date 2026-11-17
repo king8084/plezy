@@ -540,7 +540,11 @@
     "sidebarAndLibraries": "Sidebar and libraries",
     "hiddenFromHome": "Hidden from Home",
     "showRowOnHome": "Show on Home",
-    "hideRowFromHome": "Hide from Home"
+    "hideRowFromHome": "Hide from Home",
+    "stillWatchingAfterEpisodes": "Ask \"Still watching?\"",
+    "stillWatchingAfterEpisodesOff": "Off",
+    "stillWatchingAfterEpisodesCount": "After ${count} episodes play on their own (no remote press)",
+    "episodesInARow": "After ${count} episodes"
   },
   "themeEditor": {
     "builtIn": "Built-in",

@@ -835,6 +835,14 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Only consulted while [autoPlayNextEpisode] is on.
   static final playNextCountdown = IntPref('play_next_countdown', defaultValue: 5, transform: (v) => v.clamp(0, 30));
 
+  /// Ask "Still watching?" after this many episodes started automatically in a
+  /// row with no remote press in between. 0 (the default) never asks.
+  static final stillWatchingAfterEpisodes = IntPref(
+    'still_watching_after_episodes',
+    defaultValue: 0,
+    transform: (v) => v.clamp(0, 10),
+  );
+
   /// Touch gestures on the player surface (#1810). Each defaults on; the
   /// edge swipes gate [MobileEdgeAdjustmentTracker] tracking and the zoom
   /// pref gates the pinch recognizer in the player screen.
@@ -1564,6 +1572,7 @@ class SettingsService extends BaseSharedPreferencesService {
     resumeMusicOnLaunch,
     autoPlayNextEpisode,
     playNextCountdown,
+    stillWatchingAfterEpisodes,
     shuffleStartsFromBeginning,
     gestureBrightnessSwipe,
     gestureVolumeSwipe,

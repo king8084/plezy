@@ -344,6 +344,22 @@ class PlaybackSettingsScreen extends StatelessWidget {
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
+      SettingSelectionTile<int>(
+        pref: SettingsService.stillWatchingAfterEpisodes,
+        icon: Symbols.bedtime_rounded,
+        title: t.settings.stillWatchingAfterEpisodes,
+        subtitleBuilder: (v) => v == 0
+            ? t.settings.stillWatchingAfterEpisodesOff
+            : t.settings.stillWatchingAfterEpisodesCount(count: v.toString()),
+        options: [
+          DialogOption(value: 0, title: t.settings.stillWatchingAfterEpisodesOff),
+          for (final n in const [2, 3, 4, 5])
+            DialogOption(
+              value: n,
+              title: t.settings.episodesInARow(count: n.toString()),
+            ),
+        ],
+      ),
       SettingSelectionTile<SkipMarkerMode>(
         pref: SettingsService.skipIntroMode,
         icon: Symbols.fast_forward_rounded,

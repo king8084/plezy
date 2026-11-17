@@ -124,6 +124,31 @@ void main() {
     expect(find.descendant(of: tile, matching: find.text('Play immediately')), findsOneWidget);
   });
 
+  testWidgets('"Still watching?" is off by default and can ask after a few episodes', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.stillWatchingAfterEpisodes), 0, reason: 'off unless the owner turns it on');
+    final title = find.text('Ask "Still watching?"');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    final tile = find.widgetWithText(ListTile, 'Ask "Still watching?"');
+    expect(find.descendant(of: tile, matching: find.text('Off')), findsOneWidget);
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('After 3 episodes'));
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.stillWatchingAfterEpisodes), 3);
+  });
+
   testWidgets('picks inverse telecine on the mpv path', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);
