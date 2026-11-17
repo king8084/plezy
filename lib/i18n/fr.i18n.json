@@ -249,8 +249,6 @@
     "showSeasonPostersOnTabsDescription": "Afficher l’affiche de chaque saison au-dessus de son onglet",
     "appleSearchKeyboard": "",
     "appleSearchKeyboardDescription": "",
-    "classicShowPage": "",
-    "classicShowPageDescription": "",
     "tvFullCardLayout": "Cartes TV plein format",
     "tvFullCardLayoutDescription": "Utiliser des cartes TV composées uniquement d’une image, avec le nom des acteurs en surimpression",
     "focusGlow": "Halo de sélection",
@@ -861,17 +859,8 @@
     "markUnwatched": "",
     "more": "",
     "trailer": "",
-    "creator": "",
-    "castAndCrew": "",
     "resumeEpisode": "",
-    "playEpisode": "",
-    "timeLeftIn": "",
-    "request": "",
-    "inLibrary": "",
-    "simklPicks": "",
-    "notInLibrary": "",
-    "episodeShort": "",
-    "watchedOf": ""
+    "playEpisode": ""
   },
   "tooltips": {
     "findInShow": "",

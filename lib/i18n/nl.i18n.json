@@ -249,8 +249,6 @@
     "showSeasonPostersOnTabsDescription": "Toon de poster van elk seizoen boven het tabblad",
     "appleSearchKeyboard": "",
     "appleSearchKeyboardDescription": "",
-    "classicShowPage": "",
-    "classicShowPageDescription": "",
     "tvFullCardLayout": "Volledige tv-kaarten",
     "tvFullCardLayoutDescription": "Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay",
     "focusGlow": "Focusgloed",
@@ -861,17 +859,8 @@
     "markUnwatched": "",
     "more": "",
     "trailer": "",
-    "creator": "",
-    "castAndCrew": "",
     "resumeEpisode": "",
-    "playEpisode": "",
-    "timeLeftIn": "",
-    "request": "",
-    "inLibrary": "",
-    "simklPicks": "",
-    "notInLibrary": "",
-    "episodeShort": "",
-    "watchedOf": ""
+    "playEpisode": ""
   },
   "tooltips": {
     "findInShow": "",

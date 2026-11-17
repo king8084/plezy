@@ -249,8 +249,6 @@
     "showSeasonPostersOnTabsDescription": "Visa affischen för varje säsong ovanför dess flik",
     "appleSearchKeyboard": "",
     "appleSearchKeyboardDescription": "",
-    "classicShowPage": "",
-    "classicShowPageDescription": "",
     "tvFullCardLayout": "Heltäckande TV-kort",
     "tvFullCardLayoutDescription": "Använd TV-kort med enbart bild och skådespelarnamn ovanpå",
     "focusGlow": "Fokusmarkering",
@@ -861,17 +859,8 @@
     "markUnwatched": "",
     "more": "",
     "trailer": "",
-    "creator": "",
-    "castAndCrew": "",
     "resumeEpisode": "",
-    "playEpisode": "",
-    "timeLeftIn": "",
-    "request": "",
-    "inLibrary": "",
-    "simklPicks": "",
-    "notInLibrary": "",
-    "episodeShort": "",
-    "watchedOf": ""
+    "playEpisode": ""
   },
   "tooltips": {
     "findInShow": "",

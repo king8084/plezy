@@ -249,8 +249,6 @@
     "showSeasonPostersOnTabsDescription": "Әр маусымның постерін өз бөлімінің үстінде көрсету",
     "appleSearchKeyboard": "",
     "appleSearchKeyboardDescription": "",
-    "classicShowPage": "",
-    "classicShowPageDescription": "",
     "tvFullCardLayout": "Толық TV карточкалары",
     "tvFullCardLayoutDescription": "Актер аттары үстіне жазылған, тек суреттен тұратын TV карточкаларын пайдалану",
     "focusGlow": "Фокус жарқылы",
@@ -861,17 +859,8 @@
     "markUnwatched": "",
     "more": "",
     "trailer": "",
-    "creator": "",
-    "castAndCrew": "",
     "resumeEpisode": "",
-    "playEpisode": "",
-    "timeLeftIn": "",
-    "request": "",
-    "inLibrary": "",
-    "simklPicks": "",
-    "notInLibrary": "",
-    "episodeShort": "",
-    "watchedOf": ""
+    "playEpisode": ""
   },
   "tooltips": {
     "findInShow": "",

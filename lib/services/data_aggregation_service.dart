@@ -5,6 +5,7 @@ import '../media/ids.dart';
 
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
@@ -1109,62 +1110,19 @@ class DataAggregationService {
           if (seedTitleId == null) return null;
           final seedKind = isEpisode ? MediaKind.show : seed.kind;
 
-          Future<List<String>> resolved(List<String> refs) async {
-            if (refs.isEmpty) return const [];
-            final response = await smart.resolve(connection, refs, seedId: seedTitleId);
-            return [for (final w in response.visibleIds(hidden)) w.id];
-          }
-
-          Future<List<List<String>>> bestEffort(String name, Future<List<List<String>>> Function() fetch) async {
-            try {
-              return await fetch();
-            } catch (e) {
-              if (_isCancellation(e)) rethrow;
-              appLogger.d('"Because you watched" source $name unavailable', error: e);
-              return const [];
-            }
-          }
-
-          String? sourceTitle;
-          final libraryOf = <String, String?>{};
-          final lists = await Future.wait([
-            bestEffort('index', () async {
-              final similar = await smart.similar(connection, seedTitleId);
-              sourceTitle = similar.sourceTitle;
-              final wanted = similar.response.visibleIds(hidden);
-              for (final w in wanted) {
-                libraryOf[w.id] = w.libraryId;
-              }
-              return [
-                [for (final w in wanted) w.id],
-              ];
-            }),
-            bestEffort('jellyfin', () async {
-              final hubs = await client.fetchRelatedHubs(seedTitleId, count: 20);
-              return [
-                await resolved([
-                  for (final hub in hubs)
-                    for (final item in hub.items) 'item:${item.id}',
-                ]),
-              ];
-            }),
-            if (externalRecommendations != null)
-              bestEffort('external', () async {
-                final external = await client.fetchExternalIds(seedTitleId);
-                if (!external.hasCatalogIds) return const [];
-                final perSource = await externalRecommendations(seedKind, external);
-                return Future.wait([
-                  for (final list in perSource) resolved([for (final item in list) ...catalogRecommendationRefs(item)]),
-                ]);
-              }),
-          ]);
-          final ranked = blendRecommendations([for (final sourceLists in lists) ...sourceLists]);
+          final blended = await _blendSimilar(
+            smart: smart,
+            client: client,
+            hidden: hidden,
+            seedTitleId: seedTitleId,
+            seedKind: seedKind,
+            externalRecommendations: externalRecommendations,
+            abort: abort,
+          );
+          final sourceTitle = blended.sourceTitle;
           final title = sourceTitle ?? (isEpisode ? seed.grandparentTitle : seed.title);
           if (title == null || title.isEmpty) return null;
-          final items = await notStarted([
-            for (final id in ranked)
-              if (id != seedTitleId) (id: id, libraryId: libraryOf[id]),
-          ]);
+          final items = await notStarted(blended.wanted);
           if (items.isEmpty) return null;
           return MediaHub(
             id: smartBecauseWatchedHubId,
@@ -1200,6 +1158,111 @@ class DataAggregationService {
       }
     }
     return const [];
+  }
+
+  /// Library titles like [seed] (a movie or show), best first, blended from
+  /// the smart index's neighbours, Jellyfin's Similar items and, through
+  /// [externalRecommendations], Simkl and Trakt; watched and started titles
+  /// removed. The show page's "More like this" row (the same logic as Home's
+  /// "Because you watched"). Null when the seed's server has no index.
+  Future<List<MediaItem>?> blendedSimilarTitles(
+    MediaItem seed, {
+    Set<String>? hiddenLibraryKeys,
+    ExternalTitleRecommender? externalRecommendations,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    final serverId = seed.serverId;
+    final client = serverId == null ? null : _serverManager.onlineClients[serverId];
+    if (smart == null || client is! JellyfinClient || !(seed.isShow || seed.isMovie)) return null;
+    if (!await smart.isAvailable(client.connection)) return null;
+    final blended = await _blendSimilar(
+      smart: smart,
+      client: client,
+      hidden: _hiddenLibraryIdsOn(serverId!, hiddenLibraryKeys),
+      seedTitleId: seed.id,
+      seedKind: seed.kind,
+      externalRecommendations: externalRecommendations,
+      abort: abort,
+    );
+    final candidates = blended.wanted.take(smartHomeRowLimit * 2).toList();
+    final loaded = await client.fetchItemsInOrder([for (final w in candidates) w.id], abort: abort);
+    final libraryOf = {for (final w in candidates) w.id: w.libraryId};
+    return [
+      for (final item in loaded)
+        if (!isStartedOrWatched(item))
+          if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+    ].take(smartHomeRowLimit).toList();
+  }
+
+  Future<({String? sourceTitle, List<({String id, String? libraryId})> wanted})> _blendSimilar({
+    required SmartSearchClient smart,
+    required JellyfinClient client,
+    required Set<String> hidden,
+    required String seedTitleId,
+    required MediaKind seedKind,
+    ExternalTitleRecommender? externalRecommendations,
+    AbortController? abort,
+  }) async {
+    final connection = client.connection;
+    Future<List<String>> resolved(List<String> refs) async {
+      if (refs.isEmpty) return const [];
+      final response = await smart.resolve(connection, refs, seedId: seedTitleId);
+      return [for (final w in response.visibleIds(hidden)) w.id];
+    }
+
+    Future<List<List<String>>> bestEffort(String name, Future<List<List<String>>> Function() fetch) async {
+      try {
+        return await fetch();
+      } catch (e) {
+        if (_isCancellation(e)) rethrow;
+        appLogger.d('Similar-titles source $name unavailable', error: e);
+        return const [];
+      }
+    }
+
+    String? sourceTitle;
+    final libraryOf = <String, String?>{};
+    final lists = await Future.wait([
+      bestEffort('index', () async {
+        final similar = await smart.similar(connection, seedTitleId);
+        sourceTitle = similar.sourceTitle;
+        final wanted = similar.response.visibleIds(hidden);
+        for (final w in wanted) {
+          libraryOf[w.id] = w.libraryId;
+        }
+        return [
+          [for (final w in wanted) w.id],
+        ];
+      }),
+      bestEffort('jellyfin', () async {
+        final hubs = await client.fetchRelatedHubs(seedTitleId, count: 20);
+        return [
+          await resolved([
+            for (final hub in hubs)
+              for (final item in hub.items) 'item:${item.id}',
+          ]),
+        ];
+      }),
+      if (externalRecommendations != null)
+        bestEffort('external', () async {
+          final external = await client.fetchExternalIds(seedTitleId);
+          if (!external.hasCatalogIds) return const [];
+          final perSource = await externalRecommendations(seedKind, external);
+          return Future.wait([
+            for (final list in perSource) resolved([for (final item in list) ...catalogRecommendationRefs(item)]),
+          ]);
+        }),
+    ]);
+    abort?.throwIfAborted();
+    final ranked = blendRecommendations([for (final sourceLists in lists) ...sourceLists]);
+    return (
+      sourceTitle: sourceTitle,
+      wanted: [
+        for (final id in ranked)
+          if (id != seedTitleId) (id: id, libraryId: libraryOf[id]),
+      ],
+    );
   }
 
   /// One ranking from several best-first lists: each source adds 1/(rank+5)

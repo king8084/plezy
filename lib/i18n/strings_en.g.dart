@@ -697,12 +697,6 @@ class Translations$settings$en {
 	/// en: 'Search with Apple's keyboard and hold the remote's mic to dictate. Off uses Plezy's on-screen keyboard'
 	String get appleSearchKeyboardDescription => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard';
 
-	/// en: 'Classic show page'
-	String get classicShowPage => 'Classic show page';
-
-	/// en: 'Use the previous layout for show and season pages'
-	String get classicShowPageDescription => 'Use the previous layout for show and season pages';
-
 	/// en: 'Full TV Cards'
 	String get tvFullCardLayout => 'Full TV Cards';
 
@@ -2416,38 +2410,11 @@ class Translations$detailActions$en {
 	/// en: 'Trailer'
 	String get trailer => 'Trailer';
 
-	/// en: 'Creator'
-	String get creator => 'Creator';
-
-	/// en: 'Cast & crew'
-	String get castAndCrew => 'Cast & crew';
-
 	/// en: 'Resume S${season} · E${episode}'
 	String resumeEpisode({required Object season, required Object episode}) => 'Resume S${season} · E${episode}';
 
 	/// en: 'Play S${season} · E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'Play S${season} · E${episode}';
-
-	/// en: '${time} left in “${title}”'
-	String timeLeftIn({required Object time, required Object title}) => '${time} left in “${title}”';
-
-	/// en: 'Request'
-	String get request => 'Request';
-
-	/// en: '✓ In library'
-	String get inLibrary => '✓ In library';
-
-	/// en: 'Simkl picks'
-	String get simklPicks => 'Simkl picks';
-
-	/// en: 'Not in your library'
-	String get notInLibrary => 'Not in your library';
-
-	/// en: 'E${number}'
-	String episodeShort({required Object number}) => 'E${number}';
-
-	/// en: '${watched} of ${total} watched'
-	String watchedOf({required Object watched, required Object total}) => '${watched} of ${total} watched';
 }
 
 // Path: tooltips
@@ -8639,8 +8606,6 @@ extension on Translations {
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.appleSearchKeyboard' => 'Apple search keyboard',
 			'settings.appleSearchKeyboardDescription' => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard',
-			'settings.classicShowPage' => 'Classic show page',
-			'settings.classicShowPageDescription' => 'Use the previous layout for show and season pages',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.focusGlow' => 'Focus Glow',
@@ -8924,10 +8889,10 @@ extension on Translations {
 			'settings.customizeSidebar' => 'Customize sidebar',
 			'settings.customizeSidebarDescription' => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.',
 			'settings.pinToSidebar' => 'Pin to sidebar',
-			_ => null,
-		} ?? switch (path) {
 			'settings.unpinFromSidebar' => 'Unpin from sidebar',
 			'settings.sidebarMoveUp' => 'Move up',
+			_ => null,
+		} ?? switch (path) {
 			'settings.sidebarMoveDown' => 'Move down',
 			'settings.homeAndSidebar' => 'Home & Sidebar',
 			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
@@ -9220,17 +9185,8 @@ extension on Translations {
 			'detailActions.markUnwatched' => 'Mark unwatched',
 			'detailActions.more' => 'More',
 			'detailActions.trailer' => 'Trailer',
-			'detailActions.creator' => 'Creator',
-			'detailActions.castAndCrew' => 'Cast & crew',
 			'detailActions.resumeEpisode' => ({required Object season, required Object episode}) => 'Resume S${season} · E${episode}',
 			'detailActions.playEpisode' => ({required Object season, required Object episode}) => 'Play S${season} · E${episode}',
-			'detailActions.timeLeftIn' => ({required Object time, required Object title}) => '${time} left in “${title}”',
-			'detailActions.request' => 'Request',
-			'detailActions.inLibrary' => '✓ In library',
-			'detailActions.simklPicks' => 'Simkl picks',
-			'detailActions.notInLibrary' => 'Not in your library',
-			'detailActions.episodeShort' => ({required Object number}) => 'E${number}',
-			'detailActions.watchedOf' => ({required Object watched, required Object total}) => '${watched} of ${total} watched',
 			'tooltips.findInShow' => 'Find an episode',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
@@ -9438,8 +9394,6 @@ extension on Translations {
 			'mpvConfig.deletePreset' => 'Delete',
 			'mpvConfig.presetSaved' => 'Preset saved',
 			'mpvConfig.presetLoaded' => 'Preset loaded',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
@@ -9451,6 +9405,8 @@ extension on Translations {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
@@ -9952,8 +9908,6 @@ extension on Translations {
 			'explore.detail.links' => 'Links',
 			'explore.detail.watchOn' => 'Watch on',
 			'explore.detail.watchTrailer' => 'Watch trailer',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
 			'explore.detail.trailerUnavailable' => 'Couldn\'t open the trailer on this device',
 			'explore.detail.linkUnavailable' => 'Couldn\'t open this link on this device',
@@ -9965,6 +9919,8 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
@@ -10466,8 +10422,6 @@ extension on Translations {
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
@@ -10479,6 +10433,8 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',

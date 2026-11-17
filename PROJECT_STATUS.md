@@ -385,6 +385,14 @@ from the logs) is already fast enough, so it was left alone.
   outside the page (expanded sidebar), and is removed when the tab or route
   is not current. Fallback: Plezy's docked keyboard if docking fails.
 
+- Owner decision (Nov 17, late): drop the show page redesign and the Classic
+  setting; keep the classic layout, only prettier: "Season N" pill tabs,
+  labeled action pills ("Play/Resume S1 · E3", Shuffle, Find, Mark watched,
+  More; only at 1280+ wide, i.e. always on tvOS). The redesign file is
+  deleted. The show page's first "More Like This" row is replaced (after the
+  page loads) by the blended list used for Home's "Because you watched",
+  seeded by that show. Find uses the docked Apple keyboard like Search.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid

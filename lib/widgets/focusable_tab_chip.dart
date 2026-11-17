@@ -58,6 +58,9 @@ class FocusableTabChip extends StatefulWidget {
   /// Called when the user presses BACK from this chip.
   final VoidCallback? onBack;
 
+  /// TV show page season tabs: larger glassy pills, white when selected.
+  final bool tvPill;
+
   /// Called when SELECT key is held (D-pad long press).
   final VoidCallback? onLongPress;
 
@@ -76,6 +79,7 @@ class FocusableTabChip extends StatefulWidget {
     this.onNavigateDown,
     this.onNavigateUp,
     this.onBack,
+    this.tvPill = false,
     this.onLongPress,
     this.topImage,
   });
@@ -140,13 +144,29 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       }
     }
 
+    final pill = widget.tvPill && PlatformDetector.isTV();
+    if (pill) {
+      if (showFocus) {
+        backgroundColor = Colors.white;
+        foregroundColor = Colors.black;
+      } else if (widget.isSelected) {
+        backgroundColor = Colors.white.withValues(alpha: 0.88);
+        foregroundColor = Colors.black;
+      } else {
+        backgroundColor = Colors.black.withValues(alpha: 0.42);
+        foregroundColor = Colors.white.withValues(alpha: 0.86);
+      }
+    }
+
     final isHighlighted = showFocus || widget.isSelected;
 
     final label = Text(
       widget.label,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
         color: foregroundColor,
-        fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
+        fontWeight: pill ? (isHighlighted ? FontWeight.w700 : FontWeight.w500) : (isHighlighted ? FontWeight.w600 : FontWeight.normal),
+        fontSize: pill ? 16 : null,
+        letterSpacing: pill ? 0.2 : null,
       ),
     );
 
@@ -158,9 +178,13 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       onTap: widget.onSelect,
       semanticLabel: widget.label,
       selected: widget.isSelected,
-      padding: hasImage ? const EdgeInsets.all(8) : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: hasImage
+          ? const EdgeInsets.all(8)
+          : pill
+          ? const EdgeInsets.symmetric(horizontal: 22, vertical: 10)
+          : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       backgroundColor: backgroundColor,
-      borderRadius: hasImage ? 12 : 20,
+      borderRadius: hasImage ? 12 : (pill ? 24 : 20),
       child: hasImage
           ? Column(
               mainAxisSize: .min,

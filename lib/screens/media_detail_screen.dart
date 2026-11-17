@@ -16,7 +16,6 @@ import 'package:provider/provider.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/rating_bottom_sheet.dart';
 
-import '../focus/focus_theme.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focusable_action_bar.dart';
@@ -40,7 +39,6 @@ import '../media/media_kind.dart';
 import '../media/media_source_info.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
-import '../services/jellyfin_mappers.dart';
 import '../media/paged_media_list_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/media_rating_badge.dart';
@@ -68,6 +66,7 @@ import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/layout_constants.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../providers/hidden_libraries_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/simkl_catalog_source.dart';
@@ -122,7 +121,6 @@ part 'media_detail/action_buttons.dart';
 part 'media_detail/playback_tracks_status.dart';
 part 'media_detail/seerr_recommendations.dart';
 part 'media_detail/simkl_recommendations.dart';
-part 'media_detail/tv_modern_layout.dart';
 
 /// Ceiling for the detail hero's backdrop box, as a fraction of the window
 /// height. Roughly the natural height of a 16:9 backdrop on a 16:10 desktop
@@ -466,17 +464,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// checked once per show (see [_syncFindInShowAvailability]).
   bool _findInShowAvailable = false;
 
-  /// True while the redesigned TV show/season layout is on screen (see
-  /// media_detail/tv_modern_layout.dart); off for movies, episodes and the
-  /// Classic show page setting.
-  bool _tvModernLayoutActive = false;
-
-  /// Redesigned page backdrop: the focused episode's still once focus rests
-  /// on it (see _MediaDetailTvModernLayout._syncTvModernBackdrop).
-  final ValueNotifier<MediaItem?> _tvModernBackdropItem = ValueNotifier(null);
-  Timer? _tvModernBackdropTimer;
-  bool _tvModernBackdropListening = false;
-  String? _tvModernLayoutLogged;
+  /// TV show and season pages: labeled action buttons, "Resume S1 · E3" and
+  /// "Season N" pill tabs on the classic layout.
+  bool _tvPrettyActions = false;
+  bool _tvPrettyTabs = false;
   String? _findInShowCheckedFor;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
@@ -1179,8 +1170,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   @override
   void dispose() {
-    _tvModernBackdropTimer?.cancel();
-    _tvModernBackdropItem.dispose();
     _libraryContentSubscription?.cancel();
     unawaited(_communityRatingsSubscription?.cancel());
     for (final source in _watchlistListenedSources) {
@@ -2417,9 +2406,54 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       apply: (relatedHubs) {
         _relatedHubs = relatedHubs;
         _relatedHubKeys = List.generate(relatedHubs.length, (_) => GlobalKey<HubSectionState>());
+        WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadBlendedSimilar()));
       },
       markLoaded: () => _hasLoadedRelatedHubs = true,
     );
+  }
+
+  int _blendedSimilarGeneration = 0;
+
+  /// Replaces the server's "More Like This" row with the blended one Home's
+  /// "Because you watched" uses (smart index + Jellyfin + Simkl + Trakt,
+  /// library titles only, watched and started titles left out). Supplemental:
+  /// the page never waits for it, and any failure keeps the server's row.
+  Future<void> _loadBlendedSimilar() async {
+    final metadata = _metadata;
+    if (!mounted || widget.isOffline || !(metadata.isShow || metadata.isMovie)) return;
+    final generation = ++_blendedSimilarGeneration;
+    final aggregation = context.read<MultiServerProvider>().aggregationService;
+    final hidden = context.read<HiddenLibrariesProvider?>()?.hiddenLibraryKeys;
+    final recommender = context.read<CatalogSourcesProvider?>()?.titleRecommendations;
+    try {
+      final items = await aggregation.blendedSimilarTitles(
+        metadata,
+        hiddenLibraryKeys: hidden,
+        externalRecommendations: recommender,
+      );
+      if (!mounted || generation != _blendedSimilarGeneration || items == null || items.isEmpty) return;
+      if (!identical(_metadata, metadata) && _metadata.id != metadata.id) return;
+      final blended = MediaHub(
+        id: 'detail_blended_similar',
+        title: t.discover.moreLikeThis,
+        type: 'mixed',
+        items: items,
+        size: items.length,
+        serverId: metadata.serverId,
+        serverName: metadata.serverName,
+      );
+      setState(() {
+        final index = _relatedHubs.indexWhere((hub) => hub.title == t.discover.moreLikeThis);
+        if (index < 0) {
+          _relatedHubs = [blended, ..._relatedHubs];
+          _relatedHubKeys = [GlobalKey<HubSectionState>(), ..._relatedHubKeys];
+        } else {
+          _relatedHubs = [..._relatedHubs]..[index] = blended;
+        }
+      });
+    } catch (error) {
+      appLogger.d('Blended "More like this" unavailable', error: error);
+    }
   }
 
   /// Focus the first visible section above cast: season tabs → overview → play button.
@@ -2580,10 +2614,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final metadata = _metadata;
 
     if (PlatformDetector.isTV()) {
-      if (_tvModernLayoutActive && _hasTvSeasonTabs && _tvDetailSeasonTabsShown) {
-        _focusTvSeasonTabs();
-        return;
-      }
       _tvDetailRailKey.currentState?.requestFocus();
       return;
     }
@@ -2766,10 +2796,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
                     label: PlatformDetector.isTV() && season.index != null && season.index! > 0
-                        ? (_tvModernLayoutActive ? t.common.seasonNumber(number: season.index!) : 'S${season.index}')
+                        ? (_tvPrettyTabs ? t.common.seasonNumber(number: season.index!) : 'S${season.index}')
                         : season.displayTitle,
                     isSelected: index == _selectedSeasonIndex,
                     topImage: topImage,
+                    tvPill: _tvPrettyTabs,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
                       final changedSeason = index != _selectedSeasonIndex;
@@ -2805,20 +2836,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           }
                         : null,
                     onNavigateDown: () {
-                      if (PlatformDetector.isTV() && _tvModernLayoutActive) {
-                        // Tabs sit right above the episodes they switch.
-                        _tvDetailRailKey.currentState?.requestFocus();
-                        return;
-                      }
                       if (PlatformDetector.isTV()) {
                         _tvDetailInfoFocusNode.requestFocus();
                         return;
                       }
                       _firstEpisodeFocusNode.requestFocus();
                     },
-                    onNavigateUp: PlatformDetector.isTV()
-                        ? (_tvModernLayoutActive ? _focusTvDetailActionRow : _backButtonFocusNode.requestFocus)
-                        : null,
+                    onNavigateUp: PlatformDetector.isTV() ? _backButtonFocusNode.requestFocus : null,
                     onLongPress: () => _showSeasonTabContextMenu(index),
                     onBack: () {
                       Navigator.of(context).maybePop();
@@ -3867,10 +3891,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   ) => ListenableBuilder(
     listenable: _tvDetailChromeFocus,
     builder: (context, _) {
-      _tvModernLayoutActive = _useTvModernLayout(metadata);
-      return _tvModernLayoutActive
-          ? _buildTvModernDetailLayout(context, metadata, handleBack)
-          : _buildTvDetailLayout(context, metadata, handleBack);
+      _tvPrettyTabs = PlatformDetector.isTV() && (metadata.isShow || metadata.isSeason);
+      // Labeled pills need the room of a real TV layout (1920 wide on tvOS).
+      _tvPrettyActions = _tvPrettyTabs && MediaQuery.sizeOf(context).width >= 1280;
+      return _buildTvDetailLayout(context, metadata, handleBack);
     },
   );
 
@@ -4677,13 +4701,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final actors = _tvDetailActorItems(metadata);
     if (actors.isNotEmpty) {
       hubs.add(
-        MediaHub(
-          id: _tvDetailActorsHubId,
-          title: _tvModernLayoutActive ? t.detailActions.castAndCrew : t.discover.cast,
-          type: 'person',
-          items: actors,
-          size: actors.length,
-        ),
+        MediaHub(id: _tvDetailActorsHubId, title: t.discover.cast, type: 'person', items: actors, size: actors.length),
       );
     }
     if (_extras != null && _extras!.isNotEmpty) {
@@ -4706,21 +4724,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (simklHub != null && _simklRecommendationsSource != null) hubs.add(simklHub);
     final requestHub = _seerrRecommendationsHub;
     if (requestHub != null && _seerrRecommendationsSource?.canRequest(metadata.kind) == true) hubs.add(requestHub);
-    if (_tvModernLayoutActive) {
-      // Redesigned show page: plain row names; the cards keep their ratings,
-      // votes, years and availability badges.
-      return [
-        for (final hub in hubs)
-          if (hub.title == t.discover.moreLikeThisOwned)
-            hub.copyWith(title: t.discover.moreLikeThis)
-          else if (identical(hub, simklHub))
-            hub.copyWith(title: t.detailActions.simklPicks)
-          else if (identical(hub, requestHub))
-            hub.copyWith(title: t.detailActions.notInLibrary)
-          else
-            hub,
-      ];
-    }
     return hubs;
   }
 
@@ -4744,34 +4747,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // Cached per metadata object: the TV rail memoizes cards by item identity,
   // so rebuilding identical cast items on every Detail build would rebuild
   // every cast card with them.
-  (MediaItem, bool, List<MediaItem>)? _tvDetailActorItemsCache;
+  (MediaItem, List<MediaItem>)? _tvDetailActorItemsCache;
 
   List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
     final cached = _tvDetailActorItemsCache;
-    if (cached != null && identical(cached.$1, metadata) && cached.$2 == _tvModernLayoutActive) return cached.$3;
+    if (cached != null && identical(cached.$1, metadata)) return cached.$2;
     final roles = metadata.roles ?? const <MediaRole>[];
-    // Redesigned page: creators and directors lead the row ("Cast & crew"),
-    // labelled by their job instead of a character.
-    final crew = _tvModernLayoutActive && metadata.backend == MediaBackend.jellyfin
-        ? JellyfinMappers.crew(metadata.raw?['People'])
-        : const <MediaRole>[];
     final items = [
-      for (var i = 0; i < crew.length; i++)
-        _tvDetailActorItem(
-          metadata,
-          MediaRole(
-            id: crew[i].id,
-            tag: crew[i].tag,
-            role: crew[i].role == 'Creator' ? t.detailActions.creator : t.discover.director,
-            thumbPath: crew[i].thumbPath,
-          ),
-          i,
-          idPrefix: 'crew',
-        ),
       for (var i = 0; i < roles.length; i++)
         if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
     ];
-    _tvDetailActorItemsCache = (metadata, _tvModernLayoutActive, items);
+    _tvDetailActorItemsCache = (metadata, items);
     return items;
   }
 
@@ -5343,7 +5329,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   String _getPlayButtonLabel(MediaItem metadata) {
     // Redesigned TV show page: say what the button does ("Resume S1 · E3").
-    if (metadata.isShow && _tvModernLayoutActive && PlatformDetector.isTV()) {
+    if (metadata.isShow && _tvPrettyActions) {
       final episode = _showPlayEpisode();
       final season = '${episode?.parentIndex ?? defaultPlaybackSeason(_seasons)?.index ?? 1}';
       final number = '${episode?.index ?? 1}';

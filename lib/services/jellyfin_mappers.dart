@@ -503,24 +503,6 @@ class JellyfinMappers {
     return nullIfEmptyList(result);
   }
 
-  /// Creators, then directors, from a raw Jellyfin `People` list, each with
-  /// its type in [MediaRole.role] ("Creator" / "Director"); for the TV show
-  /// page's cast & crew row.
-  static List<MediaRole> crew(Object? list) {
-    if (list is! List) return const [];
-    final result = <MediaRole>[];
-    final seen = <String>{};
-    for (final type in const ['Creator', 'Director']) {
-      for (final entry in list) {
-        if (entry is! Map<String, dynamic> || entry['Type'] != type) continue;
-        final name = (entry['Name'] as String? ?? '').trim();
-        if (name.isEmpty || !seen.add(name)) continue;
-        result.add(MediaRole(id: entry['Id'] as String?, tag: name, role: type, thumbPath: _personImage(entry)));
-      }
-    }
-    return result;
-  }
-
   static List<MediaRole>? _actors(Object? list) {
     if (list is! List) return null;
     final result = <MediaRole>[];

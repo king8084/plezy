@@ -89,9 +89,6 @@ void main() {
     SettingsService.resetForTesting();
     TvDetectionService.debugSetAppleTVOverride(true);
     LocaleSettings.setLocaleSync(AppLocale.en);
-    // These tests pin the classic TV show page; the redesigned one is covered
-    // by media_detail_modern_layout_test.dart.
-    await (await SettingsService.getInstance()).write(SettingsService.classicShowPage, true);
   });
 
   tearDown(() {
@@ -754,7 +751,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
     expect(find.text('Specials'), findsOneWidget); // Available as a tab, not an episode row.
     final seasonHubs = tester
         .widget<TvBrowseRail>(find.byType(TvBrowseRail))
@@ -997,9 +994,9 @@ void main() {
     var seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
     expect(seasonHubs, hasLength(1));
     expect(rail.leadingItemForHub!(seasonHubs[0])?.id, season1.id);
-    expect(find.text('S1'), findsOneWidget);
-    expect(find.text('S2'), findsOneWidget);
-    await tester.tap(find.text('S2'));
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 2'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FocusableTabChip, 'Season 2'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
     rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
@@ -1101,7 +1098,7 @@ void main() {
     expect(seasonHubs.single.items, hasLength(22));
     expect(rail.initialItemId, enteredEpisode.id);
     final selectedTab = find.byWidgetPredicate((widget) => widget is FocusableTabChip && widget.isSelected);
-    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'Season 8');
     expect(tester.getRect(selectedTab).left, greaterThanOrEqualTo(0));
     expect(tester.getRect(selectedTab).right, lessThanOrEqualTo(1280));
     expect(rail.hubs[1].id, 'detail_actors');
@@ -1121,10 +1118,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_8');
     // Moving across tabs does not switch until Select.
-    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'Season 8');
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
-    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S9');
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'Season 9');
     final switchedRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(
       switchedRail.hubs.where((hub) => hub.id.startsWith('detail_season_')).single.items.first.id,
@@ -1138,11 +1135,11 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(railState.focusedMediaItem?.id, season9Episodes[4].id);
-    await tester.tap(find.text('S8'));
+    await tester.tap(find.widgetWithText(FocusableTabChip, 'Season 8'));
     await tester.pumpAndSettle();
     railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
     expect(railState.focusedMediaItem?.id, season8Episodes.first.id);
-    await tester.tap(find.text('S9'));
+    await tester.tap(find.widgetWithText(FocusableTabChip, 'Season 9'));
     await tester.pumpAndSettle();
     expect(railState.focusedMediaItem?.id, season9Episodes.first.id);
     expect(tester.takeException(), isNull);
@@ -1362,8 +1359,8 @@ void main() {
     // Every season tab is derived from the season list, so both appear
     // immediately. TV warms only the selected first page plus the adjacent first
     // page; it still does not walk the whole show or load page 2+.
-    expect(find.text('S1'), findsOneWidget);
-    expect(find.text('S2'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 2'), findsOneWidget);
     expect(client.childrenPageCalls.map((call) => call.parentId), containsAll([season1.id, season2.id]));
     expect(client.childrenPageCalls.every((call) => call.start == 0 && call.size == 200), isTrue);
   });
@@ -1454,8 +1451,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('S1'), findsOneWidget);
-    expect(find.text('S2'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, 'Season 2'), findsOneWidget);
   });
 
   testWidgets('TV detail completes adjacent prefetch after focus moves to that season', (tester) async {
@@ -1545,7 +1542,7 @@ void main() {
     tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
     await tester.pump();
 
-    await tester.tap(find.text('S2'));
+    await tester.tap(find.widgetWithText(FocusableTabChip, 'Season 2'));
     await tester.pump();
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsNothing);
 
@@ -1693,7 +1690,7 @@ void main() {
     expect(find.descendant(of: cards, matching: find.text('The Show')), findsNothing);
 
     // Play agrees with the hero: the focused episode, not a stale on-deck.
-    expect(find.text('S1E1'), findsOneWidget);
+    expect(find.textContaining('S1 · E1'), findsOneWidget);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
@@ -1707,8 +1704,8 @@ void main() {
       find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The second episode summary.')),
       findsNothing,
     );
-    expect(find.text('S1E2'), findsOneWidget);
-    expect(find.text('S1E1'), findsNothing);
+    expect(find.textContaining('S1 · E2'), findsOneWidget);
+    expect(find.textContaining('S1 · E1'), findsNothing);
     expect(tester.getSemantics(information).label, isNot(contains('min left')));
     semantics.dispose();
   });
@@ -2211,7 +2208,7 @@ void main() {
       await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await settleSelection(tester);
-      expect(find.text('S1E2'), findsOneWidget);
+      expect(find.textContaining('S1 · E2'), findsOneWidget);
       expect(status(tester), contains('4K'));
       expect(status(tester), contains('Japanese'));
       expect(status(tester), isNot(contains('English')));
@@ -3951,207 +3948,68 @@ void main() {
     });
   });
 
-  group('redesigned TV show page', () {
-    setUp(() async {
-      await (await SettingsService.getInstance()).write(SettingsService.classicShowPage, false);
-    });
-
-    Future<void> pumpShow(WidgetTester tester, {int seasonCount = 3}) async {
-      tester.view.physicalSize = const Size(1920, 1080);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final show = testMediaItem(
-        id: 'industry',
-        backend: MediaBackend.jellyfin,
-        kind: MediaKind.show,
-        title: 'Industry',
-        summary: 'Young graduates compete in international finance.',
-        serverId: 'server_1',
-        year: 2020,
-      );
-      final seasons = [
-        for (var i = 1; i <= seasonCount; i++)
-          testMediaItem(
-            id: 's$i',
-            backend: show.backend,
-            kind: MediaKind.season,
-            title: 'Season $i',
-            index: i,
-            parentId: show.id,
-            serverId: show.serverId,
-          ),
-      ];
-      final episodes = [
-        for (var i = 1; i <= 6; i++)
-          testMediaItem(
-            id: 'e$i',
-            backend: show.backend,
-            kind: MediaKind.episode,
-            title: 'Episode $i',
-            summary: 'Synopsis of episode $i.',
-            index: i,
-            parentIndex: 1,
-            parentId: 's1',
-            grandparentId: show.id,
-            serverId: show.serverId,
-            durationMs: 3420000,
-          ),
-      ];
-      final client = _FakeMediaServerClient(
-        show: show,
-        childrenByParent: {show.id: seasons, for (final season in seasons) season.id: episodes},
-      );
-      final provider = testMultiServer(clients: [client]).provider;
-      await tester.pumpWidget(
-        ChangeNotifierProvider<MultiServerProvider>.value(
-          value: provider,
-          child: MaterialApp(
-            theme: monoTheme(MonoPalette.dark),
-            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
-          ),
+  testWidgets('TV show page: Season N pill tabs and labeled actions on the classic layout', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final show = testMediaItem(
+      id: 'industry',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'Industry',
+      serverId: 'server_1',
+    );
+    final seasons = [
+      for (var i = 1; i <= 3; i++)
+        testMediaItem(
+          id: 's$i',
+          backend: show.backend,
+          kind: MediaKind.season,
+          title: 'Season $i',
+          index: i,
+          parentId: show.id,
+          serverId: show.serverId,
         ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    Future<void> press(WidgetTester tester, LogicalKeyboardKey key) async {
-      await tester.sendKeyEvent(key);
-      await tester.pumpAndSettle();
-    }
-
-    String? focused() => FocusManager.instance.primaryFocus?.debugLabel;
-
-    testWidgets('labeled actions, Season tabs above the episodes, no back arrow', (tester) async {
-      await pumpShow(tester);
-
-      expect(find.byType(AppBarBackButton), findsNothing);
-      expect(find.text('Shuffle'), findsOneWidget);
-      expect(find.text('Mark watched'), findsOneWidget);
-      expect(find.text('More'), findsOneWidget);
-      expect(find.text('Season 1'), findsOneWidget);
-      expect(find.text('S1'), findsNothing);
-      // Episode cards carry their number in the subtitle, not a corner badge.
-      expect(find.text('E1'), findsNothing);
-      final tabs = tester.getRect(find.byKey(const ValueKey('tv_detail_season_tabs')));
-      final rail = tester.getRect(find.byType(TvBrowseRail));
-      expect(tabs.bottom, lessThanOrEqualTo(rail.top + 40));
-      expect(rail.top - tabs.bottom, lessThan(80), reason: 'tabs sit right above the episodes');
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('focus runs episodes, tabs, actions, info; the title never moves', (tester) async {
-      await pumpShow(tester);
-      final title = find.text('Industry').first;
-      final titleTop = tester.getTopLeft(title).dy;
-
-      expect(focused(), 'tv_browse_rail');
-      await press(tester, LogicalKeyboardKey.arrowRight);
-      expect(tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_title'))).data, 'Episode 2');
-      expect(tester.getTopLeft(title).dy, titleTop);
-
-      await press(tester, LogicalKeyboardKey.arrowUp);
-      expect(focused(), 'season_tab_0');
-      await press(tester, LogicalKeyboardKey.arrowUp);
-      expect(focused(), 'play_button');
-      expect(tester.getTopLeft(title).dy, titleTop);
-      await press(tester, LogicalKeyboardKey.arrowUp);
-      expect(focused(), 'tv_detail_info');
-      expect(tester.getTopLeft(title).dy, titleTop);
-
-      await press(tester, LogicalKeyboardKey.arrowDown);
-      await press(tester, LogicalKeyboardKey.arrowDown);
-      expect(focused(), 'season_tab_0');
-      await press(tester, LogicalKeyboardKey.arrowDown);
-      expect(focused(), 'tv_browse_rail');
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('play label, creators first in Cast & crew, compact header on lower rows', (tester) async {
-      tester.view.physicalSize = const Size(1920, 1080);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final show =
-          testMediaItem(
-            id: 'mf',
-            backend: MediaBackend.jellyfin,
-            kind: MediaKind.show,
-            title: 'Modern Family',
-            serverId: 'server_1',
-            roles: const [MediaRole(id: 'a1', tag: 'Ty Burrell', role: 'Phil Dunphy')],
-          ).copyWith(
-            raw: {
-              'People': [
-                {'Id': 'd1', 'Name': 'Jason Winer', 'Type': 'Director'},
-                {'Id': 'c1', 'Name': 'Steven Levitan', 'Type': 'Creator'},
-                {'Id': 'a1', 'Name': 'Ty Burrell', 'Type': 'Actor', 'Role': 'Phil Dunphy'},
-              ],
-            },
-          );
-      final episodes = [
-        for (var i = 1; i <= 3; i++)
-          testMediaItem(
-            id: 'mf$i',
-            backend: show.backend,
-            kind: MediaKind.episode,
-            title: 'Episode $i',
-            index: i,
-            parentIndex: 1,
-            parentId: 'mfs1',
-            grandparentId: show.id,
-            serverId: show.serverId,
-            durationMs: 1320000,
-          ),
-      ];
-      final season = testMediaItem(
-        id: 'mfs1',
-        backend: show.backend,
-        kind: MediaKind.season,
-        title: 'Season 1',
-        index: 1,
-        parentId: show.id,
-        serverId: show.serverId,
-      );
-      final client = _FakeMediaServerClient(
-        show: show,
-        childrenByParent: {
-          show.id: [season],
-          season.id: episodes,
-        },
-      );
-      final provider = testMultiServer(clients: [client]).provider;
-      await tester.pumpWidget(
-        ChangeNotifierProvider<MultiServerProvider>.value(
-          value: provider,
-          child: MaterialApp(
-            theme: monoTheme(MonoPalette.dark),
-            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
-          ),
+    ];
+    final episodes = [
+      for (var i = 1; i <= 3; i++)
+        testMediaItem(
+          id: 'e$i',
+          backend: show.backend,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          index: i,
+          parentIndex: 1,
+          parentId: 's1',
+          grandparentId: show.id,
+          serverId: show.serverId,
         ),
-      );
-      await tester.pumpAndSettle();
+    ];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {show.id: seasons, for (final season in seasons) season.id: episodes},
+    );
+    final provider = testMultiServer(clients: [client]).provider;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('Play S1 · E1'), findsOneWidget);
-      await press(tester, LogicalKeyboardKey.arrowDown);
-      expect(find.byKey(const ValueKey('tv_modern_compact_header')), findsOneWidget);
-      expect(find.byKey(const ValueKey('tv_detail_actions')), findsNothing);
-      double x(String name) => tester.getTopLeft(find.text(name).first).dx;
-      expect(x('Steven Levitan'), lessThan(x('Jason Winer')));
-      expect(x('Jason Winer'), lessThan(x('Ty Burrell')));
-      expect(find.text('Creator'), findsOneWidget);
-      expect(find.text('Cast & crew'), findsOneWidget);
-      await press(tester, LogicalKeyboardKey.arrowUp);
-      expect(find.byKey(const ValueKey('tv_detail_actions')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('Classic show page setting brings the old layout back', (tester) async {
-      await (await SettingsService.getInstance()).write(SettingsService.classicShowPage, true);
-      await pumpShow(tester);
-
-      expect(find.byType(AppBarBackButton), findsOneWidget);
-      expect(find.text('S1'), findsOneWidget);
-      expect(find.text('Shuffle'), findsNothing);
-    });
+    expect(find.widgetWithText(FocusableTabChip, 'Season 1'), findsOneWidget);
+    expect(find.text('S1'), findsNothing);
+    expect(tester.widget<FocusableTabChip>(find.byType(FocusableTabChip).first).tvPill, isTrue);
+    expect(find.text('Shuffle'), findsOneWidget);
+    expect(find.text('Mark watched'), findsOneWidget);
+    expect(find.textContaining('S1 · E1'), findsOneWidget);
+    expect(find.byType(AppBarBackButton), findsOneWidget, reason: 'classic layout kept');
+    expect(tester.takeException(), isNull);
   });
 }
 

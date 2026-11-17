@@ -682,46 +682,12 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       artworkDim: widget.artworkDim,
     );
     final recommendation = item is MediaItem ? RecommendationCardData.fromItem(item) : null;
-    // Redesigned TV show page: a small pill per card instead of a full-width
-    // band, and owned picks say so.
-    final pillBadges = recommendation != null && TvDetailCardStyle.isActive(context);
-    final banner = pillBadges
-        ? null
-        : switch (recommendation?.availability) {
-            RecommendationAvailability.missing => t.discover.needRequest,
-            RecommendationAvailability.requested => t.explore.badge.requested,
-            _ => null,
-          };
-    final pill = !pillBadges
-        ? null
-        : switch (recommendation.availability) {
-            RecommendationAvailability.missing => (t.detailActions.request, Colors.white, Colors.black),
-            RecommendationAvailability.requested => (
-              t.explore.badge.requested,
-              const Color(0xFFF59E0B),
-              const Color(0xFF111111),
-            ),
-            RecommendationAvailability.owned => (t.detailActions.inLibrary, const Color(0xCC0B0C0F), Colors.white),
-            _ => null,
-          };
+    final banner = switch (recommendation?.availability) {
+      RecommendationAvailability.missing => t.discover.needRequest,
+      RecommendationAvailability.requested => t.explore.badge.requested,
+      _ => null,
+    };
     final overlays = <Widget>[
-      if (pill != null)
-        Positioned(
-          left: 8,
-          bottom: 8,
-          child: DecoratedBox(
-            key: const ValueKey('recommendation_pill'),
-            decoration: BoxDecoration(color: pill.$2, borderRadius: BorderRadius.circular(999)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-              child: Text(
-                pill.$1,
-                maxLines: 1,
-                style: TextStyle(color: pill.$3, fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-        ),
       if (banner != null)
         Positioned(
           bottom: 0,
@@ -744,7 +710,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         ),
       if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
-      if (item is MediaItem && item.isEpisode && item.index != null && !TvDetailCardStyle.isActive(context))
+      if (item is MediaItem && item.isEpisode && item.index != null)
         Positioned(
           top: item.isWatched ? 36 : 6,
           right: 6,
@@ -1433,17 +1399,6 @@ class _MediaCardHelpers {
       );
     }
 
-    if (catalogMetadata.isEmpty && showTitleImplied && mi.isEpisode && TvDetailCardStyle.isActive(context)) {
-      // Redesigned show page: the season tabs name the season, so the card
-      // says only which episode and how long (plus what is left mid-watch).
-      final parts = [
-        if (mi.index != null) t.detailActions.episodeShort(number: mi.index!),
-        if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs),
-        if (mi.hasActiveProgress)
-          t.discover.durationLeft(duration: formatDurationTextual(mi.durationMs! - mi.viewOffsetMs!)),
-      ];
-      if (parts.isNotEmpty) return _caption(context, parts.join(' · '));
-    }
     final text = _metadataSubtitleText(mi, catalogMetadata: catalogMetadata, showTitleImplied: showTitleImplied);
     return text == null ? _emptyCaption(context) : _caption(context, text);
   }
@@ -1926,16 +1881,4 @@ class _SeerrCardMetadataState extends State<_SeerrCardMetadata> {
       ),
     ),
   );
-}
-
-/// Card style for the redesigned TV show page: episodes drop the corner "E#"
-/// badge and carry their number in the subtitle instead. Absent everywhere
-/// else, so Home, libraries and the classic show page are unchanged.
-class TvDetailCardStyle extends InheritedWidget {
-  const TvDetailCardStyle({super.key, required super.child});
-
-  static bool isActive(BuildContext context) => context.dependOnInheritedWidgetOfExactType<TvDetailCardStyle>() != null;
-
-  @override
-  bool updateShouldNotify(TvDetailCardStyle oldWidget) => false;
 }

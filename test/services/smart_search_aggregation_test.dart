@@ -504,6 +504,24 @@ void main() {
       expect(await service.smartSearchAvailableOn('elsewhere'), isFalse);
     });
 
+    test('show page More like this blends the same sources for that show', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+      final show = testMediaItem(
+        id: 'last-played',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        title: 'Last Played',
+        serverId: '${client.serverId}',
+      );
+
+      final items = await service.blendedSimilarTitles(show);
+
+      expect([for (final item in items!) item.id], ['firefly', 'dark']);
+      expect(similarRequests.single.queryParameters['id'], 'last-played');
+    });
+
     test('no index means no rows', () async {
       final client = jellyfin();
       manager.debugRegisterClientForTesting(client);

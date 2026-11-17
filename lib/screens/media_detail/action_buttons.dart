@@ -237,7 +237,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       String? label,
       Color? foregroundColor,
     }) {
-      if (label != null && isTv && _tvModernLayoutActive) {
+      if (label != null && isTv && _tvPrettyActions) {
         return _tvLabeledActionButton(
           icon: icon,
           label: label,
@@ -573,7 +573,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     double tvScale, {
     bool showFocus = false,
   }) {
-    if (PlatformDetector.isTV() && _tvModernLayoutActive) {
+    if (PlatformDetector.isTV() && _tvPrettyActions) {
       return _tvLabeledActionButton(
         icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
         label: metadata.isWatched ? t.detailActions.markUnwatched : t.detailActions.markWatched,
@@ -618,7 +618,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             }
           }
 
-          if (PlatformDetector.isTV() && _tvModernLayoutActive) {
+          if (PlatformDetector.isTV() && _tvPrettyActions) {
             return _tvLabeledActionButton(
               icon: const AppIcon(Symbols.more_horiz_rounded, fill: 1),
               label: t.detailActions.more,

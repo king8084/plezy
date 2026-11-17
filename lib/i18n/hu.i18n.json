@@ -249,8 +249,6 @@
     "showSeasonPostersOnTabsDescription": "Megjeleníti az egyes évadok borítóját a fülük felett",
     "appleSearchKeyboard": "",
     "appleSearchKeyboardDescription": "",
-    "classicShowPage": "",
-    "classicShowPageDescription": "",
     "tvFullCardLayout": "Teljes TV-kártyák",
     "tvFullCardLayoutDescription": "Csak képet tartalmazó TV-kártyák használata, rájuk helyezett színésznevekkel",
     "focusGlow": "Kijelölési ragyogás",
@@ -861,17 +859,8 @@
     "markUnwatched": "",
     "more": "",
     "trailer": "",
-    "creator": "",
-    "castAndCrew": "",
     "resumeEpisode": "",
-    "playEpisode": "",
-    "timeLeftIn": "",
-    "request": "",
-    "inLibrary": "",
-    "simklPicks": "",
-    "notInLibrary": "",
-    "episodeShort": "",
-    "watchedOf": ""
+    "playEpisode": ""
   },
   "tooltips": {
     "findInShow": "",
