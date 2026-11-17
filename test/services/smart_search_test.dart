@@ -112,10 +112,13 @@ void main() {
       final seen = <Uri>[];
       final connection = testJellyfinConnection(machineId: 'srv');
       final smart = client((_) => jsonResponse({'ok': true, 'server_id': 'srv'}), seen: seen);
+      expect(smart.knownAvailable(connection), isFalse, reason: 'never probed yet');
       expect(await smart.isAvailable(connection), isTrue);
       expect(await smart.isAvailable(connection), isTrue);
       expect(seen.where((u) => u.path == '/v1/ping'), hasLength(1));
+      expect(smart.knownAvailable(connection), isTrue, reason: 'no network needed once probed');
       smart.markUnavailable(connection);
+      expect(smart.knownAvailable(connection), isFalse);
       expect(await smart.isAvailable(connection), isFalse);
     });
 

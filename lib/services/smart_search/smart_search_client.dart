@@ -66,6 +66,14 @@ class SmartSearchClient {
         });
   }
 
+  /// Whether a recent probe found the index for [connection] (no network).
+  bool knownAvailable(JellyfinConnection connection) {
+    final endpoint = endpointFor(connection);
+    if (endpoint == null) return false;
+    final cached = _probes['${connection.id}@$endpoint'];
+    return cached != null && cached.available && _clock().isBefore(cached.until);
+  }
+
   /// Forget a cached "available" after a failed request, so the next search
   /// re-checks instead of waiting on a service that went away.
   void markUnavailable(JellyfinConnection connection) {

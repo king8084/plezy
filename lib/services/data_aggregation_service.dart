@@ -942,6 +942,16 @@ class DataAggregationService {
     );
   }
 
+  /// Whether a visible server's smart-search index answered recently, so
+  /// search can afford a shorter typing pause (no network call).
+  bool get smartSearchKnownAvailable {
+    final smart = _smartSearch;
+    if (smart == null) return false;
+    return _serverManager.visibleOnlineClients.values.any(
+      (client) => client is JellyfinClient && smart.knownAvailable(client.connection),
+    );
+  }
+
   /// Meaning-based suggestions from the household smart-search index for
   /// [query] (the "AI" row): plot descriptions, famous scenes, vague memories.
   /// Empty when no connected server has an index. Slower than [searchAcrossServers]

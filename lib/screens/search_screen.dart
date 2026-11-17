@@ -129,6 +129,13 @@ class _SearchScreenState extends State<SearchScreen>
   @override
   String get searchDebugLabel => 'Search';
 
+  /// With the household index answering in milliseconds, half the shared
+  /// pause keeps typing responsive; plain server search keeps the default.
+  @override
+  Duration get searchDebounce => context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable
+      ? const Duration(milliseconds: 250)
+      : super.searchDebounce;
+
   @override
   Future<List<SearchHit>> performSearchQuery(String query) async {
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
