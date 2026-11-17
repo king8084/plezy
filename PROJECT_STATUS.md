@@ -237,8 +237,20 @@ Implemented and source/native CI validated:
   only when the index is known reachable. Flutter 3.47.1 installed in
   ~/development/flutter (analytics off). Full local release gate passed:
   8,662 tests, 7 skipped, plus all static checks.
+- Nov 17 owner requests (local, gate passed: 8,666 tests, 7 skipped): Home
+  Back on the TV rows returns to the first item of the first row before the
+  sidebar; player "Mark as played" button after Next (an episode plays the
+  next and marks the one left played; a movie or last episode is marked played
+  and the player closes; the stop report goes first). Movie behaviour (close
+  vs keep playing) awaits owner confirmation.
+- TV waking investigation: tvsign's log shows overnight installs (Nov 15 04:07,
+  04:43, 05:44; Nov 16 04:05 local). Each install wakes the Apple TV, which
+  turns the TV on via HDMI-CEC. tvsign does no automatic device contact
+  between installs (next renewal about a year out). Nothing in the app can wake a
+  sleeping Apple TV. Awaiting the owner's confirmation of timing. Rule:
+  install only after "build apple tv" and tell the owner first.
 - Next: owner decides on pushing (CI) and says "build apple tv" to try it on
-  the TV. Then owner checks Search, then playback.
+  the TV. Then owner checks Search, Home Back and Mark played, then playback.
 - Committed locally on this branch only (not pushed: avoid triggering CI
   until the owner decides). No Apple TV build; the owner's magic words
   "build apple tv" are still required.
