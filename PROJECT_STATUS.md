@@ -294,6 +294,13 @@ from the logs) is already fast enough, so it was left alone.
   anime/cartoon library keeps that group). Each source adds 1/(rank+5), so
   agreement ranks first. Both smart rows drop watched and partly watched
   titles (in progress, or any episode of a show played).
+- Show page Find (owner request, Nov 17): a Find button next to Shuffle on
+  shows whose server has the index opens a small search screen scoped to that
+  show (`/v1/smart?series=<id>`; the request is read as "<show> episode ...").
+  Results update while typing (meaning + text, ~0.2-0.5 s); Search adds the
+  language model and focuses the results; Select plays the episode. Live
+  check in Modern Family: "phil basketball" -> S1E20 Benched, S8E16 Basketball;
+  "haley goes to college" -> S4E2 Schooled.
 - Owner (Nov 17): animated shows in normal TV libraries stay in results; only
   the anime/cartoon libraries are excluded unless asked for (unchanged).
 - Search: "unwatched"/"haven't seen" requests filter by the viewer's own watch
@@ -301,8 +308,9 @@ from the logs) is already fast enough, so it was left alone.
 - Player: optional "Still watching?" after 2–5 automatic episodes, Off by
   default (Settings > Playback); remote input resets the count.
 - Logs: `/applog` on the diagnostics endpoint serves the redacted app log.
-- Full local gate at 7c167862c: GATE_EXIT=0, 8,685 Flutter tests passed, 7 skipped;
-  smartsearch Python tests 30/30. Earlier gate at 32e2a51a1: 8,682 passed,
+- Full local gate after Find: GATE_EXIT=0, 8,688 Flutter tests passed, 7 skipped;
+  smartsearch Python tests 31/31. Earlier at 7c167862c: 8,685 passed.
+  Work after the PR #1 merge is on the branch only (not yet in `main`). Earlier gate at 32e2a51a1: 8,682 passed,
   plus strict translations, isolated codegen, format, guards and analyzer;
   smartsearch Python tests 29/29. Two earlier runs failed the codegen check
   because a batch commit had run `dart format` over 33 generated `.g.dart`
