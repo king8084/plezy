@@ -476,6 +476,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final ValueNotifier<MediaItem?> _tvModernBackdropItem = ValueNotifier(null);
   Timer? _tvModernBackdropTimer;
   bool _tvModernBackdropListening = false;
+  String? _tvModernLayoutLogged;
   String? _findInShowCheckedFor;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
