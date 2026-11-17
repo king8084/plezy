@@ -8,8 +8,9 @@
   Build 23 failed on a Codemagic DNS error while fetching the engine; one
   justified retry. Owner checks of Search, Home Back, Mark played and playback
   are pending. Build 22 (`6f2026663`) IPAs are backed up as `*-before-d92d0d9`.
-- Draft release PR into the owner's fork: https://github.com/king8084/plezy/pull/1.
-  Both branches belong to `king8084/plezy`; upstream is untouched.
+- PR https://github.com/king8084/plezy/pull/1 merged into the fork's `main` on
+  Nov 17 at the owner's request (merge commit `416683ba6`); the working branch
+  is kept for the Codemagic workflow. Upstream is untouched.
 - Previous installed sources `73439a226` (build 21), `d627ca4c7` and `22f5fc8bb`, with
   their IPA backups, are preserved. Owner approved the earlier layouts.
 - Build 22 signed and installed in place successfully; no deletion/uninstall.
@@ -284,12 +285,24 @@ from the logs) is already fast enough, so it was left alone.
   episodes count as their show). Watched titles and hidden libraries drop out.
   Bounded at 4 s per Home pass; a miss keeps rows already shown. Server
   endpoints `/v1/top` and `/v1/similar` are live in `plezy-smartsearch`.
+- "Because you watched <title>": seed is the viewer's last played movie or
+  show (episode -> its show). Four best-first sources are blended: the index's
+  meaning-based neighbours (`/v1/similar`), Jellyfin's own Similar items,
+  Simkl recommendations and Trakt related titles (when connected). Simkl/Trakt
+  and Jellyfin results map to library titles through `/v1/resolve`
+  (IMDb/TMDB/TVDB ids and item ids, same library scope; a seed from an
+  anime/cartoon library keeps that group). Each source adds 1/(rank+5), so
+  agreement ranks first. Both smart rows drop watched and partly watched
+  titles (in progress, or any episode of a show played).
+- Owner (Nov 17): animated shows in normal TV libraries stay in results; only
+  the anime/cartoon libraries are excluded unless asked for (unchanged).
 - Search: "unwatched"/"haven't seen" requests filter by the viewer's own watch
   state; a dictation (mic) button opens the system keyboard for Siri.
 - Player: optional "Still watching?" after 2–5 automatic episodes, Off by
   default (Settings > Playback); remote input resets the count.
 - Logs: `/applog` on the diagnostics endpoint serves the redacted app log.
-- Full local gate at 32e2a51a1: GATE_EXIT=0, 8,682 Flutter tests passed, 7 skipped,
+- Full local gate at 7c167862c: GATE_EXIT=0, 8,685 Flutter tests passed, 7 skipped;
+  smartsearch Python tests 30/30. Earlier gate at 32e2a51a1: 8,682 passed,
   plus strict translations, isolated codegen, format, guards and analyzer;
   smartsearch Python tests 29/29. Two earlier runs failed the codegen check
   because a batch commit had run `dart format` over 33 generated `.g.dart`
@@ -305,4 +318,4 @@ from the logs) is already fast enough, so it was left alone.
 - Next: owner reviews the enhancement batch; build only on "build app".
   Owner visual/settings/playback checks of build 24 remain open.
   Diagnose inconsistent iOS speed results separately; native behavior unchanged.
-  PR #1/main approval remains pending. Recovery receipts/bundles remain private.
+  Recovery receipts/bundles remain private.
