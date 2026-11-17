@@ -841,7 +841,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "",
+    "fieldHint": "",
+    "hint": "",
+    "noResults": "",
+    "failed": ""
+  },
   "tooltips": {
+    "findInShow": "",
     "shufflePlay": "Blanda uppspelning",
     "playTrailer": "Spela trailer",
     "markAsWatched": "Markera som sedd",

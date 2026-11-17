@@ -103,6 +103,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import '../widgets/episode_card.dart';
+import 'find_in_show_screen.dart';
 import '../widgets/fitting_title_text.dart';
 import '../utils/media_navigation_helper.dart';
 import '../widgets/focusable_tab_chip.dart';
@@ -457,6 +458,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   SimklCatalogSource? _simklRecommendationsSource;
   int _simklRecommendationsGeneration = 0;
   MediaHub? _simklRecommendationsHub;
+
+  /// Show page Find: whether this show's server has a smart-search index,
+  /// checked once per show (see [_syncFindInShowAvailability]).
+  bool _findInShowAvailable = false;
+  String? _findInShowCheckedFor;
   final GlobalKey _watchlistButtonKey = GlobalKey();
   bool _watchlistMutationInFlight = false;
 

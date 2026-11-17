@@ -838,7 +838,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "",
+    "fieldHint": "",
+    "hint": "",
+    "noResults": "",
+    "failed": ""
+  },
   "tooltips": {
+    "findInShow": "",
     "shufflePlay": "随机播放",
     "playTrailer": "播放预告片",
     "markAsWatched": "标记为已观看",

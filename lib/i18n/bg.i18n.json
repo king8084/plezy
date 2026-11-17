@@ -841,7 +841,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "",
+    "fieldHint": "",
+    "hint": "",
+    "noResults": "",
+    "failed": ""
+  },
   "tooltips": {
+    "findInShow": "",
     "shufflePlay": "Разбъркано възпроизвеждане",
     "playTrailer": "Пусни трейлър",
     "markAsWatched": "Маркирай като гледано",

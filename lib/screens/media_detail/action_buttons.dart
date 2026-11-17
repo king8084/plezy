@@ -292,6 +292,27 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           )
         : null;
 
+    _syncFindInShowAvailability(metadata);
+    void openFind() => unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => FindInShowScreen(show: metadata, client: _getMediaClientForMetadata(context)),
+        ),
+      ),
+    );
+    final findAction = metadata.isShow && _findInShowAvailable && !widget.isOffline
+        ? FocusableAction(
+            debugLabel: 'detail_find',
+            onPressed: openFind,
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: openFind,
+              icon: const AppIcon(Symbols.manage_search_rounded, fill: 1),
+              tooltip: t.tooltips.findInShow,
+            ),
+          )
+        : null;
+
     final downloadAction = !widget.isOffline && !PlatformDetector.isAppleTV()
         ? FocusableAction(
             debugLabel: 'detail_download',
@@ -362,6 +383,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       ?versionAction,
       ?trailerAction,
       ?shuffleAction,
+      ?findAction,
       ?downloadAction,
       watchedAction,
       ?watchlistAction,
@@ -852,6 +874,21 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     return _DownloadButtonSpec(
       icon: const AppIcon(Symbols.download_rounded, fill: 1),
       tooltip: t.downloads.downloadNow,
+    );
+  }
+
+  /// Find needs the show's server to have a smart-search index; check once
+  /// per show and rebuild when the answer arrives.
+  void _syncFindInShowAvailability(MediaItem metadata) {
+    if (!metadata.isShow || widget.isOffline || _findInShowCheckedFor == metadata.id) return;
+    _findInShowCheckedFor = metadata.id;
+    final checkedFor = metadata.id;
+    final service = context.read<MultiServerProvider>().aggregationService;
+    unawaited(
+      service.smartSearchAvailableOn(metadata.serverId).then((available) {
+        if (!mounted || _findInShowCheckedFor != checkedFor || available == _findInShowAvailable) return;
+        setStateIfMounted(() => _findInShowAvailable = available);
+      }),
     );
   }
 }

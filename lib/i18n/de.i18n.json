@@ -841,7 +841,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "",
+    "fieldHint": "",
+    "hint": "",
+    "noResults": "",
+    "failed": ""
+  },
   "tooltips": {
+    "findInShow": "",
     "shufflePlay": "Zufallswiedergabe",
     "playTrailer": "Trailer abspielen",
     "markAsWatched": "Als gesehen markieren",

@@ -42,8 +42,8 @@ class SearchScreen extends StatefulWidget {
 
   /// TV keyboard for the search field: Plezy's docked overlay keeps results
   /// visible and updating while typing (the Apple TV system keyboard covers
-  /// the whole screen). Tests of the platform-keyboard flow switch it back.
-  @visibleForTesting
+  /// the whole screen). Shared by the show page's Find. Tests of the
+  /// platform-keyboard flow switch it back.
   static TvTextInputPresentation keyboardPresentation = TvTextInputPresentation.flutterOverlay;
 
   @override

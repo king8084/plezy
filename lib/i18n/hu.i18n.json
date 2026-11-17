@@ -841,7 +841,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "",
+    "fieldHint": "",
+    "hint": "",
+    "noResults": "",
+    "failed": ""
+  },
   "tooltips": {
+    "findInShow": "",
     "shufflePlay": "Véletlenszerű lejátszás",
     "playTrailer": "Előzetes lejátszása",
     "markAsWatched": "Megjelölés megtekintettként",

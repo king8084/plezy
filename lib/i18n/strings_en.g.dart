@@ -55,6 +55,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$mediaMenu$en mediaMenu = Translations$mediaMenu$en.internal(_root);
 	late final Translations$rateSheet$en rateSheet = Translations$rateSheet$en.internal(_root);
 	late final Translations$accessibility$en accessibility = Translations$accessibility$en.internal(_root);
+	late final Translations$findInShow$en findInShow = Translations$findInShow$en.internal(_root);
 	late final Translations$tooltips$en tooltips = Translations$tooltips$en.internal(_root);
 	late final Translations$audioTracks$en audioTracks = Translations$audioTracks$en.internal(_root);
 	late final Translations$videoControls$en videoControls = Translations$videoControls$en.internal(_root);
@@ -2346,6 +2347,30 @@ class Translations$accessibility$en {
 	String get valueShort => 'V';
 }
 
+// Path: findInShow
+class Translations$findInShow$en {
+	Translations$findInShow$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Find in ${title}'
+	String title({required Object title}) => 'Find in ${title}';
+
+	/// en: 'Describe the episode'
+	String get fieldHint => 'Describe the episode';
+
+	/// en: 'Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.'
+	String get hint => 'Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.';
+
+	/// en: 'No matching episodes'
+	String get noResults => 'No matching episodes';
+
+	/// en: 'Find isn't available right now'
+	String get failed => 'Find isn\'t available right now';
+}
+
 // Path: tooltips
 class Translations$tooltips$en {
 	Translations$tooltips$en.internal(this._root);
@@ -2353,6 +2378,9 @@ class Translations$tooltips$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'Find an episode'
+	String get findInShow => 'Find an episode';
 
 	/// en: 'Shuffle play'
 	String get shufflePlay => 'Shuffle play';
@@ -9096,6 +9124,12 @@ extension on Translations {
 			'accessibility.hueShort' => 'H',
 			'accessibility.saturationShort' => 'S',
 			'accessibility.valueShort' => 'V',
+			'findInShow.title' => ({required Object title}) => 'Find in ${title}',
+			'findInShow.fieldHint' => 'Describe the episode',
+			'findInShow.hint' => 'Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.',
+			'findInShow.noResults' => 'No matching episodes',
+			'findInShow.failed' => 'Find isn\'t available right now',
+			'tooltips.findInShow' => 'Find an episode',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
@@ -9325,14 +9359,14 @@ extension on Translations {
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
 			'profiles.removeConnectionTitle' => 'Remove connection?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
 			'profiles.pinProtectionLabel' => 'PIN protection',
@@ -9839,14 +9873,14 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.liveStreamFailed' => 'Live stream failed',
 			'liveTv.unknownProgram' => 'Unknown Program',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.unknownHub' => 'Unknown',
 			'liveTv.unknownError' => 'Unknown error',
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.premiereBadge' => 'NEW',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
@@ -10353,14 +10387,14 @@ extension on Translations {
 			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
 			'videoSettings.zoom' => 'Zoom',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',

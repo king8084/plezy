@@ -1011,6 +1011,44 @@ class DataAggregationService {
     return const [];
   }
 
+  /// Whether [serverId]'s household smart-search index answers (the show
+  /// page's Find needs it). Cheap after the first probe.
+  Future<bool> smartSearchAvailableOn(String? serverId) async {
+    final smart = _smartSearch;
+    final client = serverId == null ? null : _serverManager.onlineClients[serverId];
+    if (smart == null || client is! JellyfinClient) return false;
+    try {
+      return await smart.isAvailable(client.connection);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Episodes of [show] matching a description ("phil basketball"), best
+  /// first, loaded for this viewer. [recall] also asks the language model
+  /// (slower; for a submitted request rather than every keystroke).
+  Future<List<SmartSuggestion>> findInShow(
+    MediaItem show,
+    String query, {
+    bool recall = false,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    final serverId = show.serverId;
+    final client = serverId == null ? null : _serverManager.onlineClients[serverId];
+    if (smart == null || client is! JellyfinClient || query.trim().isEmpty) return const [];
+    final response = await smart.smart(client.connection, query.trim(), recall: recall, seriesId: show.id);
+    abort?.throwIfAborted();
+    final hits = {for (final hit in response.results) hit.id: hit};
+    final loaded = await client.fetchItemsInOrder([for (final hit in response.results) hit.id], abort: abort);
+    abort?.throwIfAborted();
+    return [
+      for (final item in loaded)
+        if (hits[item.id] case final hit? when hit.match != SmartSearchMatch.rejected)
+          SmartSuggestion(item: item, match: hit.match, recalled: hit.recalled),
+    ];
+  }
+
   /// Home rows built from the household smart-search index: "Top rated you
   /// haven't watched" and "Because you watched <title>" (seeded by the user's
   /// most recent play). "Because you watched" blends the index's meaning-based

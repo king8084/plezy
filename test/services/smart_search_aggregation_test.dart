@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/utils/external_ids.dart';
@@ -15,6 +16,7 @@ import 'package:plezy/services/smart_search/smart_search_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
+import '../test_helpers/media_items.dart';
 
 const _views = [
   {'Id': 'lib-movies', 'Name': 'Movies', 'CollectionType': 'movies', 'Type': 'CollectionFolder'},
@@ -286,6 +288,7 @@ void main() {
   group('smart Home rows', () {
     final similarRequests = <Uri>[];
     final resolveRequests = <Uri>[];
+    final smartRequests = <Uri>[];
     SmartSearchClient homeSmart() => SmartSearchClient(
       httpClientFactory: () => MockClient((request) async {
         final path = request.url.path;
@@ -317,6 +320,16 @@ void main() {
                 'title': 'Kids Space Movie',
                 'libraries': ['lib-movies'],
               },
+            ],
+          });
+        }
+        if (path == '/v1/smart') {
+          smartRequests.add(request.url);
+          return jsonResponse({
+            'results': [
+              {'id': 'firefly', 'kind': 'Episode', 'title': 'Firefly', 'match': 'possible'},
+              {'id': 'dark', 'kind': 'Episode', 'title': 'Dark', 'match': 'rejected'},
+              {'id': 'kids-movie', 'kind': 'Episode', 'title': 'Kids', 'match': 'confirmed'},
             ],
           });
         }
@@ -367,6 +380,7 @@ void main() {
     setUp(() {
       similarRequests.clear();
       resolveRequests.clear();
+      smartRequests.clear();
     });
 
     test('top rated and because-you-watched rows drop watched titles', () async {
@@ -466,6 +480,28 @@ void main() {
         ['b', 'c', 'a', 'd'],
       );
       expect(DataAggregationService.blendRecommendations([]), isEmpty);
+    });
+
+    test('find in show searches that show only and drops rejected matches', () async {
+      final client = jellyfin();
+      manager.debugRegisterClientForTesting(client);
+      final service = DataAggregationService(manager, smartSearch: homeSmart());
+      final show = testMediaItem(
+        id: 'modern-family',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        title: 'Modern Family',
+        serverId: '${client.serverId}',
+      );
+
+      final found = await service.findInShow(show, ' phil basketball ', recall: true);
+
+      expect([for (final s in found) s.item.id], ['firefly', 'kids-movie']);
+      expect(found.last.match, SmartSearchMatch.confirmed);
+      final q = smartRequests.single.queryParameters;
+      expect((q['q'], q['series'], q['recall']), ('phil basketball', 'modern-family', '1'));
+      expect(await service.smartSearchAvailableOn('${client.serverId}'), isTrue);
+      expect(await service.smartSearchAvailableOn('elsewhere'), isFalse);
     });
 
     test('no index means no rows', () async {

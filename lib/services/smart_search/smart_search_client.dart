@@ -105,12 +105,19 @@ class SmartSearchClient {
       _get(connection, '/v1/search', {'q': query, 'limit': '$limit'}, instantTimeout);
 
   /// Meaning-based results (optionally with the model's title recall).
+  /// [seriesId] searches only that show's episodes (the show page's Find).
   Future<SmartSearchResponse> smart(
     JellyfinConnection connection,
     String query, {
     int limit = 20,
     bool recall = true,
-  }) => _get(connection, '/v1/smart', {'q': query, 'limit': '$limit', 'recall': recall ? '1' : '0'}, smartTimeout);
+    String? seriesId,
+  }) => _get(connection, '/v1/smart', {
+    'q': query,
+    'limit': '$limit',
+    'recall': recall ? '1' : '0',
+    'series': ?seriesId,
+  }, smartTimeout);
 
   /// The highest IMDb-rated movies and shows in the index (Home's "Top rated
   /// you haven't watched"; the caller removes what the viewer has watched).

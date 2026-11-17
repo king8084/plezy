@@ -841,7 +841,15 @@
     "saturationShort": "S",
     "valueShort": "V"
   },
+  "findInShow": {
+    "title": "Find in ${title}",
+    "fieldHint": "Describe the episode",
+    "hint": "Describe what happens, for example who is in it and what they do. Search also asks the AI for famous episodes.",
+    "noResults": "No matching episodes",
+    "failed": "Find isn't available right now"
+  },
   "tooltips": {
+    "findInShow": "Find an episode",
     "shufflePlay": "Shuffle play",
     "playTrailer": "Play trailer",
     "markAsWatched": "Mark as watched",
