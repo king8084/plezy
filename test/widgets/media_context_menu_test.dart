@@ -1,3 +1,4 @@
+import 'package:plezy/providers/removed_continue_watching_provider.dart';
 import '../test_helpers/paged_fakes.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -13,6 +14,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
+import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
 import 'package:plezy/media/ids.dart';
@@ -69,6 +71,188 @@ import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
+  testWidgets('episode menu opens immediately while parent favorite lookup is pending', (tester) async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    final response = Completer<http.Response>();
+    final key = await _pumpJellyfinItemMenu(
+      tester,
+      isAdministrator: false,
+      item: testMediaItem(
+        id: 'e16',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        grandparentId: 'show',
+        serverId: 'srv-1',
+      ),
+      handler: (request) =>
+          request.url.path.endsWith('/show') ? response.future : Future.value(http.Response('{}', 200)),
+    );
+    key.currentState!.showContextMenu(key.currentContext!);
+    await tester.pumpAndSettle();
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+    expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    String? focusedLabel() => FocusManager.instance.primaryFocus?.context
+        ?.findAncestorWidgetOfExactType<AppMenuItemTile<String>>()
+        ?.item
+        .label;
+    expect(focusedLabel(), t.mediaMenu.rate);
+    response.complete(
+      http.Response(
+        jsonEncode({
+          'Id': 'show',
+          'Name': 'Show',
+          'Type': 'Series',
+          'UserData': {'IsFavorite': true},
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(t.mediaMenu.unfavorite), findsOneWidget);
+    expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+    expect(focusedLabel(), t.mediaMenu.rate, reason: 'late entries must not steal the focused action');
+  });
+
+  for (final initialFavorite in [false, true]) {
+    testWidgets('favorite menu toggles and reopens correctly from $initialFavorite', (tester) async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      final mutations = <String>[];
+      final item = testMediaItem(
+        id: 'movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: 'srv-1',
+      ).copyWith(isFavorite: initialFavorite);
+      final key = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: false,
+        item: item,
+        handler: (request) async {
+          if (request.method != 'GET') mutations.add(request.method);
+          return http.Response('{}', 200);
+        },
+      );
+      await _openMenu(tester, key);
+      final first = initialFavorite ? t.mediaMenu.unfavorite : t.mediaMenu.addToFavorites;
+      final second = initialFavorite ? t.mediaMenu.addToFavorites : t.mediaMenu.unfavorite;
+      expect(find.text(first), findsOneWidget);
+      await tester.tap(find.text(first));
+      await tester.pumpAndSettle();
+      expect(mutations, [initialFavorite ? 'DELETE' : 'POST']);
+      await _openMenu(tester, key);
+      expect(find.text(second), findsOneWidget);
+    });
+  }
+  testWidgets('failed favorite write keeps Add to favorites on the next open', (tester) async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    final key = await _pumpJellyfinItemMenu(
+      tester,
+      isAdministrator: false,
+      item: testMediaItem(id: 'movie', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+      handler: (request) async => http.Response('{}', request.method == 'POST' ? 500 : 200),
+    );
+    await _openMenu(tester, key);
+    await tester.tap(find.text(t.mediaMenu.addToFavorites));
+    await tester.pumpAndSettle();
+    await _openMenu(tester, key);
+    expect(find.text(t.mediaMenu.addToFavorites), findsOneWidget);
+    expect(find.text(t.mediaMenu.unfavorite), findsNothing);
+  });
+  for (final scenario in [(MediaKind.episode, true), (MediaKind.episode, false), (MediaKind.season, false)]) {
+    testWidgets('Favorites targets show from ${scenario.$1}, Continue Watching ${scenario.$2}', (tester) async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+      var favorite = false;
+      final mutations = <String>[];
+      final item = testMediaItem(
+        id: 'ep',
+        backend: MediaBackend.jellyfin,
+        kind: scenario.$1,
+        parentId: scenario.$1 == MediaKind.season ? 'show' : 'season',
+        serverId: 'srv-1',
+        grandparentId: 'show',
+        grandparentTitle: 'Show',
+      );
+      final key = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: false,
+        item: item,
+        isInContinueWatching: scenario.$2,
+        handler: (request) async {
+          if (request.method != 'GET') {
+            mutations.add(request.url.path);
+            favorite = request.method == 'POST';
+          }
+          return http.Response(
+            jsonEncode({
+              'Id': 'show',
+              'Name': 'Show',
+              'Type': 'Series',
+              'UserData': {'IsFavorite': favorite},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        },
+      );
+      await _openMenu(tester, key);
+      await tester.tap(find.text(t.mediaMenu.addToFavorites));
+      await tester.pumpAndSettle();
+      expect(mutations.single, endsWith('/show'));
+      await _openMenu(tester, key);
+      expect(find.text(t.mediaMenu.unfavorite), findsOneWidget);
+      await tester.tap(find.text(t.mediaMenu.unfavorite));
+      await tester.pumpAndSettle();
+      expect(favorite, isFalse);
+      expect(mutations, everyElement(endsWith('/show')));
+    });
+  }
+  testWidgets('Jellyfin Continue Watching menu removes a whole show locally without server mutations', (tester) async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+    final removed = RemovedContinueWatchingProvider(profileId: 'alice');
+    await removed.ensureInitialized();
+    addTearDown(removed.dispose);
+    final methods = <String>[];
+    final item = testMediaItem(
+      id: 'e14',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 14',
+      serverId: 'srv-1',
+      grandparentId: 'modern-family',
+      grandparentTitle: 'Modern Family',
+    );
+    final key = await _pumpJellyfinItemMenu(
+      tester,
+      isAdministrator: false,
+      item: item,
+      removed: removed,
+      isInContinueWatching: true,
+      handler: (request) async {
+        methods.add(request.method);
+        return http.Response('{}', 200);
+      },
+    );
+    await _openMenu(tester, key);
+    expect(find.text(t.mediaMenu.removeFromContinueWatching), findsOneWidget);
+    await tester.tap(find.text(t.mediaMenu.removeFromContinueWatching));
+    await tester.pumpAndSettle();
+    expect(removed.entries.single.item.id, 'modern-family');
+    expect(methods.where((method) => method != 'GET'), isEmpty);
+  });
+
   testWidgets('cancelled media menu restores its live captured item', (tester) async {
     final destination = FocusNode();
     addTearDown(destination.dispose);
@@ -350,6 +534,8 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
+      expect(find.text(t.mediaMenu.addToFavorites), findsNothing);
+      expect(find.text(t.mediaMenu.unfavorite), findsNothing);
       expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
       expect(requests.where((uri) => uri.queryParameters['Fields'] == 'CanDelete'), isEmpty);
     });
@@ -363,7 +549,11 @@ void main() {
 
       menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
       await tester.pump();
-      expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the permission answer');
+      expect(
+        find.text(t.mediaMenu.fileInfo),
+        findsOneWidget,
+        reason: 'ordinary actions do not wait for the permission answer',
+      );
 
       await tester.pump(MediaServerTimeouts.jellyfinDeletePermission + const Duration(milliseconds: 1));
       await tester.pumpAndSettle();
@@ -399,6 +589,7 @@ void main() {
       );
 
       await _openMenu(tester, menuKey);
+      await tester.ensureVisible(find.text(t.common.addTo));
       await tester.tap(find.text(t.common.addTo));
       await tester.pumpAndSettle();
 
@@ -425,6 +616,7 @@ void main() {
       );
 
       await _openMenu(tester, menuKey);
+      await tester.ensureVisible(find.text(t.common.addTo));
       await tester.tap(find.text(t.common.addTo));
       await tester.pumpAndSettle();
 
@@ -1943,6 +2135,9 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
   bool serverOnline = true,
   List<Uri>? requests,
 
+  RemovedContinueWatchingProvider? removed,
+  bool isInContinueWatching = false,
+
   /// Push the menu onto a route above a home screen, so the navigator has
   /// something below the menu that a stray pop could reach.
   bool onPushedRoute = false,
@@ -1976,6 +2171,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
       child: MediaContextMenu(
         key: menuKey,
         item: item,
+        isInContinueWatching: isInContinueWatching,
         child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
       ),
     ),
@@ -1984,6 +2180,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
     TranslationProvider(
       child: MultiProvider(
         providers: [
+          if (removed != null) ChangeNotifierProvider<RemovedContinueWatchingProvider>.value(value: removed),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
           ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),

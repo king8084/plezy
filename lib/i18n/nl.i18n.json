@@ -222,6 +222,9 @@
     "gridView": "Raster",
     "listView": "Lijst",
     "showHeroSection": "Toon hoofdsectie",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Actie voor 'Doorgaan met kijken'",
     "continueWatchingPlay": "Afspelen",
     "continueWatchingDetails": "Details openen",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Ondertitelopmaak",
     "subtitleStylingDescription": "Pas de weergave van ondertitels aan",
     "smallSkipDuration": "Korte sprong",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Lange sprong",
     "rewindOnResume": "Terugspoelen bij hervatten",
     "secondsUnit": "${seconds} seconden",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Dynamisch bereik afstemmen",
     "matchDynamicRangeDescription": "Schakel HDR in voor HDR-content en daarna terug naar SDR",
     "displaySwitchDelay": "Vertraging bij schermwisseling",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Getunnelde weergave",
     "tunneledPlaybackDescription": "Gebruik videotunneling. Schakel uit als HDR-afspelen zwart beeld geeft of beweging hapert.",
     "audioPassthrough": "Audio-doorvoer",
@@ -484,6 +491,7 @@
     "display": "Weergave",
     "libraryAndCards": "Bibliotheek en kaarten",
     "homeScreen": "Startscherm",
+    "homeTextSize": "",
     "navigation": "Navigatie",
     "window": "Venster",
     "liveTv": "Live-tv",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Overal",
     "playerScopeLibrary": "Per bibliotheek",
     "playerScopeTitle": "Per serie of film",
-    "exportDialogTitle": "Plezy-instellingen exporteren"
+    "exportDialogTitle": "Plezy-instellingen exporteren",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Ingebouwd",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Probeer een andere zoekterm",
     "searchYourMedia": "Zoek in je media",
     "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in",
-    "people": "Personen"
+    "people": "Personen",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Details bekijken",
     "goToSeries": "Ga naar serie",
     "shufflePlay": "Willekeurig afspelen",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Willekeurig afspelen is offline niet beschikbaar",
     "fileInfo": "Bestandsinformatie",
     "deleteEpisodeFromServer": "Aflevering verwijderen van server",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Afspelen vanaf het begin",
     "playVersion": "Versie afspelen..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Geforceerd)",
     "osdSubtitlesOff": "Ondertitels: uit",
     "osdSubtitles": "Ondertitels: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Ontdekken",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "Tv-serie",
     "minutesLeft": "nog ${minutes} min",
+    "durationLeft": "",
     "moreLikeThis": "Meer zoals dit",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titels"
@@ -1220,7 +1272,9 @@
       "birthplace": "Geboorteplaats",
       "dateWithAge": "${date} (${age} jaar)",
       "dateWithAgeAtDeath": "${date} (op ${age}-jarige leeftijd)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Logbestanden wissen",
     "copyLogs": "Logbestanden kopiëren",
-    "uploadLogs": "Logbestanden uploaden"
+    "uploadLogs": "Logbestanden uploaden",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kon niet starten",

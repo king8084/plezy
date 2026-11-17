@@ -61,6 +61,12 @@ class GridLayoutConstants {
 }
 
 class TvLayoutConstants {
+  static const heroTextShadows = [
+    Shadow(color: Color(0xE6000000), offset: Offset(-1, 0)),
+    Shadow(color: Color(0xE6000000), offset: Offset(1, 0)),
+    Shadow(color: Color(0xE6000000), offset: Offset(0, -1)),
+    Shadow(color: Color(0xE6000000), offset: Offset(0, 1)),
+  ];
   static const double horizontalInset = 72;
   static const double shelfHorizontalInset = 56;
   static const double shelfVerticalGap = 32;
@@ -75,4 +81,47 @@ class TvLayoutConstants {
   static double scaleForSize(Size size) => scaleForHeight(size.height);
 
   static double scaleOf(BuildContext context) => scaleForSize(MediaQuery.sizeOf(context));
+}
+
+/// The compact spotlight reserves its reading space before sizing the rail.
+/// Poster density and synopsis length must never change header typography.
+class TvSpotlightLayout {
+  static const double summaryFontSize = 14;
+  static const double summaryLineHeight = 1.34;
+  static const int summaryLines = 3;
+
+  static double maxRailHeight(
+    Size size, {
+    required double textScale,
+    bool episodeTitle = true,
+    bool technicalRow = true,
+  }) {
+    final scale = (size.height / 1080).clamp(0.5, 1.35).toDouble();
+    final top = (size.height * 0.075).clamp(64 * scale, 120 * scale);
+    return (size.height -
+            top -
+            8 * scale -
+            infoHeight(
+              scale: TvLayoutConstants.scaleForSize(size),
+              textScale: textScale,
+              episodeTitle: episodeTitle,
+              technicalRow: technicalRow,
+            ))
+        .clamp(0, size.height)
+        .toDouble();
+  }
+
+  static double infoHeight({
+    required double scale,
+    required double textScale,
+    bool episodeTitle = true,
+    bool technicalRow = true,
+  }) =>
+      scale *
+      (TvLayoutConstants.compactHeroLogoHeight +
+          20 +
+          (episodeTitle ? 18 * textScale * 1.3 + 4 : 0) +
+          18 * textScale * 1.3 +
+          (technicalRow ? 6 + 16 * textScale * 1.3 + 8 : 0) +
+          summaryLines * summaryFontSize * summaryLineHeight);
 }

@@ -40,7 +40,6 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
-import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
 import 'package:plezy/widgets/rasterized_gradient.dart';
@@ -86,6 +85,7 @@ void main() {
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
       title: 'Movie 1',
+      summary: 'A full description that stays available in Read more even when its Home preview is truncated. ' * 12,
       serverId: 'server_1',
       serverName: 'Server',
     );
@@ -178,37 +178,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TvBrowseRail), findsOneWidget);
 
-    final scale = TvLayoutConstants.scaleForSize(const Size(1280, 720));
-    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
     final spotlightBackground = tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground));
-    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + currentForegroundLeft, 0.001));
-
-    final railHeight = TvBrowseRailLayout.estimateHeight(
-      size: const Size(foregroundWidth, 720),
-      hubs: [hub],
-      density: LibraryDensity.max,
-      episodePosterMode: settings.read(SettingsService.episodePosterMode),
-      fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
-      tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-      widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
-    );
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (720 * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
-    final maxSpotlightBottom = (720 - ((720 * 0.075).clamp(64.0 * scale, 120.0 * scale)) - (96 * scale))
-        .clamp(0.0, double.infinity)
-        .toDouble();
-    final expectedSpotlightBottom = desiredSpotlightBottom > maxSpotlightBottom
-        ? maxSpotlightBottom
-        : desiredSpotlightBottom;
-    expect(spotlightBackground.contentBottom, closeTo(expectedSpotlightBottom, 0.001));
+    expect(spotlightBackground.contentLeft, closeTo(18 + currentForegroundLeft, 0.001));
+    expect(spotlightBackground.contentBottom, greaterThan(tester.getSize(find.byType(TvBrowseRail)).height));
+    final preview = find.byKey(const ValueKey('tv_spotlight_summary'));
+    expect(tester.widget<Text>(preview).maxLines, 3);
+    expect(tester.getBottomLeft(preview).dy, lessThan(tester.getTopLeft(find.byType(TvBrowseRail)).dy));
 
     // The rail no longer receives the bleed via constructor (a per-flip param
     // would rebuild the whole rail); its bleed layer reads the scope's
     // sideNavigationWidth itself. Assert the rendered bleed position instead.
     final browseRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(browseRail.onActivateItem, isNotNull, reason: 'Apple TV Select opens details through its own handler');
+    await settings.write(SettingsService.homeTextSize, 130);
+    await tester.pump();
+    expect(tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground)).textScale, 1.3);
     expect(browseRail.backgroundBleedLeft, isNull);
     final railBleedPositions = tester
         .widgetList<Positioned>(find.descendant(of: find.byType(TvBrowseRail), matching: find.byType(Positioned)))
@@ -247,6 +231,17 @@ void main() {
     await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+    tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    final fullDescription = find.descendant(of: find.byType(AlertDialog), matching: find.text(item.summary!));
+    expect(fullDescription, findsOneWidget);
+    expect(tester.widget<Text>(fullDescription).maxLines, isNull);
+    expect(
+      tester.widget<Text>(fullDescription).style!.fontSize,
+      greaterThan(tester.widget<Text>(preview).style!.fontSize!),
+    );
   });
   testWidgets('startup prime does not duplicate the load DiscoverScreen started in initState', (tester) async {
     // DiscoverScreen.initState fires load(); main_screen._primeOnlineServices

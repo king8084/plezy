@@ -12,6 +12,8 @@ import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
+import '../utils/media_quality_labels.dart';
+import '../utils/media_runtime_label.dart';
 import '../services/settings_service.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import 'cycling_media_backdrop.dart';
@@ -19,11 +21,18 @@ import 'fitting_title_text.dart';
 import 'fitted_metadata_line.dart';
 import 'settings_builder.dart';
 import 'media_rating_badge.dart';
+import 'media_technical_badges.dart';
 import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import 'rasterized_gradient.dart';
 
 class TvSpotlightBackground extends StatelessWidget {
   final MediaItem? item;
+
+  /// Full item or parent-series metadata for missing scores, genres and age rating.
+  final MediaItem? ratingsFallback;
+
+  /// Full metadata for this exact file; series metadata must not supply tags.
+  final MediaItem? technicalItem;
   final MediaServerClient? client;
   final bool hideSpoilers;
   final double contentBottom;
@@ -31,6 +40,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final double? contentLeft;
   final bool compact;
   final bool showInfo;
+  final double textScale;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
 
@@ -40,6 +50,8 @@ class TvSpotlightBackground extends StatelessWidget {
   const TvSpotlightBackground({
     super.key,
     required this.item,
+    this.ratingsFallback,
+    this.technicalItem,
     required this.client,
     this.hideSpoilers = false,
     this.contentBottom = 360,
@@ -47,6 +59,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.contentLeft,
     this.compact = false,
     this.showInfo = true,
+    this.textScale = 1,
     this.localArtworkPathResolver,
     this.allowNetwork = true,
     this.metadataTrailing,
@@ -110,13 +123,13 @@ class TvSpotlightBackground extends StatelessWidget {
             if (media != null && showInfo)
               Positioned(
                 left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: MediaQuery.sizeOf(context).width * 0.43,
+                right: (24 * _scale(context)).clamp(18.0, 40.0).toDouble(),
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
                 // saveLayers are bounded to the text region, not the screen.
                 child: AnimatedSwitcher(
-                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
+                  duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 120)),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeOutCubic,
                   // Expand instead of the default loose centered Stack so the
@@ -127,18 +140,15 @@ class TvSpotlightBackground extends StatelessWidget {
                     key: ValueKey(media.globalKey),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media, constraints.maxWidth));
-                        }
-
-                        return Align(
-                          alignment: .bottomLeft,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: .bottomLeft,
-                            child: SizedBox(
-                              width: constraints.maxWidth,
-                              child: _buildInfo(context, media, constraints.maxWidth),
+                        if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
+                        return ClipRect(
+                          child: Align(
+                            alignment: .topLeft,
+                            child: _buildInfo(
+                              context,
+                              media,
+                              constraints.maxWidth,
+                              availableHeight: constraints.hasBoundedHeight ? constraints.maxHeight : null,
                             ),
                           ),
                         );
@@ -186,51 +196,143 @@ class TvSpotlightBackground extends StatelessWidget {
       gradient: LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-        colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), bgColor.withValues(alpha: 0)],
-        stops: const [0.0, 0.56, 1.0],
+        colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.50), bgColor.withValues(alpha: 0)],
+        stops: const [0.0, 0.68, 1.0],
       ),
     );
   }
 
-  Widget _buildInfo(BuildContext context, MediaItem media, double width) {
+  Widget _buildInfo(BuildContext context, MediaItem media, double width, {double? availableHeight}) {
     final scale = _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
     final title = media.grandparentTitle ?? media.displayTitle;
+    final episodeTitle = media.isEpisode ? media.title?.trim() : null;
+    final hasEpisodeTitle = episodeTitle?.isNotEmpty == true;
+    // Series-level rows have no file tags. Do not leave an empty badge band
+    // between the show's metadata and description.
+    final hasTechnicalRow = media.isEpisode || media.isMovie || technicalItem?.mediaVersions?.isNotEmpty == true;
+    final gap = _sectionGap(scale);
+    final metadataHeight = _metadataFontSize(scale) * textScale * 1.3;
+    final episodeTitleHeight = hasEpisodeTitle ? metadataHeight + 4 * scale : 0.0;
+    final badgeHeight = MediaTechnicalBadges.rowHeight(scale, textScale);
+    final badgeGap = 6 * scale;
+    final fileItem = technicalItem?.globalKey == media.globalKey && technicalItem?.mediaVersions?.isNotEmpty == true
+        ? technicalItem
+        : media.mediaVersions?.isNotEmpty == true
+        ? media
+        : null;
+    final technicalLabels = fileItem == null ? const <String>[] : buildMediaTechnicalLabels(fileItem);
+    // Browsing synopsis has its own comfortable size; large Home labels must
+    // not squeeze it to one line. Read More keeps the full-size details sheet.
+    final summaryFontSize = _summaryFontSize(scale) * (compact ? 1 : textScale);
+    final lineHeight = compact ? TvSpotlightLayout.summaryLineHeight : 1.45;
+    // On an exceptionally short band at maximum text size, preserve the
+    // existing metadata and one synopsis line rather than overflowing posters.
+    final showBadgeRow =
+        hasTechnicalRow &&
+        (compact ||
+            availableHeight == null ||
+            availableHeight >=
+                episodeTitleHeight + metadataHeight + badgeGap + badgeHeight + 2 * gap + summaryFontSize * lineHeight);
+    var summaryLines = compact ? TvSpotlightLayout.summaryLines : 4;
+    final desiredLogoHeight = _logoHeight(scale);
+    double remainingLogoHeight() => availableHeight == null
+        ? desiredLogoHeight
+        : availableHeight -
+              episodeTitleHeight -
+              metadataHeight -
+              (showBadgeRow ? badgeGap + badgeHeight : 0) -
+              2 * gap -
+              summaryFontSize * lineHeight * summaryLines;
+    while (!compact && summaryLines > 1 && remainingLogoHeight() < desiredLogoHeight) {
+      summaryLines--;
+    }
+    final logoHeight = compact ? desiredLogoHeight : remainingLogoHeight().clamp(0.0, desiredLogoHeight).toDouble();
+    // Slot sizes depend only on viewport and text size, never on logo aspect,
+    // synopsis length or missing metadata. Swiping between titles therefore
+    // preserves the metadata and synopsis baselines and their actual font size.
+    // The episode title now has its own line; do not repeat it in the
+    // synopsis slot when spoilers are hidden.
+    final synopsis = summary ?? '';
 
     return Column(
       crossAxisAlignment: .start,
       mainAxisSize: .min,
       children: [
-        _buildLogoOrTitle(context, media, title, width),
-        SizedBox(height: _sectionGap(scale)),
-        _buildMetadataLine(context, media),
-        if (summary != null && summary.isNotEmpty) ...[
-          SizedBox(height: _sectionGap(scale)),
-          Text(
-            summary,
-            maxLines: compact ? 3 : 4,
-            overflow: .ellipsis,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.78),
-              fontSize: _summaryFontSize(scale),
-              height: compact ? 1.34 : 1.45,
+        SizedBox(
+          key: const ValueKey('tv_spotlight_logo_slot'),
+          height: logoHeight,
+          child: logoHeight == 0 ? null : _buildLogoOrTitle(context, media, title, width, logoHeight: logoHeight),
+        ),
+        SizedBox(height: gap),
+        if (hasEpisodeTitle) ...[
+          SizedBox(
+            height: metadataHeight,
+            width: double.infinity,
+            child: Text(
+              episodeTitle!,
+              key: const ValueKey('tv_spotlight_episode_title'),
+              maxLines: 1,
+              overflow: .ellipsis,
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 0.5))],
+                fontSize: _metadataFontSize(scale) * textScale,
+                fontWeight: .w600,
+                height: 1.3,
+              ),
             ),
           ),
-        ] else if (shouldHideSpoiler && media.isEpisode) ...[
-          SizedBox(height: _sectionGap(scale)),
-          Text(
-            media.title ?? '',
-            maxLines: 2,
-            overflow: .ellipsis,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurface.withValues(alpha: 0.72),
-              fontSize: _summaryFontSize(scale),
-              height: compact ? 1.34 : 1.45,
+          SizedBox(height: 4 * scale),
+        ],
+        SizedBox(
+          key: const ValueKey('tv_spotlight_metadata'),
+          height: metadataHeight,
+          child: Align(
+            alignment: .topLeft,
+            child: _buildMetadataLine(context, media, layoutScale: scale),
+          ),
+        ),
+        if (showBadgeRow) ...[
+          SizedBox(height: badgeGap),
+          SizedBox(
+            key: const ValueKey('tv_spotlight_technical_badges'),
+            height: badgeHeight,
+            child: Align(
+              alignment: .topLeft,
+              child: MediaTechnicalBadges(labels: technicalLabels, scale: scale, textScale: textScale),
             ),
           ),
         ],
+        SizedBox(height: gap),
+        SizedBox(
+          height: summaryFontSize * lineHeight * summaryLines,
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0x33000000), Color(0x33000000), Colors.transparent],
+                stops: [0, 0.15, 0.85, 1],
+              ),
+            ),
+            child: Text(
+              synopsis,
+              key: const ValueKey('tv_spotlight_summary'),
+              maxLines: summaryLines,
+              overflow: .ellipsis,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.95),
+                shadows: const [Shadow(color: Colors.black, blurRadius: 3, offset: Offset(0, 1))],
+                fontSize: summaryFontSize,
+                height: lineHeight,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -238,7 +340,13 @@ class TvSpotlightBackground extends StatelessWidget {
   /// The logo is contained within its slot; the title fallback gets
   /// [ClearLogoImage.fallbackWidthFor] of the info block's [availableWidth]
   /// at the slot's height (#1796).
-  Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title, double availableWidth) {
+  Widget _buildLogoOrTitle(
+    BuildContext context,
+    MediaItem media,
+    String title,
+    double availableWidth, {
+    required double logoHeight,
+  }) {
     final theme = Theme.of(context);
     // The spotlight scrim washes artwork toward the scaffold background, so
     // light themes recolor light-toned logos to stay visible.
@@ -249,7 +357,6 @@ class TvSpotlightBackground extends StatelessWidget {
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
     final logoWidth = math.min(_logoWidth(scale), availableWidth);
-    final logoHeight = _logoHeight(scale);
     final width = ClearLogoImage.fallbackWidthFor(logoWidth: logoWidth, available: availableWidth);
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: width, height: logoHeight, child: _buildTitle(context, title));
@@ -272,7 +379,7 @@ class TvSpotlightBackground extends StatelessWidget {
         width: width,
         height: logoHeight,
         child: Align(
-          alignment: .centerLeft,
+          alignment: .topLeft,
           child: blurArtwork(
             Image(
               image: logoToneTarget == null
@@ -282,7 +389,7 @@ class TvSpotlightBackground extends StatelessWidget {
               height: logoHeight,
               fit: BoxFit.contain,
               filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
-              alignment: .centerLeft,
+              alignment: .topLeft,
               // Replaces the image under Align's loose constraints, so it
               // takes the whole title slot rather than the logo's.
               errorBuilder: (context, error, stackTrace) => SizedBox.expand(child: _buildTitle(context, title)),
@@ -300,6 +407,7 @@ class TvSpotlightBackground extends StatelessWidget {
       width: logoWidth,
       height: logoHeight,
       fallbackWidth: width,
+      alignment: .topLeft,
       fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
       logoToneTarget: logoToneTarget,
       fallbackBuilder: (context) => _buildTitle(context, title),
@@ -311,22 +419,24 @@ class TvSpotlightBackground extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return FittingTitleText(
       title,
+      alignment: .topLeft,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
         color: colorScheme.onSurface,
-        fontSize: _titleFontSize(scale),
+        fontSize: _titleFontSize(scale) * textScale,
         fontWeight: .w700,
         shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 12)],
       ),
     );
   }
 
-  Widget _buildMetadataLine(BuildContext context, MediaItem media) {
-    final scale = _scale(context);
+  Widget _buildMetadataLine(BuildContext context, MediaItem media, {double? layoutScale}) {
+    final scale = layoutScale ?? _scale(context);
     final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final textStyle = TextStyle(
       color: colorScheme.onSurface,
-      fontSize: _metadataFontSize(scale),
+      shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 0.5))],
+      fontSize: _metadataFontSize(scale) * textScale,
       fontWeight: .w700,
       letterSpacing: 0.1,
     );
@@ -338,21 +448,38 @@ class TvSpotlightBackground extends StatelessWidget {
     } else if (media.isShow) {
       parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
-    // Hub listings carry the scalar rating pair, so the dashboard spotlight
-    // shows every score the shelf request already returned — no per-item
-    // hydration to lengthen it.
-    final ratings = mediaRatingsFor(media);
-    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
-    if (media.contentRating != null) {
-      parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
+    // Episode scores stay episode-level. Critic/audience percentages describe
+    // a whole title and remain available on show/movie-level surfaces only.
+    final ratings = [
+      for (final rating in mediaRatingsFor(media))
+        if (!media.isEpisode || !rating.source.startsWith('rottenTomatoes')) rating,
+    ];
+    if (!media.isEpisode && ratingsFallback != null) {
+      final sources = ratings.map((rating) => rating.source).toSet();
+      ratings.addAll(
+        mediaRatingsFor(
+          ratingsFallback!,
+        ).where((rating) => rating.source.startsWith('rottenTomatoes') && !sources.contains(rating.source)),
+      );
     }
-    if (media.durationMs != null) {
-      parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: -1));
+    if (mediaRuntimeLabel(media) case final runtime?) {
+      parts.add(MetadataLineText(runtime, dropPriority: 1));
     }
     if (media.isEpisode && media.originallyAvailableAt != null) {
       parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));
     } else if (media.year != null) {
       parts.add(MetadataLineText(media.year.toString(), dropPriority: 0));
+    }
+    final itemGenres = media.genres?.where((genre) => genre.trim().isNotEmpty).toList();
+    final genres = itemGenres?.isNotEmpty == true ? itemGenres! : ratingsFallback?.genres ?? const <String>[];
+    for (final genre in genres.map((genre) => genre.trim()).where((genre) => genre.isNotEmpty).toSet().take(2)) {
+      parts.add(MetadataLineText(genre, dropPriority: 3));
+    }
+    final itemAgeRating = media.contentRating?.trim();
+    final ageRating = itemAgeRating?.isNotEmpty == true ? itemAgeRating : ratingsFallback?.contentRating?.trim();
+    if (ageRating != null && ageRating.isNotEmpty) {
+      parts.add(MetadataLineText(formatContentRating(ageRating), dropPriority: 2));
     }
 
     final line = parts.isEmpty
@@ -363,6 +490,7 @@ class TvSpotlightBackground extends StatelessWidget {
             ratingIconSize: textStyle.fontSize,
             ratingSpacing: 4 * scale,
             ratingEntrySpacing: 12 * scale,
+            goldRatingStars: true,
           );
     final trailing = metadataTrailing;
     if (trailing == null) return line ?? const SizedBox.shrink();
@@ -387,9 +515,9 @@ class TvSpotlightBackground extends StatelessWidget {
   double _logoHeight(double scale) =>
       (compact ? TvLayoutConstants.compactHeroLogoHeight : TvLayoutConstants.heroLogoHeight) * scale;
 
-  double _titleFontSize(double scale) => (compact ? 36 : 54) * scale;
+  double _titleFontSize(double scale) => (compact ? 39 : 54) * scale;
 
-  double _metadataFontSize(double scale) => (compact ? 16 : 18) * scale;
+  double _metadataFontSize(double scale) => 18 * scale;
 
-  double _summaryFontSize(double scale) => (compact ? 18 : 20) * scale;
+  double _summaryFontSize(double scale) => (compact ? TvSpotlightLayout.summaryFontSize : 20) * scale;
 }

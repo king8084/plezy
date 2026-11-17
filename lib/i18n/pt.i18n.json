@@ -222,6 +222,9 @@
     "gridView": "Grade",
     "listView": "Lista",
     "showHeroSection": "Mostrar Seção de Destaque",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Ação da seção Continuar assistindo",
     "continueWatchingPlay": "Reproduzir",
     "continueWatchingDetails": "Abrir detalhes",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Estilo de Legendas",
     "subtitleStylingDescription": "Personalizar aparência das legendas",
     "smallSkipDuration": "Duração do Avanço Curto",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Duração do Avanço Longo",
     "rewindOnResume": "Rebobinar ao retomar",
     "secondsUnit": "${seconds} segundos",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Ajustar à faixa dinâmica",
     "matchDynamicRangeDescription": "Ativar HDR para conteúdo HDR e depois voltar para SDR",
     "displaySwitchDelay": "Atraso na troca do modo de exibição",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Reprodução em túnel",
     "tunneledPlaybackDescription": "Usar o tunelamento de vídeo. Desative se o vídeo ficar preto ao reproduzir em HDR ou o movimento travar.",
     "audioPassthrough": "Passagem direta de áudio",
@@ -484,6 +491,7 @@
     "display": "Tela",
     "libraryAndCards": "Biblioteca e Cards",
     "homeScreen": "Tela inicial",
+    "homeTextSize": "",
     "navigation": "Navegação",
     "window": "Janela",
     "liveTv": "TV ao Vivo",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Em todos os lugares",
     "playerScopeLibrary": "Por biblioteca",
     "playerScopeTitle": "Por série ou filme",
-    "exportDialogTitle": "Exportar configurações do Plezy"
+    "exportDialogTitle": "Exportar configurações do Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Tente um termo de busca diferente",
     "searchYourMedia": "Buscar suas mídias",
     "enterTitleActorOrKeyword": "Insira um título, ator ou palavra-chave",
-    "people": "Pessoas"
+    "people": "Pessoas",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Definir Atalho para ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Ver detalhes",
     "goToSeries": "Ir para a série",
     "shufflePlay": "Reprodução Aleatória",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Reprodução aleatória indisponível offline",
     "fileInfo": "Informações do arquivo",
     "deleteEpisodeFromServer": "Excluir episódio do servidor",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Item de mídia excluído com sucesso",
     "mediaFailedToDelete": "Falha ao excluir item de mídia",
     "rate": "Avaliar",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Reproduzir do início",
     "playVersion": "Reproduzir versão..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Forçada)",
     "osdSubtitlesOff": "Legendas: desativadas",
     "osdSubtitles": "Legendas: ${track}",
-    "osdAudio": "Áudio: ${track}"
+    "osdAudio": "Áudio: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Descobrir",
     "noContentAvailable": "Nenhum conteúdo disponível",
     "addMediaToLibraries": "Adicione mídias às suas bibliotecas",
@@ -1209,7 +1258,10 @@
     "movie": "Filme",
     "tvShow": "Série de TV",
     "minutesLeft": "${minutes} min restantes",
+    "durationLeft": "",
     "moreLikeThis": "Títulos semelhantes",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} título",
       "other": "${n} títulos"
@@ -1220,7 +1272,9 @@
       "birthplace": "Local de nascimento",
       "dateWithAge": "${date} (${age} anos)",
       "dateWithAgeAtDeath": "${date} (aos ${age} anos)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Falha na busca: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Limpar Logs",
     "copyLogs": "Copiar Logs",
-    "uploadLogs": "Enviar Logs"
+    "uploadLogs": "Enviar Logs",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "O Plezy não conseguiu iniciar",

@@ -222,6 +222,9 @@
     "gridView": "Сетка",
     "listView": "Список",
     "showHeroSection": "Показать раздел избранного",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Действие для «Продолжить просмотр»",
     "continueWatchingPlay": "Воспроизвести",
     "continueWatchingDetails": "Открыть сведения",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Стиль субтитров",
     "subtitleStylingDescription": "Настроить внешний вид субтитров",
     "smallSkipDuration": "Малая перемотка",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Большая перемотка",
     "rewindOnResume": "Перемотка при возобновлении",
     "secondsUnit": "${seconds} с",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Соответствие динамического диапазона",
     "matchDynamicRangeDescription": "Включать HDR для HDR-контента, затем возвращаться к SDR",
     "displaySwitchDelay": "Задержка переключения дисплея",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Туннельное воспроизведение",
     "tunneledPlaybackDescription": "Использовать видеотуннелирование. Отключите, если при воспроизведении HDR отображается чёрный экран или движение прерывается.",
     "audioPassthrough": "Сквозной вывод аудио",
@@ -484,6 +491,7 @@
     "display": "Экран",
     "libraryAndCards": "Библиотека и карточки",
     "homeScreen": "Главный экран",
+    "homeTextSize": "",
     "navigation": "Навигация",
     "window": "Окно",
     "liveTv": "Прямой эфир",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Везде",
     "playerScopeLibrary": "Для библиотеки",
     "playerScopeTitle": "Для сериала или фильма",
-    "exportDialogTitle": "Экспорт настроек Plezy"
+    "exportDialogTitle": "Экспорт настроек Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Встроенные",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Попробуйте другой запрос",
     "searchYourMedia": "Поиск в вашей медиатеке",
     "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово",
-    "people": "Люди"
+    "people": "Люди",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Показать сведения",
     "goToSeries": "Перейти к сериалу",
     "shufflePlay": "Случайное воспроизведение",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Перемешивание недоступно офлайн",
     "fileInfo": "Информация о файле",
     "deleteEpisodeFromServer": "Удалить эпизод с сервера",
@@ -767,6 +804,8 @@
     "mediaDeletedSuccessfully": "Медиаэлемент успешно удалён",
     "mediaFailedToDelete": "Не удалось удалить медиаэлемент",
     "rate": "Оценить",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Воспроизвести сначала",
     "playVersion": "Воспроизвести версию..."
   },
@@ -913,7 +952,10 @@
     "forcedTrack": "${label} (принудительная)",
     "osdSubtitlesOff": "Субтитры: выкл.",
     "osdSubtitles": "Субтитры: ${track}",
-    "osdAudio": "Аудио: ${track}"
+    "osdAudio": "Аудио: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1193,6 +1235,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Обзор",
     "noContentAvailable": "Контент недоступен",
     "addMediaToLibraries": "Добавьте медиафайлы в ваши библиотеки",
@@ -1217,7 +1266,10 @@
     "movie": "Фильм",
     "tvShow": "Сериал",
     "minutesLeft": "Осталось ${minutes} мин",
+    "durationLeft": "",
     "moreLikeThis": "Похожее",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} название",
       "few": "${n} названия",
@@ -1230,7 +1282,9 @@
       "birthplace": "Место рождения",
       "dateWithAge": "${date} (возраст: ${age})",
       "dateWithAgeAtDeath": "${date} (в возрасте ${age})"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",
@@ -1402,7 +1456,15 @@
   "logs": {
     "clearLogs": "Очистить логи",
     "copyLogs": "Скопировать логи",
-    "uploadLogs": "Загрузить логи"
+    "uploadLogs": "Загрузить логи",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy не удалось запустить",

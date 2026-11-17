@@ -1,4 +1,5 @@
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
 import 'codec_utils.dart';
@@ -33,6 +34,37 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? p
   final version = _selectedVersion(item.mediaVersions, versionIndex);
   if (version == null) return const [];
 
+  return _videoLabels(version, partIndex: partIndex);
+}
+
+/// File badges for browsing: the first version and exactly its first audio
+/// track, irrespective of the server's selected/default audio flags. These
+/// describe the source file, not the device's eventual HDMI output.
+List<String> buildMediaTechnicalLabels(MediaItem item, {int versionIndex = 0}) {
+  if (!item.isMovie && !item.isEpisode) return const [];
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
+  if (version == null) return const [];
+  return [
+    ..._videoLabels(version, fullDolbyVisionName: true),
+    ?_formatAudio(_firstStreamOfKind(version, MediaStreamKind.audio)),
+    ?buildMediaFileSummaryLabel(item, versionIndex: versionIndex),
+  ];
+}
+
+/// Size and overall bitrate for the selected file version.
+String? buildMediaFileSummaryLabel(MediaItem item, {int versionIndex = 0}) {
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
+  if (version == null) return null;
+  final size = buildMediaSizeLabel(item, versionIndex: versionIndex);
+  final bitrate = version.bitrate;
+  final labels = [
+    if (size != null) size.replaceFirst('.0 MB', ' MB').replaceAll(' ', ''),
+    if (bitrate != null && bitrate > 0) ByteFormatter.formatBitrate(bitrate).replaceAll(' ', ''),
+  ];
+  return labels.isEmpty ? null : labels.join(' | ');
+}
+
+List<String> _videoLabels(MediaVersion version, {int? partIndex, bool fullDolbyVisionName = false}) {
   final labels = <String>[];
   final resolution = _formatResolution(version);
   if (resolution != null) labels.add(resolution);
@@ -42,7 +74,7 @@ List<String> buildMediaVideoLabels(MediaItem item, {int versionIndex = 0, int? p
   if (codec != null && codec.isNotEmpty) labels.add(CodecUtils.formatVideoCodec(codec));
 
   if (video?.dolbyVision == true) {
-    labels.add(_formatDolbyVision(video!));
+    labels.add(fullDolbyVisionName ? 'Dolby Vision' : _formatDolbyVision(video!));
   } else if (video?.hdr == true) {
     labels.add('HDR');
   }
@@ -78,11 +110,13 @@ MediaVersion? _selectedVersion(List<MediaVersion>? versions, int versionIndex) {
 }
 
 String? _formatResolution(MediaVersion version) {
+  // Re-evaluate dimensions even for cached Jellyfin rows whose old canonical
+  // label was computed before cropped 4K widths were recognized.
+  final dimensions = resolutionLabelFromDimensions(version.width, version.height);
+  if (dimensions != null) return resolutionDisplayLabel(dimensions);
   final raw = version.videoResolution?.trim();
   if (raw != null && raw.isNotEmpty) return resolutionDisplayLabel(raw);
-
-  final fallback = resolutionLabelFromDimensions(version.width, version.height);
-  return fallback == null ? null : resolutionDisplayLabel(fallback);
+  return null;
 }
 
 MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind, {int? partIndex}) {

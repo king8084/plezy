@@ -42,7 +42,6 @@ import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
-import '../../widgets/library_management_sheet.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
@@ -55,6 +54,7 @@ import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
+import 'home_sidebar_settings_screen.dart';
 import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
@@ -317,13 +317,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
+  /// Home rows, sidebar, pinned collections and libraries in one place.
   Widget _buildManageLibrariesTile(BuildContext context) {
     return SettingNavigationTile(
       focusNode: _focusTracker.get(_kManageLibraries),
-      icon: Symbols.video_library_rounded,
-      title: t.libraries.manageLibraries,
-      subtitle: t.settings.manageLibrariesDescription,
-      onTap: () => showLibraryManagementSheet(context),
+      icon: Symbols.dashboard_customize_rounded,
+      title: t.settings.homeAndSidebar,
+      subtitle: t.settings.homeAndSidebarDescription,
+      destinationBuilder: (_) => const HomeSidebarSettingsScreen(),
     );
   }
 

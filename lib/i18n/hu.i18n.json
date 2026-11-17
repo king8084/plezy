@@ -222,6 +222,9 @@
     "gridView": "Rács",
     "listView": "Lista",
     "showHeroSection": "Kiemelt sáv megjelenítése",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "A „Folytatás” művelete",
     "continueWatchingPlay": "Lejátszás",
     "continueWatchingDetails": "Részletek megnyitása",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Feliratok stílusa",
     "subtitleStylingDescription": "Feliratok megjelenésének testreszabása",
     "smallSkipDuration": "Kis ugrás időtartama",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Nagy ugrás időtartama",
     "rewindOnResume": "Visszatekerés folytatáskor",
     "secondsUnit": "${seconds} másodperc",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Dinamikatartomány illesztése",
     "matchDynamicRangeDescription": "HDR bekapcsolása HDR-tartalmak esetén, majd visszaváltás SDR-re",
     "displaySwitchDelay": "Kijelzőváltási késleltetés",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Alagutas lejátszás",
     "tunneledPlaybackDescription": "Videóalagút használata. Tiltsd le, ha HDR-lejátszáskor fekete a kép vagy akadozik a mozgás.",
     "audioPassthrough": "Hangtovábbítás (passthrough)",
@@ -484,6 +491,7 @@
     "display": "Kijelző",
     "libraryAndCards": "Könyvtár és kártyák",
     "homeScreen": "Kezdőképernyő",
+    "homeTextSize": "",
     "navigation": "Navigáció",
     "window": "Ablak",
     "liveTv": "Élő TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Mindenhol",
     "playerScopeLibrary": "Könyvtáronként",
     "playerScopeTitle": "Sorozatonként vagy filmenként",
-    "exportDialogTitle": "Plezy-beállítások exportálása"
+    "exportDialogTitle": "Plezy-beállítások exportálása",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Beépített",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Próbálj másik keresési kifejezést",
     "searchYourMedia": "Keresés a saját médiatartalmak között",
     "enterTitleActorOrKeyword": "Adj meg egy címet, színészt vagy kulcsszót",
-    "people": "Személyek"
+    "people": "Személyek",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Billentyűparancs beállítása ehhez: ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Részletek megtekintése",
     "goToSeries": "Ugrás a sorozathoz",
     "shufflePlay": "Véletlenszerű lejátszás",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "A véletlenszerű lejátszás nem érhető el offline",
     "fileInfo": "Fájlinformáció",
     "deleteEpisodeFromServer": "Epizód törlése a szerverről",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Médiaelem sikeresen törölve",
     "mediaFailedToDelete": "Nem sikerült a médiaelem törlése",
     "rate": "Értékelés",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Lejátszás az elejétől",
     "playVersion": "Verzió lejátszása..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (kényszerített)",
     "osdSubtitlesOff": "Feliratok: ki",
     "osdSubtitles": "Feliratok: ${track}",
-    "osdAudio": "Hang: ${track}"
+    "osdAudio": "Hang: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Felfedezés",
     "noContentAvailable": "Nincs elérhető tartalom",
     "addMediaToLibraries": "Adj hozzá médiát a könyvtáraidhoz",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV-sorozat",
     "minutesLeft": "${minutes} perc van hátra",
+    "durationLeft": "",
     "moreLikeThis": "Hasonló tartalmak",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} cím",
       "other": "${n} cím"
@@ -1220,7 +1272,9 @@
       "birthplace": "Születési hely",
       "dateWithAge": "${date} (${age} éves)",
       "dateWithAgeAtDeath": "${date} (${age} évesen)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Keresés sikertelen: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Naplók törlése",
     "copyLogs": "Naplók másolása",
-    "uploadLogs": "Naplók feltöltése"
+    "uploadLogs": "Naplók feltöltése",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "A Plezy nem tudott elindulni",

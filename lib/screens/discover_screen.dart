@@ -18,6 +18,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
+import '../utils/home_rows.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
@@ -41,9 +42,11 @@ import '../profiles/profile.dart';
 import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
 import '../services/settings_service.dart';
+import '../services/apple_tv_remote_touch_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/fitting_title_text.dart';
+import '../widgets/full_description_dialog.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import '../mixins/refreshable.dart';
@@ -106,6 +109,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   bool _heroFocusPausedAutoScroll = false;
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
+  StreamSubscription<AppleTvRemotePlayPauseAction>? _homePlaybackSubscription;
+  bool _launchingFromRemote = false;
+
+  Future<void> _playFocusedHomeItem(AppleTvRemotePlayPauseAction action) async {
+    if (!mounted || !_isTabVisible || _launchingFromRemote || ModalRoute.of(context)?.isCurrent != true) return;
+    if (action.detail == 'mediaPause' || action.detail == 'remoteControlPause') return;
+    final item = _tvBrowseRailKey.currentState?.focusedMediaItem;
+    if (item == null) return;
+    _launchingFromRemote = true;
+    appLogger.i('Apple TV remote: Home direct playback requested');
+    try {
+      await navigateToMediaItem(context, item, playDirectly: true, forcePlayback: true);
+    } catch (e, st) {
+      appLogger.w('Home remote playback failed', error: e, stackTrace: st);
+      if (mounted) showErrorSnackBar(context, t.messages.playbackFailed);
+    } finally {
+      _launchingFromRemote = false;
+    }
+  }
+
+  Future<bool> _openHomeCardDetails(MediaHub hub, MediaItem item) async {
+    if (!item.isMovie && !item.isEpisode && !item.isShow && !item.isSeason) return false;
+    await navigateToMediaItemDetails(context, item, onRefresh: _discover.updateItem);
+    return true;
+  }
 
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
@@ -180,19 +208,30 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
   // fast path — and the cached rail widget below — kick in.
   List<MediaHub>? _tvBrowseHubsCache;
-  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+  (List<MediaItem>, List<MediaHub>, bool, String, String, String)? _tvBrowseHubsCacheKey;
 
   List<MediaHub> get _tvBrowseHubs {
-    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
+    // The saved order and hidden rows (Settings → Home & Sidebar) are part of
+    // the key, so a change made in Settings shows on the next build.
+    final order = SettingsService.instance.read(SettingsService.homeRowOrder);
+    final hidden = SettingsService.instance.read(SettingsService.homeRowHidden);
+    final key = (
+      _onDeck,
+      _hubs,
+      _hasMoreContinueWatching,
+      t.discover.continueWatching,
+      order.join('\u001e'),
+      hidden.join('\u001e'),
+    );
     if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
       hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
-    _tvBrowseHubsCache = hubs;
+    _tvBrowseHubsCache = orderHomeRows(hubs, order: order, hidden: hidden.toSet());
     _tvBrowseHubsCacheKey = key;
-    return hubs;
+    return _tvBrowseHubsCache!;
   }
 
   /// The synthesized Continue Watching row, rendered ahead of the backend hubs
@@ -208,6 +247,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   );
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+
+  void _showFullDescription() {
+    final item = _spotlight.resolve(_tvBrowseHubs);
+    if (item == null) return;
+    final hidden = SettingsService.instance.read(SettingsService.hideSpoilers) && item.shouldHideSpoiler;
+    final summary = hidden ? null : item.summary;
+    showDialog<void>(
+      context: context,
+      builder: (context) => FullDescriptionDialog(item: item, description: summary),
+    );
+  }
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -344,9 +394,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     MainScreenFocusScope.focusSidebarOf(context);
   }
 
+  /// Back on the home rows: first return to the first item of the first row,
+  /// and only from there move on to the sidebar.
+  void _handleTvRailBack() {
+    if (_tvBrowseRailKey.currentState?.focusFirstItemOfFirstHubIfElsewhere() ?? false) return;
+    _navigateToSidebar();
+  }
+
   @override
   void initState() {
     super.initState();
+    if (PlatformDetector.isAppleTV()) {
+      _homePlaybackSubscription = AppleTvRemoteTouchService.instance.playPauseActions.listen(
+        (action) => unawaited(_playFocusedHomeItem(action)),
+      );
+    }
     WidgetsBinding.instance.addObserver(this);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
     _heroFocusNode.addListener(_onHeroFocusChanged);
@@ -465,6 +527,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void dispose() {
+    unawaited(_homePlaybackSubscription?.cancel());
     _discover.removeListener(_onDiscoverChanged);
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
@@ -836,6 +899,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
+                  if (PlatformDetector.isTV())
+                    FocusableAction(
+                      tooltip: t.discover.readFullDescription,
+                      onPressed: _showFullDescription,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Text(t.discover.readMore, style: TextStyle(color: foregroundColor)),
+                      ),
+                    ),
+                  if (PlatformDetector.isTV())
+                    FocusableAction(
+                      tooltip: t.common.search,
+                      onPressed: () => MainScreenFocusScope.openSearchOf(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppIcon(Symbols.search_rounded, color: foregroundColor),
+                            const SizedBox(width: 4),
+                            Text(t.common.search, style: TextStyle(color: foregroundColor)),
+                          ],
+                        ),
+                      ),
+                    ),
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(
@@ -937,6 +1025,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
+        SettingsService.homeTextSize,
       ],
       builder: (context) => _buildContent(context),
     );
@@ -947,7 +1036,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showHeroSection = svc.read(SettingsService.showHeroSection);
 
     if (PlatformDetector.isTV()) {
-      return _buildTvContent(context);
+      // Row order / hidden rows edited in Settings → Home & Sidebar.
+      return SettingsBuilder(
+        prefs: const [SettingsService.homeRowOrder, SettingsService.homeRowHidden],
+        builder: _buildTvContent,
+      );
     }
 
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
@@ -1088,6 +1181,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       key: _tvBrowseRailKey,
       hubs: browseHubs,
       initialHubId: 'continue_watching',
+      showNextHubPeek: false,
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hubIconFor(hub),
@@ -1096,11 +1190,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
+      onActivateItem: PlatformDetector.isAppleTV() ? _openHomeCardDetails : null,
       // Every other hub pages from its server in View All, as on phones; handing
       // it the preview items only showed that preview again.
       loadMoreItems: _loadHubItems,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
+      onBack: _handleTvRailBack,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
       widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
@@ -1115,11 +1211,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return () async {
       final client = context.tryGetMediaClientForServer(ServerId(serverId));
       if (client == null) return const <MediaItem>[];
-      return fetchAllCollectionItemsPaged(
-        client,
-        collectionId,
-        libraryId: hub.libraryId,
-      );
+      return fetchAllCollectionItemsPaged(client, collectionId, libraryId: hub.libraryId);
     };
   }
 
@@ -1146,11 +1238,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final browseHubs = _tvBrowseHubs;
 
     return TvSpotlightScaffold(
+      showNextHubPeek: false,
       hubs: browseHubs,
       spotlightListenable: _spotlight,
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
+      textScale: svc.read(SettingsService.homeTextSize) / 100,
       foreground: Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,

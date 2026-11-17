@@ -222,6 +222,9 @@
     "gridView": "Rutnät",
     "listView": "Lista",
     "showHeroSection": "Visa utvalt innehåll",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Åtgärd för Fortsätt titta",
     "continueWatchingPlay": "Spela",
     "continueWatchingDetails": "Öppna detaljer",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Utseende för undertexter",
     "subtitleStylingDescription": "Anpassa undertexternas utseende",
     "smallSkipDuration": "Litet hoppsteg",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Stort hoppsteg",
     "rewindOnResume": "Spola tillbaka vid återupptagning",
     "secondsUnit": "${seconds} sekunder",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Matcha dynamiskt omfång",
     "matchDynamicRangeDescription": "Slå på HDR för HDR-innehåll och sedan tillbaka till SDR",
     "displaySwitchDelay": "Fördröjning vid skärmbyte",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunneluppspelning",
     "tunneledPlaybackDescription": "Använd videotunnling. Inaktivera om HDR-uppspelning visar svart video eller rörelser hackar.",
     "audioPassthrough": "Ljudgenomströmning",
@@ -484,6 +491,7 @@
     "display": "Skärm",
     "libraryAndCards": "Bibliotek och kort",
     "homeScreen": "Hemskärm",
+    "homeTextSize": "",
     "navigation": "Navigering",
     "window": "Fönster",
     "liveTv": "Live-TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Överallt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Exportera Plezy-inställningar"
+    "exportDialogTitle": "Exportera Plezy-inställningar",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Inbyggda",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Prova en annan sökterm",
     "searchYourMedia": "Sök i dina media",
     "enterTitleActorOrKeyword": "Ange en titel, skådespelare eller nyckelord",
-    "people": "Personer"
+    "people": "Personer",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Sätt genväg för ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Visa detaljer",
     "goToSeries": "Gå till serie",
     "shufflePlay": "Blanda uppspelning",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Blandad uppspelning är inte tillgänglig offline",
     "fileInfo": "Filinformation",
     "deleteEpisodeFromServer": "Ta bort avsnitt från servern",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Medieobjektet har tagits bort",
     "mediaFailedToDelete": "Det gick inte att ta bort medieobjektet",
     "rate": "Betygsätt",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Spela från början",
     "playVersion": "Spela version..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Forcerad)",
     "osdSubtitlesOff": "Undertexter: Av",
     "osdSubtitles": "Undertexter: ${track}",
-    "osdAudio": "Ljud: ${track}"
+    "osdAudio": "Ljud: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Upptäck",
     "noContentAvailable": "Inget innehåll tillgängligt",
     "addMediaToLibraries": "Lägg till medieinnehåll i dina bibliotek",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min kvar",
+    "durationLeft": "",
     "moreLikeThis": "Mer liknande innehåll",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titlar"
@@ -1220,7 +1272,9 @@
       "birthplace": "Födelseort",
       "dateWithAge": "${date} (${age} år)",
       "dateWithAgeAtDeath": "${date} (blev ${age} år)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Sökningen misslyckades: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
-    "uploadLogs": "Ladda upp loggar"
+    "uploadLogs": "Ladda upp loggar",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kunde inte starta",

@@ -13,6 +13,29 @@ import '../test_helpers/media_items.dart';
 
 void main() {
   group('buildMediaQualityLabels', () {
+    test('cropped resolution tiers override stale cached labels on either dimension', () {
+      for (final (width, height, expected) in <(int?, int, String)>[
+        (3832, 1600, '4K'),
+        (3840, 1608, '4K'),
+        (3820, 2150, '4K'),
+        (1920, 800, '1080p'),
+        (1912, 800, '1080p'),
+        (1912, 1072, '1080p'),
+        (1880, 1072, '1080p'),
+        (null, 1072, '1080p'),
+        (1280, 720, '720p'),
+        (1272, 536, '720p'),
+        (1240, 712, '720p'),
+        (null, 712, '720p'),
+      ]) {
+        final item = _episodeWithVersion(
+          MediaVersion(id: 'file', width: width, height: height, videoResolution: '1080', videoCodec: 'hevc'),
+        );
+        expect(buildMediaTechnicalLabels(item).first, expected);
+        expect(buildMediaQualityLabels(item).first, expected);
+        expect(buildMediaVideoLabels(item).first, expected);
+      }
+    });
     test('formats resolution, Dolby Vision, and Atmos audio', () {
       final item = _episodeWithVersion(
         MediaVersion(
@@ -186,6 +209,8 @@ void main() {
       )!;
 
       expect(buildMediaQualityLabels(item), ['4K', 'DV P8', 'AAC Stereo']);
+      // Browsing tags use track 1 even when the user selected track 2.
+      expect(buildMediaTechnicalLabels(item), ['4K', 'HEVC', 'Dolby Vision', 'EAC3 5.1']);
     });
 
     test('uses selected audio stream and stereo label', () {
@@ -214,6 +239,51 @@ void main() {
       expect(buildMediaQualityLabels(_episodeWithVersion(null)), isEmpty);
     });
   });
+  group('Home file summary', () {
+    test('appends first-version size and overall bitrate after audio', () {
+      final item = _episodeWithVersion(
+        const MediaVersion(
+          id: 'file',
+          bitrate: 12000,
+          parts: [
+            MediaPart(
+              id: 'part',
+              sizeBytes: 5261334938,
+              streams: [MediaStream(id: 'audio', kind: MediaStreamKind.audio, codec: 'eac3', channels: 6)],
+            ),
+          ],
+        ),
+      );
+      expect(buildMediaTechnicalLabels(item), ['EAC3 5.1', '4.90GB | 12.0Mbps']);
+    });
+
+    test('uses MB below one GB and never takes bitrate from another version', () {
+      final item =
+          _episodeWithVersion(
+            const MediaVersion(
+              id: 'small',
+              parts: [MediaPart(id: 'part', sizeBytes: 830 * 1024 * 1024)],
+            ),
+          ).copyWith(
+            mediaVersions: [
+              const MediaVersion(
+                id: 'small',
+                parts: [MediaPart(id: 'part', sizeBytes: 830 * 1024 * 1024)],
+              ),
+              const MediaVersion(id: 'other', bitrate: 12000),
+            ],
+          );
+      expect(buildMediaTechnicalLabels(item), ['830MB']);
+    });
+
+    test('omits unknown or invalid file facts', () {
+      expect(buildMediaTechnicalLabels(_episodeWithVersion(const MediaVersion(id: 'empty', bitrate: 0))), isEmpty);
+      expect(buildMediaTechnicalLabels(_episodeWithVersion(const MediaVersion(id: 'rate-only', bitrate: 12000))), [
+        '12.0Mbps',
+      ]);
+    });
+  });
+
   group('buildMediaSizeLabel', () {
     test('formats the complete size of a multi-part version', () {
       final item = _episodeWithVersion(

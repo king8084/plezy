@@ -1,3 +1,4 @@
+import 'removed_continue_watching_provider.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -86,6 +87,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// because nothing pushes library changes to the client (#1646).
   static const Duration staleAfter = Duration(minutes: 15);
 
+  /// Simkl/Trakt suggestions blended into "Because you watched".
+  final ExternalTitleRecommender? externalRecommendations;
+
   DiscoverProvider(
     this._multiServer,
     this._hiddenLibraries,
@@ -93,6 +97,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this.profileId,
     required this.isProfileBinding,
     WatchStateStore? watchStateStore,
+    this.removedContinueWatching,
     DateTime Function()? now,
     bool Function()? isRefreshBlocked,
     this.libraryEventDebounce = const Duration(seconds: 3),
@@ -100,6 +105,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     this.libraryEventCooldown = const Duration(minutes: 2),
     Future<void> Function(String profileId, List<MediaItem>)? syncSystemShelf,
     Future<void> Function(String profileId, List<MediaServerClient> clients)? syncServerSources,
+    this.externalRecommendations,
     // A private field cannot be a named initializing formal callers can pass.
     // ignore: prefer_initializing_formals
   }) : _watchStateStore = watchStateStore,
@@ -120,6 +126,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // profile switch can't leave a stale listener on the app-global provider.
     _multiServer.addOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
+    removedContinueWatching?.addListener(_onRemovedContinueWatchingChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
@@ -143,6 +150,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   final MultiServerProvider _multiServer;
   final HiddenLibrariesProvider _hiddenLibraries;
+  final RemovedContinueWatchingProvider? removedContinueWatching;
   final LibrariesProvider _libraries;
 
   /// Injectable clock for the [staleAfter] check; tests advance it instead of
@@ -440,6 +448,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (!_multiServer.hasConnectedServers) throw Exception('No servers available');
 
       await _hiddenLibraries.ensureInitialized();
+      await removedContinueWatching?.ensureInitialized();
       if (isDisposed) return;
       _lastSeenHiddenKeys = Set.of(_hiddenLibraries.hiddenLibraryKeys);
 
@@ -465,6 +474,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         includePlaybackHubs: false,
       );
       final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, _multiServer.onlineServerIds.toSet());
+      final smartHubsFuture = _fetchSmartHomeHubs(aggregation);
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -539,9 +549,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
 
       final pinnedHubs = await pinnedHubsFuture;
+      final smartHubs = await smartHubsFuture;
       if (isDisposed) return;
       final filteredHubs = _filterDiscoverHubs([...fetchedHubs.hubs, ...pinnedHubs]);
       sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
+      filteredHubs.insertAll(
+        0,
+        (smartHubs ?? const <MediaHub>[]).where((hub) => fetchedHubs.succeededServerIds.contains(hub.serverId)),
+      );
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
       _replaceHubs(filteredHubs);
@@ -633,6 +648,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     try {
       await _hiddenLibraries.ensureInitialized();
+      await removedContinueWatching?.ensureInitialized();
       if (isDisposed) return;
 
       final settings = await SettingsService.getInstance();
@@ -657,10 +673,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               serverIds: hubIds,
             );
       final pinnedHubsFuture = _fetchPinnedHomeCollectionHubs(settings, hubIds.toSet());
+      final smartHubsFuture = hubIds.isEmpty
+          ? Future<List<MediaHub>?>.value(const [])
+          : _fetchSmartHomeHubs(aggregation, serverIds: hubIds.toSet());
 
       final freshOnDeck = await onDeckFuture;
       final freshHubs = await hubsFuture;
       final freshPinnedHubs = await pinnedHubsFuture;
+      final freshSmartHubs = await smartHubsFuture;
       if (isDisposed) return;
       // Staged, not recorded here: the merge below can still throw, and the
       // catch keeps the previous rows. Suppressing patches against rows that
@@ -691,12 +711,21 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       if (freshHubs != null) {
         final succeededHubIds = freshHubs.succeededServerIds;
+        final keptHubs = _hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId));
         final mergedHubs = [
-          ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
+          ...keptHubs.where((hub) => !_isSmartHomeHub(hub)),
           ..._filterDiscoverHubs(freshHubs.hubs),
-          ...freshPinnedHubs,
+          ...freshPinnedHubs.where((hub) => succeededHubIds.contains(hub.serverId)),
         ];
         sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
+        // A smart-row miss keeps the rows already on screen.
+        final smartHubs = [
+          ..._hubs
+              .where(_isSmartHomeHub)
+              .where((hub) => freshSmartHubs == null || !succeededHubIds.contains(hub.serverId)),
+          if (freshSmartHubs != null) ...freshSmartHubs.where((hub) => succeededHubIds.contains(hub.serverId)),
+        ];
+        mergedHubs.insertAll(0, smartHubs);
         _replaceHubs(mergedHubs);
         _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds}
           ..removeAll(freshHubs.failedServerIds)
@@ -727,8 +756,31 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       fetchPinnedHomeCollectionHubs(
         settings: settings,
         serverIds: serverIds,
-        clientForServer: _multiServer.getClient,
+        clientForServer: _multiServer.getClientForServer,
       );
+
+  /// Smart-index rows ("Top rated you haven't watched", "Because you
+  /// watched …"). Bounded so a slow index never holds up Home; a miss simply
+  /// leaves the rows out of this pass.
+  /// Null when the rows could not be fetched (versus an empty answer).
+  Future<List<MediaHub>?> _fetchSmartHomeHubs(DataAggregationService aggregation, {Set<String>? serverIds}) async {
+    try {
+      return await aggregation
+          .smartHomeHubs(
+            hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+            serverIds: serverIds,
+            externalRecommendations: externalRecommendations,
+          )
+          .timeout(_smartHomeRowsCeiling);
+    } catch (e) {
+      appLogger.d('DiscoverProvider: smart Home rows skipped', error: e);
+      return null;
+    }
+  }
+
+  static const Duration _smartHomeRowsCeiling = Duration(seconds: 4);
+
+  static bool _isSmartHomeHub(MediaHub hub) => hub.id == smartTopRatedHubId || hub.id == smartBecauseWatchedHubId;
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
@@ -877,6 +929,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<List<MediaItem>> loadAllContinueWatching() async {
     if (!_multiServer.hasConnectedServers) return const [];
     await _hiddenLibraries.ensureInitialized();
+    await removedContinueWatching?.ensureInitialized();
     if (isDisposed) return const [];
     final observation = _beginObservation();
     final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
@@ -887,7 +940,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
     // Its rows past the preview open the same copy picker as the row's.
     _continueWatchingCopies = {..._continueWatchingCopies, ...fetched.copies};
-    return fetched.items;
+    await removedContinueWatching?.observeItems(fetched.items);
+    return removedContinueWatching?.filterItems(fetched.items) ?? fetched.items;
   }
 
   /// Reconcile [source] after the user acted on it: returned from its player
@@ -983,13 +1037,14 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _replaceOnDeck(List<MediaItem> onDeck, {required bool hasMore}) {
-    _onDeck = onDeck;
+    unawaited(removedContinueWatching?.observeItems(onDeck));
+    _onDeck = removedContinueWatching?.filterItems(onDeck) ?? onDeck;
     _hasMoreContinueWatching = hasMore;
     ++_commitRevision;
   }
 
   void _replaceHubs(List<MediaHub> hubs) {
-    _hubs = hubs;
+    _hubs = removedContinueWatching?.filterHubs(hubs) ?? hubs;
     ++_commitRevision;
   }
 
@@ -1096,6 +1151,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (event.origin == DeletionOrigin.local) {
       unawaited(refreshContinueWatching());
     }
+  }
+
+  void _onRemovedContinueWatchingChanged() {
+    if (isDisposed) return;
+    _replaceOnDeck(_onDeck, hasMore: _hasMoreContinueWatching);
+    _replaceHubs(_hubs);
+    safeNotifyListeners();
+    unawaited(_syncSystemShelf(_onDeck));
+    unawaited(load());
   }
 
   void _onHiddenLibrariesChanged() {
@@ -1208,6 +1272,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void dispose() {
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
+    removedContinueWatching?.removeListener(_onRemovedContinueWatchingChanged);
     _libraries.removeListener(_onLibrariesChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;

@@ -222,6 +222,9 @@
     "gridView": "Тор",
     "listView": "Тізім",
     "showHeroSection": "Басты бөлімді көрсету",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "\"Көруді жалғастыру\" әрекеті",
     "continueWatchingPlay": "Ойнату",
     "continueWatchingDetails": "Толығырақ ашу",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Субтитр баптаулары",
     "subtitleStylingDescription": "Субтитрлердің сыртқы келбетін теңшеу",
     "smallSkipDuration": "Шағын өткізіп жіберу уақыты",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Үлкен өткізіп жіберу уақыты",
     "rewindOnResume": "Жалғастырғанда артқа айналдыру",
     "secondsUnit": "${seconds} секунд",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Динамикалық диапазонды сәйкестендіру",
     "matchDynamicRangeDescription": "HDR мазмұн үшін HDR қосу, кейін SDR-ға қайту",
     "displaySwitchDelay": "Экранды ауыстыру кідірісі",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Туннельді ойнату",
     "tunneledPlaybackDescription": "Видео туннельдеуді пайдалану. HDR ойнатқанда қара экран көрінсе немесе қозғалыс кідірсе, өшіріңіз.",
     "audioPassthrough": "Дыбысты тікелей өткізу (Passthrough)",
@@ -484,6 +491,7 @@
     "display": "Дисплей",
     "libraryAndCards": "Кітапхана және карточкалар",
     "homeScreen": "Басты экран",
+    "homeTextSize": "",
     "navigation": "Навигация",
     "window": "Терезе",
     "liveTv": "Тікелей TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Барлық жерде",
     "playerScopeLibrary": "Кітапхана бойынша",
     "playerScopeTitle": "Сериал немесе фильм бойынша",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "Plezy параметрлерін экспорттау",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Кірістірілген",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Басқа іздеу сөзін байқап көріңіз",
     "searchYourMedia": "Медиафайлдардан іздеу",
     "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз",
-    "people": "Адамдар"
+    "people": "Адамдар",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} үшін пернелер тіркесін орнату",
@@ -727,6 +760,10 @@
     "viewDetails": "Толығырақ көру",
     "goToSeries": "Сериалға өту",
     "shufflePlay": "Араластырып ойнату",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Араластырып ойнату офлайн режимде қолжетімсіз",
     "fileInfo": "Файл туралы ақпарат",
     "deleteEpisodeFromServer": "Бөлімді серверден өшіру",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Медиа элементі сәтті өшірілді",
     "mediaFailedToDelete": "Медиа элементін өшіру мүмкін болмады",
     "rate": "Бағалау",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Басынан бастап ойнату",
     "playVersion": "Нұсқаны ойнату..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Мәжбүрлі)",
     "osdSubtitlesOff": "Субтитр: өшірулі",
     "osdSubtitles": "Субтитр: ${track}",
-    "osdAudio": "Дыбыс: ${track}"
+    "osdAudio": "Дыбыс: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Шолу",
     "noContentAvailable": "Мазмұн қолжетімсіз",
     "addMediaToLibraries": "Кітапханаларыңызға медиа қосыңыз",
@@ -1209,7 +1258,10 @@
     "movie": "Фильм",
     "tvShow": "TV Шоу",
     "minutesLeft": "${minutes} мин қалды",
+    "durationLeft": "",
     "moreLikeThis": "Ұқсастар",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} атау",
       "other": "${n} атау"
@@ -1220,7 +1272,9 @@
       "birthplace": "Туған жері",
       "dateWithAge": "${date} (${age} жаста)",
       "dateWithAgeAtDeath": "${date} (${age} жасында)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Іздеу қатесі: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Журналдарды тазалау",
     "copyLogs": "Журналдарды көшіру",
-    "uploadLogs": "Журналдарды жүктеу"
+    "uploadLogs": "Журналдарды жүктеу",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy іске қосылмады",

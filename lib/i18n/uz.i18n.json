@@ -222,6 +222,9 @@
     "gridView": "Toʻrsimon",
     "listView": "Roʻyxat",
     "showHeroSection": "Asosiy boʻlimni koʻrsatish",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "\"Tomoshani davom ettirish\" harakati",
     "continueWatchingPlay": "Ijro etish",
     "continueWatchingDetails": "Tafsilotlarni ochish",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Subtitr sozlamalari",
     "subtitleStylingDescription": "Subtitrlar koʻrinishini moslashtiring",
     "smallSkipDuration": "Kichik oʻtkazish vaqti",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Katta oʻtkazish vaqti",
     "rewindOnResume": "Davom ettirganda orqaga qaytarish",
     "secondsUnit": "${seconds} soniya",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Dinamik diapazonni moslashtirish",
     "matchDynamicRangeDescription": "HDR kontent uchun HDR-ni yoqish, soʻng SDR-ga qaytish",
     "displaySwitchDelay": "Ekranni almashtirish kechikishi",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunnelli ijro",
     "tunneledPlaybackDescription": "Video tunnellashdan foydalanish. HDR ijrosida ekran qora boʻlsa yoki harakat uzilib qolsa, oʻchiring.",
     "audioPassthrough": "Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)",
@@ -484,6 +491,7 @@
     "display": "Displey",
     "libraryAndCards": "Kutubxona va kartochkalar",
     "homeScreen": "Bosh ekran",
+    "homeTextSize": "",
     "navigation": "Navigatsiya",
     "window": "Oyna",
     "liveTv": "Jonli TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Hamma joyda",
     "playerScopeLibrary": "Kutubxona boʻyicha",
     "playerScopeTitle": "Serial yoki film boʻyicha",
-    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
+    "exportDialogTitle": "Plezy sozlamalarini eksport qilish",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Oʻrnatilgan",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Boshqa qidiruv soʻzini kiriting",
     "searchYourMedia": "Medialaringizdan qidiring",
     "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting",
-    "people": "Odamlar"
+    "people": "Odamlar",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} uchun tugmalar birlashmasini oʻrnatish",
@@ -727,6 +760,10 @@
     "viewDetails": "Batafsil koʻrish",
     "goToSeries": "Serialga oʻtish",
     "shufflePlay": "Aralashtirib ijro etish",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Aralashtirib ijro etish oflayn rejimda mavjud emas",
     "fileInfo": "Fayl haqida maʼlumot",
     "deleteEpisodeFromServer": "Qismni serverdan oʻchirish",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Media elementi muvaffaqiyatli oʻchirildi",
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Boshidan ijro etish",
     "playVersion": "Versiyani ijro etish..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Majburiy)",
     "osdSubtitlesOff": "Subtitr: Oʻchirilgan",
     "osdSubtitles": "Subtitr: ${track}",
-    "osdAudio": "Ovoz: ${track}"
+    "osdAudio": "Ovoz: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Kashf qilish",
     "noContentAvailable": "Kontent mavjud emas",
     "addMediaToLibraries": "Kutubxonalaringizga media qoʻshing",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV Shou",
     "minutesLeft": "${minutes} daq qoldi",
+    "durationLeft": "",
     "moreLikeThis": "Oʻxshashlar",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} ta nom",
       "other": "${n} ta nom"
@@ -1220,7 +1272,9 @@
       "birthplace": "Tugʻilgan joyi",
       "dateWithAge": "${date} (${age} yosh)",
       "dateWithAgeAtDeath": "${date} (${age} yoshda)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Qidiruv xatoligi: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Jurnallarni tozalash",
     "copyLogs": "Jurnallarni nusxalash",
-    "uploadLogs": "Jurnallarni yuklash"
+    "uploadLogs": "Jurnallarni yuklash",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy ishga tusha olmadi",

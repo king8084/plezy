@@ -8,6 +8,7 @@ import '../media/media_item.dart';
 import '../media/media_item_merge.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../media/media_playlist.dart';
 import '../providers/discover_provider.dart';
 import '../screens/actor_media_screen.dart';
@@ -23,6 +24,9 @@ import 'formatters.dart';
 import 'music_navigation.dart';
 import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
+import '../media/episode_collection.dart';
+import 'provider_extensions.dart';
+import 'snackbar_helper.dart';
 
 /// Result of media navigation indicating what action was taken
 enum MediaNavigationResult {
@@ -125,9 +129,26 @@ bool shouldOpenEpisodeDetailsForActivation({
   required bool playDirectly,
   required ContinueWatchingAction continueWatchingAction,
   required EpisodeAction episodeAction,
+  bool forcePlayback = false,
 }) {
+  if (forcePlayback) return false;
   if (playDirectly) return continueWatchingAction == ContinueWatchingAction.details;
   return episodeAction == EpisodeAction.details;
+}
+
+/// Hardware Play on a show/season targets an episode, never the container.
+/// Episode and movie cards retain their already-resolved item and cost no
+/// extra server lookup on the fast startup path.
+Future<MediaItem?> resolveDirectPlaybackItem(MediaServerClient client, MediaItem item) async {
+  if (!item.isShow && !item.isSeason) return item;
+  if (item.isShow) {
+    final onDeck = (await client.fetchItemWithOnDeck(item.id)).onDeckEpisode;
+    if (onDeck != null) return onDeck.copyWith(serverId: item.serverId, serverName: item.serverName);
+  }
+  final episodes = (await client.fetchPlayableDescendants(item.id)).where((item) => item.isEpisode).toList()
+    ..sort(compareEpisodesSpecialsLast);
+  final episode = firstUnwatchedEpisode(episodes) ?? episodes.firstOrNull;
+  return episode?.copyWith(serverId: item.serverId, serverName: item.serverName);
 }
 
 /// Ask which copy a Continue Watching row should open when the row stands for
@@ -181,6 +202,8 @@ Future<MediaItem?> _pickContinueWatchingCopy(BuildContext context, List<MediaIte
 /// activation; those surfaces use the Continue Watching action setting instead
 /// of the normal Episode Action setting. A Continue Watching row that merged
 /// copies from several libraries or servers first asks which one to open.
+/// [forcePlayback] is an explicit hardware Play command: it bypasses card
+/// activation preferences and resolves shows/seasons to a playable episode.
 ///
 /// Returns a [MediaNavigationResult] indicating what action was taken:
 /// - [MediaNavigationResult.navigated]: Navigation completed, item refresh handled
@@ -192,7 +215,9 @@ Future<MediaNavigationResult> navigateToMediaItem(
   void Function(MediaItem source)? onRefresh,
   bool isOffline = false,
   bool playDirectly = false,
+  bool forcePlayback = false,
 }) async {
+  playDirectly = playDirectly || forcePlayback;
   if (item is MediaPlaylist) {
     final result = await Navigator.push<bool>(
       context,
@@ -229,12 +254,26 @@ Future<MediaNavigationResult> navigateToMediaItem(
   final settings = SettingsService.instanceOrNull;
   final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
   final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
-  final shouldOpenContinueWatchingDetails = playDirectly && continueWatchingAction == ContinueWatchingAction.details;
+  final shouldOpenContinueWatchingDetails =
+      playDirectly && !forcePlayback && continueWatchingAction == ContinueWatchingAction.details;
   final shouldOpenEpisodeDetails = shouldOpenEpisodeDetailsForActivation(
     playDirectly: playDirectly,
     continueWatchingAction: continueWatchingAction,
     episodeAction: episodeAction,
+    forcePlayback: forcePlayback,
   );
+
+  if (forcePlayback && (mi.isShow || mi.isSeason) && !isOffline) {
+    final serverId = mi.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+    final playable = client == null ? null : await resolveDirectPlaybackItem(client, mi);
+    if (!context.mounted) return MediaNavigationResult.navigated;
+    if (playable == null) {
+      showErrorSnackBar(context, t.messages.noEpisodesFound);
+      return MediaNavigationResult.unsupported;
+    }
+    return navigateToMediaItem(context, playable, onRefresh: onRefresh, forcePlayback: true);
+  }
 
   // Handle library section items (shared whole-library entries) — Plex-only;
   // `PlexMappers` stashes the section path in `raw['key']`. Jellyfin "views"

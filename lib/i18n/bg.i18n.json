@@ -222,6 +222,9 @@
     "gridView": "Мрежа",
     "listView": "Списък",
     "showHeroSection": "Показвай водеща секция",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Действие за продължаване на гледането",
     "continueWatchingPlay": "Пусни",
     "continueWatchingDetails": "Отвори подробности",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Стил на субтитрите",
     "subtitleStylingDescription": "Настройване на вида на субтитрите",
     "smallSkipDuration": "Малко прескачане",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Голямо прескачане",
     "rewindOnResume": "Връщане назад при продължаване",
     "secondsUnit": "${seconds} секунди",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Напасване на динамичния диапазон",
     "matchDynamicRangeDescription": "Включи HDR за HDR съдържание, после върни към SDR",
     "displaySwitchDelay": "Забавяне при смяна на дисплея",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Тунелно възпроизвеждане",
     "tunneledPlaybackDescription": "Използвай видео тунелиране. Изключете, ако HDR възпроизвеждането показва черен екран или движението прекъсва.",
     "audioPassthrough": "Директно предаване на аудио",
@@ -484,6 +491,7 @@
     "display": "Дисплей",
     "libraryAndCards": "Библиотека и карти",
     "homeScreen": "Начален екран",
+    "homeTextSize": "",
     "navigation": "Навигация",
     "window": "Прозорец",
     "liveTv": "Телевизия на живо",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Навсякъде",
     "playerScopeLibrary": "По библиотека",
     "playerScopeTitle": "По сериал или филм",
-    "exportDialogTitle": "Експортиране на настройките на Plezy"
+    "exportDialogTitle": "Експортиране на настройките на Plezy",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Вградени",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Опитайте с различна дума за търсене",
     "searchYourMedia": "Търсете в медийното си съдържание",
     "enterTitleActorOrKeyword": "Въведете заглавие, актьор или ключова дума",
-    "people": "Хора"
+    "people": "Хора",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Задай клавишна комбинация за ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Виж подробности",
     "goToSeries": "Към сериала",
     "shufflePlay": "Разбъркано възпроизвеждане",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Разбърканото възпроизвеждане не е налично офлайн",
     "fileInfo": "Информация за файла",
     "deleteEpisodeFromServer": "Изтрий епизода от сървъра",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Елементът е изтрит успешно",
     "mediaFailedToDelete": "Неуспешно изтриване на елемента",
     "rate": "Оцени",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Пусни от началото",
     "playVersion": "Пусни версия..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Принудителни)",
     "osdSubtitlesOff": "Субтитри: изкл.",
     "osdSubtitles": "Субтитри: ${track}",
-    "osdAudio": "Аудио: ${track}"
+    "osdAudio": "Аудио: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Открий",
     "noContentAvailable": "Няма налично съдържание",
     "addMediaToLibraries": "Добавете медия към библиотеките си",
@@ -1209,7 +1258,10 @@
     "movie": "Филм",
     "tvShow": "ТВ сериал",
     "minutesLeft": "Остават ${minutes} мин",
+    "durationLeft": "",
     "moreLikeThis": "Подобно на това",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} заглавие",
       "other": "${n} заглавия"
@@ -1220,7 +1272,9 @@
       "birthplace": "Място на раждане",
       "dateWithAge": "${date} (на ${age} г.)",
       "dateWithAgeAtDeath": "${date} (на ${age} г.)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Търсенето е неуспешно: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Изчисти логовете",
     "copyLogs": "Копирай логовете",
-    "uploadLogs": "Качи логовете"
+    "uploadLogs": "Качи логовете",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy не можа да стартира",

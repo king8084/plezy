@@ -1,3 +1,5 @@
+import '../../../media/media_item_types.dart';
+import '../../../utils/media_navigation_helper.dart';
 import 'dart:async';
 import '../../../media/ids.dart';
 
@@ -2291,6 +2293,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return FocusableMediaCard(
       key: Key(item.id),
       item: item,
+      onTap: PlatformDetector.isAppleTV() && (item.isShow || item.isSeason || item.isEpisode || item.isMovie)
+          ? () => unawaited(navigateToMediaItemDetails(context, item, onRefresh: updateItem))
+          : null,
       focusNode: focusNode,
       disableScale: disableScale,
       onRefresh: updateItem,

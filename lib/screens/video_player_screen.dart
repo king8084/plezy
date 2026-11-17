@@ -94,6 +94,7 @@ import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
+import '../services/watch_actions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
@@ -793,6 +794,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // overlaps with MPV property configuration. Awaited inside `_startPlayback`
   // immediately before `player.open()` needs the video URL.
   Future<PlaybackContext>? _playbackDataFuture;
+  final Stopwatch _startupTiming = Stopwatch();
+
+  void _logStartupPhase(String phase) {
+    if (PlatformDetector.isAppleTV()) {
+      appLogger.i('tvOS playback startup: $phase at ${_startupTiming.elapsedMilliseconds} ms');
+    }
+  }
 
   // The item currently loaded in the player: resolver output + effective
   // selections, swapped atomically by [_commitPlaybackSession]. Null until
@@ -822,6 +830,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   TrackManager? _trackManager;
   StreamSubscription<void>? _sleepTimerSubscription;
   bool _isHandlingBack = false;
+
+  /// A "mark played" command is in flight (see [_markPlayedAndContinue]).
+  bool _isMarkingPlayed = false;
 
   /// Cancel scope for the screen's player-driven stream subscriptions — the
   /// single authority consumed by [_wirePlayerStreams] (re-wire:
@@ -912,6 +923,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _showStillWatchingPrompt = false;
   final ValueNotifier<int> _stillWatchingCountdown = ValueNotifier<int>(30);
   Timer? _stillWatchingTimer;
+
+  /// Episodes started automatically in a row with no remote press since
+  /// (see [SettingsService.stillWatchingAfterEpisodes]).
+  int _unattendedAutoAdvances = 0;
+  Timer? _stillWatchingAfterAdvanceTimer;
+
+  bool _noteRemoteInput(KeyEvent event) {
+    if (event is KeyDownEvent) _unattendedAutoAdvances = 0;
+    return false; // observe only; never consumes the key
+  }
+
   late final FocusNode _stillWatchingPauseFocusNode;
   late final FocusNode _stillWatchingContinueFocusNode;
 
@@ -1393,6 +1415,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+    _startupTiming.start();
+    _logStartupPhase('player screen opened');
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
       stopAndExit: _stopVideoAndExit,
@@ -1550,6 +1574,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
       if (mounted) _showStillWatchingDialog();
     });
+    HardwareKeyboard.instance.addHandler(_noteRemoteInput);
 
     if (PlatformDetector.isAutomotive()) {
       unawaited(_startPlayerInitializationOnceVehicleAnswers());
@@ -1813,30 +1838,37 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
-        _playbackDataFuture = playbackResolver.resolve(
-          PlaybackInitializationOptions(
-            metadata: _currentMetadata,
-            selectedMediaIndex: _effectiveSelectedMediaIndex,
-            selectedMediaSourceId: _requestedMediaSourceId,
-            preferredVersionSignature: widget.preferredVersionSignature,
-            qualityPreset: _selectedQualityPreset,
-            selectedAudioStreamId: _selectedAudioStreamId,
-            preferredAudioTrack: _preferredAudioTrack,
-            preferredSubtitleTrack: _preferredSubtitleTrack,
-            sessionIdentifier: _playbackSessionIdentifier,
-            transcodeSessionId: _playbackTranscodeSessionId,
-            // The same resume the open will land on (see
-            // _resolveOpenResumePosition): a stacked item opens the file
-            // holding it.
-            startPosition: resolveOpenResumePosition(
-              requested: widget.initialPosition,
-              shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
-              viewOffsetMs: _currentMetadata.viewOffsetMs,
-            ),
-          ),
-          offlineLibraryMode: false,
-          downloadOutranksQuality: _downloadOutranksQuality,
-        );
+        final resolveTiming = Stopwatch()..start();
+        _playbackDataFuture = playbackResolver
+            .resolve(
+              PlaybackInitializationOptions(
+                metadata: _currentMetadata,
+                selectedMediaIndex: _effectiveSelectedMediaIndex,
+                selectedMediaSourceId: _requestedMediaSourceId,
+                preferredVersionSignature: widget.preferredVersionSignature,
+                qualityPreset: _selectedQualityPreset,
+                selectedAudioStreamId: _selectedAudioStreamId,
+                preferredAudioTrack: _preferredAudioTrack,
+                preferredSubtitleTrack: _preferredSubtitleTrack,
+                sessionIdentifier: _playbackSessionIdentifier,
+                transcodeSessionId: _playbackTranscodeSessionId,
+                // The same resume the open will land on (see
+                // _resolveOpenResumePosition): a stacked item opens the file
+                // holding it.
+                startPosition: resolveOpenResumePosition(
+                  requested: widget.initialPosition,
+                  shuffleFromBeginning: widget.initialPosition == null && _opensShuffledFromBeginning(settingsService),
+                  viewOffsetMs: _currentMetadata.viewOffsetMs,
+                ),
+              ),
+              offlineLibraryMode: false,
+              downloadOutranksQuality: _downloadOutranksQuality,
+            )
+            .whenComplete(() {
+              if (PlatformDetector.isAppleTV()) {
+                appLogger.i('tvOS playback startup: source resolution took ${resolveTiming.elapsedMilliseconds} ms');
+              }
+            });
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
         // unhandled async error. The later `await` still receives the error.
@@ -1878,6 +1910,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
+      _logStartupPhase('creating player');
       final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
@@ -2240,6 +2273,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       initPhase = 'starting playback';
+      _logStartupPhase('player configuration finished');
       await _startPlayback();
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
@@ -2536,6 +2570,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _tvSuspend.dispose();
 
     _stillWatchingTimer?.cancel();
+    _stillWatchingAfterAdvanceTimer?.cancel();
+    HardwareKeyboard.instance.removeHandler(_noteRemoteInput);
     _stillWatchingCountdown.dispose();
 
     _liveSeek.dispose();
@@ -2678,11 +2714,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
+    _unattendedAutoAdvances = 0; // a person is here
     appLogger.d(
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
-    await _remoteTransport(TransportCommand.toggle, source: 'Apple TV remote');
+    final command = switch (action.detail) {
+      'mediaPlay' || 'remoteControlPlay' => TransportCommand.play,
+      'mediaPause' || 'remoteControlPause' => TransportCommand.pause,
+      _ => TransportCommand.toggle,
+    };
+    await _remoteTransport(command, source: 'Apple TV remote');
   }
 
   /// Announce an *accepted user transport command* with a centred transient disc.
@@ -2983,6 +3025,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     _tvSuspend.cancelGrace();
     _episode.autoPlayTimer?.cancel();
     _stillWatchingTimer?.cancel();
+    _stillWatchingAfterAdvanceTimer?.cancel();
     _abortCurrentOpen('playback shutdown');
     _liveSeek.cancel();
     _relativeSkip.cancel();

@@ -12,6 +12,17 @@ MediaHub _hub(String id, List<MediaItem> items) =>
     MediaHub(id: id, title: id, type: 'movie', size: items.length, items: items);
 
 void main() {
+  testWidgets('spotlight settles on a new title in 80 milliseconds', (tester) async {
+    final first = _item('first');
+    final second = _item('second');
+    final controller = TvSpotlightController()..value = first;
+    addTearDown(controller.dispose);
+    controller.select(second);
+    await tester.pump(const Duration(milliseconds: 79));
+    expect(controller.value, same(first));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(controller.value, same(second));
+  });
   test('spotlight controller cancels an intermediate debounced selection', () async {
     final first = _item('first');
     final second = _item('second');

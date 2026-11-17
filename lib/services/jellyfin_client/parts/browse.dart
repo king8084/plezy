@@ -1460,6 +1460,45 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return deduplicated.values.toList();
   }
 
+  /// Items for [ids], returned in the same order, mapped like search rows.
+  ///
+  /// Used by smart search: the index ranks, Jellyfin hydrates with this user's
+  /// own token, so ids the user may not see are simply absent. `Ids=` ignores
+  /// `ParentId` on Jellyfin, so callers stamp the library themselves.
+  Future<List<MediaItem>> fetchItemsInOrder(List<String> ids, {AbortController? abort}) async {
+    if (ids.isEmpty) return const [];
+    final rows = await _fetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'Ids': ids.join(','),
+      'Fields': _browseFields,
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    }, abort: abort);
+    abort?.throwIfAborted();
+    final byId = {for (final item in _mapItems(rows)) item.id: item};
+    return [for (final id in ids) ?byId[id]];
+  }
+
+  /// The user's most recently played movies and episodes, newest first
+  /// (finished or in progress). Seeds Home's "Because you watched" row.
+  Future<List<MediaItem>> fetchRecentlyPlayed({int limit = 3, AbortController? abort}) async {
+    final rows = await _fetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'Recursive': 'true',
+      'IncludeItemTypes': 'Movie,Episode',
+      'SortBy': 'DatePlayed',
+      'SortOrder': 'Descending',
+      'Limit': '$limit',
+      'Fields': _browseFields,
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    }, abort: abort);
+    abort?.throwIfAborted();
+    return _mapItems(
+      rows,
+    ).where((item) => item.lastViewedAt != null || item.isWatched || (item.viewOffsetMs ?? 0) > 0).toList();
+  }
+
   /// Search a single library. Results are stamped with it, which is the only
   /// way a Jellyfin search hit ever learns which library it came from.
   Future<List<MediaItem>> _searchLibrary(

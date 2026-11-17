@@ -59,7 +59,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     }
     // Skip-Intro is the primary action only while the chrome is down and the
     // button is the sole affordance on screen; with the OSD up it is a real
-    // focusable control and Select must stay "toggle playback". The skip
+    // focusable control and Select belongs to the focused control. The skip
     // binding is the exception: Enter is its default, and on desktop merely
     // moving the mouse raises the OSD, so otherwise the binding would never
     // fire over a prompt the viewer can see (#2577).
@@ -68,11 +68,11 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       _activateSkipMarker();
       return;
     }
-    // Raise the chrome *before* toggling: Select is the deliberate "show me the
-    // controls" affordance, and the visible chrome suppresses the transient
-    // transport disc that would otherwise flash underneath it.
+    // Apple TV center Select opens the controls without changing playback.
+    // A focused OSD button still owns its own activation; hardware Play/Pause
+    // remains a separate transport action. Keep desktop Enter behavior intact.
     _showControlsWithFocus(requestFocus: requestFocus);
-    unawaited(_playOrPause());
+    if (!PlatformDetector.isAppleTV()) unawaited(_playOrPause());
   }
 
   KeyEventResult _handleLocalPlayerNavigationKeyEvent(
@@ -311,7 +311,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // holds primary focus — a focused OSD control owns its own activation.
     // Whether the raised chrome also takes focus is the key's own answer, so
     // mode and focus can never disagree: a remote OK starts a focus session, a
-    // physical-keyboard Enter just shows the controls and toggles playback.
+    // desktop physical-keyboard Enter shows the controls and toggles playback.
     if (key.isSelectKey && _focusNode.hasPrimaryFocus) {
       return handleOneShotSelect(event, () => _activatePlayerSurfaceSelect(event));
     }

@@ -88,6 +88,13 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (Platform.isWindows || Platform.isMacOS) _matchRefreshRateTile(),
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
+                if (PlatformDetector.isAppleTV())
+                  SettingSwitchTile(
+                    pref: SettingsService.appleTvQmsFastStart,
+                    icon: Symbols.speed_rounded,
+                    title: t.settings.qmsFastStart,
+                    subtitle: t.settings.qmsFastStartDescription,
+                  ),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.
@@ -161,11 +168,20 @@ class PlaybackSettingsScreen extends StatelessWidget {
       SettingNumberTile(
         pref: SettingsService.seekTimeSmall,
         icon: Symbols.replay_10_rounded,
-        title: t.settings.smallSkipDuration,
+        title: PlatformDetector.isAppleTV() ? t.settings.forwardSkipDuration : t.settings.smallSkipDuration,
         subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
+      if (PlatformDetector.isAppleTV())
+        SettingNumberTile(
+          pref: SettingsService.seekTimeBackward,
+          icon: Symbols.replay_rounded,
+          title: t.settings.backwardSkipDuration,
+          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+        ),
       SettingNumberTile(
         pref: SettingsService.seekTimeLarge,
         icon: Symbols.replay_30_rounded,
@@ -327,6 +343,22 @@ class PlaybackSettingsScreen extends StatelessWidget {
             v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v.toString()),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
+      ),
+      SettingSelectionTile<int>(
+        pref: SettingsService.stillWatchingAfterEpisodes,
+        icon: Symbols.bedtime_rounded,
+        title: t.settings.stillWatchingAfterEpisodes,
+        subtitleBuilder: (v) => v == 0
+            ? t.settings.stillWatchingAfterEpisodesOff
+            : t.settings.stillWatchingAfterEpisodesCount(count: v.toString()),
+        options: [
+          DialogOption(value: 0, title: t.settings.stillWatchingAfterEpisodesOff),
+          for (final n in const [2, 3, 4, 5])
+            DialogOption(
+              value: n,
+              title: t.settings.episodesInARow(count: n.toString()),
+            ),
+        ],
       ),
       SettingSelectionTile<SkipMarkerMode>(
         pref: SettingsService.skipIntroMode,

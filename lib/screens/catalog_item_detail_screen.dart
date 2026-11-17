@@ -330,9 +330,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   /// One lazy detail load against the item's own source; failures keep the
   /// opening item visible and leave provider-only sections hidden. The
-  /// trackers' scores are asked for afterwards, with the detail's ids (a Plex
-  /// Discover row carries only its rating key).
+  /// trackers' scores use the detail's ids (a Plex Discover row carries only
+  /// its rating key). Seerr's existing TMDB id lets its lookup run in parallel.
   Future<void> _loadDetail() async {
+    // Seerr rows already carry TMDB ids. Start the cached community lookup
+    // immediately rather than waiting on details and recommendation requests.
+    final isSeerr = widget.item.source == CatalogSourceId.seerr;
+    if (isSeerr) _loadCommunityRatings(widget.item);
     final source = _ownSource;
     if (source != null) {
       try {
@@ -372,11 +376,16 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       }
     }
     if (!mounted) return;
-    _communityRatingsSubscription = context.read<CatalogSourcesProvider>().communityRatingsForCatalogItem(_item).listen(
-      (ratings) {
-        if (mounted) setState(() => _communityRatings = ratings);
-      },
-    );
+    if (!isSeerr) _loadCommunityRatings(_item);
+  }
+
+  void _loadCommunityRatings(CatalogItem item) {
+    unawaited(_communityRatingsSubscription?.cancel());
+    _communityRatingsSubscription = context.read<CatalogSourcesProvider>().communityRatingsForCatalogItem(item).listen((
+      ratings,
+    ) {
+      if (mounted) setState(() => _communityRatings = ratings);
+    });
   }
 
   void _replaceRelationFocusNodes(int count) {
@@ -831,12 +840,17 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       }
     }
 
-    if (item.rating case final rating?) {
+    final isSeerr = item.source == CatalogSourceId.seerr;
+    final imdb = isSeerr ? catalogImdbRating(item, _communityRatings) : null;
+    final headlineRating = isSeerr ? imdb?.value : item.rating;
+    final headlineVotes = isSeerr ? imdb?.votes : item.votes;
+    if (headlineRating case final rating?) {
       var score = rating.toStringAsFixed(1);
-      if (item.votes case final votes?) {
+      if (isSeerr) score = '${t.common.ratingSource.imdb} $score';
+      if (headlineVotes case final votes?) {
         score = '$score (${t.explore.stats.votes(n: compact.format(votes))})';
       }
-      add(score, icon: Symbols.star_rounded, iconColor: Colors.amber);
+      add(score, icon: Symbols.star_rounded, iconColor: isSeerr ? const Color(0xFFB8860B) : Colors.amber);
     }
     if (item.airStatus case final status?) add(statusLabel(status));
     if (item.episodeCount case final count?) add(t.explore.episodeCount(n: count));

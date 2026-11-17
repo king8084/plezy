@@ -6,6 +6,31 @@ part of '../media_detail_screen.dart';
 /// hero shows, and on TV that changes with rail focus, so there is no per-
 /// episode target for a control here to act on.
 extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
+  /// Jellyfin season rows already include sources/streams. Prepare their
+  /// saved-version previews locally instead of fetching each episode again.
+  List<Map<String, dynamic>>? _listedPlaybackSources(MediaItem item) {
+    if (item.backend != MediaBackend.jellyfin) return null;
+    final sources = item.raw?['MediaSources'];
+    if (sources is! List ||
+        sources.isEmpty ||
+        !sources.every((source) => source is Map<String, dynamic> && source['MediaStreams'] is List)) {
+      return null;
+    }
+    return sources.cast<Map<String, dynamic>>();
+  }
+
+  void _warmListedEpisodeTracks() {
+    if (!_canUseDetail || widget.isOffline || !PlatformDetector.isTV()) return;
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+    final generation = _playbackProbeGeneration;
+    for (final episode in _episodes) {
+      if (_listedPlaybackSources(episode) != null) {
+        unawaited(_probeTarget(client, null, episode, generation));
+      }
+    }
+  }
+
   /// The item Play would start: the hero's episode for a show, the first
   /// episode for a season, the item itself otherwise. Null while a show has
   /// not resolved any episode yet.
@@ -31,6 +56,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
   void _onPlaybackVersionChanged() {
     if (!_canUseDetail) return;
     _invalidatePlaybackProbes(refreshItems: false);
+    _warmListedEpisodeTracks();
   }
 
   void _invalidatePlaybackProbes({required bool refreshItems}) {
@@ -54,10 +80,13 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     final downloads = widget.isOffline ? context.read<DownloadProvider>() : null;
     _playbackProbeTimer?.cancel();
     final generation = _playbackProbeGeneration;
-    _playbackProbeTimer = Timer(const Duration(milliseconds: 350), () {
-      if (!mounted || generation != _playbackProbeGeneration || _playbackProbeRequests.containsKey(key)) return;
-      unawaited(_probeTarget(client, downloads, target, generation));
-    });
+    _playbackProbeTimer = Timer(
+      _listedPlaybackSources(target) == null ? const Duration(milliseconds: 350) : Duration.zero,
+      () {
+        if (!mounted || generation != _playbackProbeGeneration || _playbackProbeRequests.containsKey(key)) return;
+        unawaited(_probeTarget(client, downloads, target, generation));
+      },
+    );
   }
 
   Future<void> _probeTarget(
@@ -67,6 +96,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     int generation,
   ) async {
     final key = target.globalKey;
+    if (_playbackSources.containsKey(key) || _playbackProbeRequests.containsKey(key)) return;
     final request = Object();
     _playbackProbeRequests[key] = request;
     bool current() => _canUseDetail && generation == _playbackProbeGeneration && _playbackProbeRequests[key] == request;
@@ -87,22 +117,30 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
           if (versions == null || mediaIndex < 0 || mediaIndex >= versions.length) mediaIndex = null;
         }
       } else {
-        final fetched = _probedPlaybackItems[key] ?? await client!.fetchItem(target.id);
+        final listedSources = _listedPlaybackSources(target);
+        final fetched =
+            _probedPlaybackItems[key] ?? (listedSources == null ? await client!.fetchItem(target.id) : target);
         if (!current() || fetched == null) return;
         item = fetched.copyWith(
           serverId: target.serverId ?? fetched.serverId,
           serverName: target.serverName ?? fetched.serverName,
         );
-        _probedPlaybackItems[key] = item;
-        _recordProbedRatings(key, item.ratings);
+        _recordProbedMetadata(key, item);
         final selection = await resolveSavedMediaVersionFor(item);
         if (!current()) return;
-        source = await client!.fetchCachedMediaSourceInfo(
-          item.id,
-          mediaIndex: selection?.index ?? 0,
-          mediaSourceId: selection?.sourceId,
-          preferredVersionSignature: selection?.signature,
-        );
+        if (listedSources != null) {
+          final selectedId = selection?.sourceId;
+          final byId = selectedId == null ? -1 : listedSources.indexWhere((source) => source['Id'] == selectedId);
+          final index = byId >= 0 ? byId : (selection?.index ?? 0).clamp(0, listedSources.length - 1);
+          source = jellyfinMediaSourceToMediaSourceInfo(listedSources[index], mediaIndex: index);
+        } else {
+          source = await client!.fetchCachedMediaSourceInfo(
+            item.id,
+            mediaIndex: selection?.index ?? 0,
+            mediaSourceId: selection?.sourceId,
+            preferredVersionSignature: selection?.signature,
+          );
+        }
         if (!current() || source == null) return;
         mediaIndex = source.mediaIndex ?? selection?.index ?? 0;
       }
@@ -118,13 +156,17 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
     }
   }
 
-  /// Repaints the TV hero only when the scores are new for the episode it
-  /// shows; a re-probe after a refresh returns the same scores.
-  void _recordProbedRatings(String key, List<MediaRatingSource>? ratings) {
-    if (ratings == null || ratings.isEmpty) return;
-    final isNew = !_probedRatings.containsKey(key);
-    _probedRatings[key] = ratings;
-    if (isNew && _tvDetailFocusedEpisode.value?.globalKey == key) _focusedEpisodeRatingsRevision.value++;
+  /// Full records can supply a synopsis absent from the thumbnail listing.
+  /// Repaint the focused hero when that arrives, even without any new scores.
+  void _recordProbedMetadata(String key, MediaItem item) {
+    final previous = _probedPlaybackItems[key];
+    _probedPlaybackItems[key] = item;
+    final ratings = item.ratings;
+    final hasNewRatings = ratings != null && ratings.isNotEmpty && !_probedRatings.containsKey(key);
+    if (ratings != null && ratings.isNotEmpty) _probedRatings[key] = ratings;
+    if (_tvDetailFocusedEpisode.value?.globalKey == key && (hasNewRatings || previous?.summary != item.summary)) {
+      _focusedEpisodeMetadataRevision.value++;
+    }
   }
 
   /// The listener stays mounted while a source is resolving, without adding
@@ -209,6 +251,32 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
             MetadataLineIconText(:final text, :final detail) => detail == null ? text : '$text${MetadataLineIconText.detailSeparator}$detail',
             MetadataLineRatings() => '',
           }].join(', ')}';
+
+    if (isTv && (metadata.isShow || metadata.isSeason || metadata.isEpisode)) {
+      final selectedItem = probed?.item;
+      final versionIndex = probed?.mediaIndex;
+      final fileSummary = selectedItem == null || versionIndex == null
+          ? null
+          : buildMediaFileSummaryLabel(selectedItem, versionIndex: versionIndex);
+      return Semantics(
+        key: const ValueKey('detail_playback_tracks'),
+        label: semanticsLabel,
+        excludeSemantics: true,
+        child: MediaTechnicalBadges(
+          scale: tvScale,
+          labels: [
+            ...videoLabels,
+            if (audioLabel != null) [audioLabel.primary, ?audioLabel.secondary].join(' · '),
+            // File size/bitrate uses the same selected version as Play.
+            ?fileSummary,
+            if (preview != null)
+              subtitleLabel == null
+                  ? t.videoControls.osdSubtitlesOff
+                  : t.videoControls.osdSubtitles(track: subtitleLabel.primary),
+          ],
+        ),
+      );
+    }
 
     // Same ink as the hero's metadata line, one step lighter in weight and
     // size so it reads as a footnote to the buttons rather than a sixth one.

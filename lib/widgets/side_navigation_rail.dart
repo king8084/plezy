@@ -14,8 +14,14 @@ import '../focus/focus_memory_tracker.dart';
 import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_library.dart';
+import '../media/media_hub.dart';
+import '../screens/hub_detail_screen.dart';
+import '../screens/sidebar_favorites_screen.dart';
+import '../services/sidebar_library_items.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
+import '../navigation/sidebar_order.dart';
+import '../navigation/sidebar_destinations.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -170,6 +176,7 @@ class NavigationRailItem extends StatelessWidget {
     // The collapsed TV rail is a transparent overlay strip; a persistent
     // active pill over artwork is noise there, so it shows focus only.
     final showSelected = isSelected && !suppressSelectedBackground && !(collapsedLayout && PlatformDetector.isTV());
+    if (focused && PlatformDetector.isTV()) return t.text;
     if (focused) return t.text.withValues(alpha: showSelected ? selectedFocusAlpha : focusAlpha);
     if (showSelected) return t.text.withValues(alpha: 0.1);
     return null;
@@ -183,14 +190,27 @@ class NavigationRailItem extends StatelessWidget {
     );
   }
 
-  Widget _leadingIcon(MonoTokens t) =>
-      iconWidget ??
-      AppIcon(
-        isSelected && selectedIcon != null ? selectedIcon! : icon,
-        fill: 1,
-        size: iconSize,
-        color: isSelected ? t.accent : t.textMuted,
-      );
+  Widget _leadingIcon(MonoTokens t, {bool focused = false}) {
+    final custom = iconWidget;
+    if (custom != null) {
+      return focused && PlatformDetector.isTV()
+          ? ColorFiltered(colorFilter: ColorFilter.mode(t.surface, BlendMode.srcIn), child: custom)
+          : custom;
+    }
+    return AppIcon(
+      isSelected && selectedIcon != null ? selectedIcon! : icon,
+      fill: PlatformDetector.isTV() ? 0 : 1,
+      weight: PlatformDetector.isTV() ? 400 : null,
+      size: iconSize,
+      color: focused && PlatformDetector.isTV()
+          ? t.surface
+          : isSelected
+          ? PlatformDetector.isTV()
+                ? t.text
+                : t.accent
+          : t.textMuted,
+    );
+  }
 
   static double _collapsedItemWidth(BuildContext context) =>
       SideNavigationRailState.collapsedWidthForContext(context) -
@@ -211,9 +231,9 @@ class NavigationRailItem extends StatelessWidget {
             alignment: .center,
             decoration: BoxDecoration(
               color: _indicatorColor(t, focused: focused, expansion: 0),
-              borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+              borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
             ),
-            child: _leadingIcon(t),
+            child: _leadingIcon(t, focused: focused),
           ),
         ),
       ),
@@ -221,15 +241,24 @@ class NavigationRailItem extends StatelessWidget {
   }
 
   /// M3E expanded destination: full-width stadium indicator behind the row.
-  Widget _labelAtOpacity(BuildContext context, double opacity) {
+  Widget _labelAtOpacity(BuildContext context, double opacity, {bool focused = false}) {
     final builder = labelBuilder;
-    if (builder != null) return builder(opacity);
+    if (builder != null) {
+      final label = builder(opacity);
+      return focused && PlatformDetector.isTV()
+          ? ColorFiltered(colorFilter: ColorFilter.mode(tokens(context).surface, BlendMode.srcIn), child: label)
+          : label;
+    }
 
     final textStyle = label is Text ? (label as Text).style : null;
     final inheritsTextColor =
         label is Text &&
         (textStyle == null || (textStyle.inherit && textStyle.color == null && textStyle.foreground == null));
-    final color = inheritsTextColor ? labelColor ?? DefaultTextStyle.of(context).style.color : null;
+    final color = inheritsTextColor
+        ? focused && PlatformDetector.isTV()
+              ? tokens(context).surface
+              : labelColor ?? DefaultTextStyle.of(context).style.color
+        : null;
     if (color != null) {
       return DefaultTextStyle.merge(
         style: TextStyle(color: color.withValues(alpha: color.a * opacity)),
@@ -254,12 +283,13 @@ class NavigationRailItem extends StatelessWidget {
     MonoTokens t, {
     required double labelOpacity,
     required bool showLeading,
+    required bool focused,
   }) {
     return Row(
       children: [
-        if (showLeading) _leadingIcon(t) else SizedBox(width: iconSize, height: iconSize),
+        if (showLeading) _leadingIcon(t, focused: focused) else SizedBox(width: iconSize, height: iconSize),
         const SizedBox(width: 11),
-        Expanded(child: _labelAtOpacity(context, labelOpacity)),
+        Expanded(child: _labelAtOpacity(context, labelOpacity, focused: focused)),
         ?_trailingAtOpacity(labelOpacity),
       ],
     );
@@ -272,9 +302,9 @@ class NavigationRailItem extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: fixedHeight ? 0 : 8),
       decoration: BoxDecoration(
         color: _indicatorColor(t, focused: focused, expansion: 1),
-        borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+        borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
       ),
-      child: _buildExpandedContent(context, t, labelOpacity: 1, showLeading: true),
+      child: _buildExpandedContent(context, t, labelOpacity: 1, showLeading: true, focused: focused),
     );
   }
 
@@ -312,7 +342,7 @@ class NavigationRailItem extends StatelessWidget {
               height: lerpDouble(collapsedIndicatorHeight, expandedHeight, expansion),
               decoration: BoxDecoration(
                 color: _indicatorColor(t, focused: focused, expansion: expansion),
-                borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+                borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
               ),
             ),
           ),
@@ -324,7 +354,7 @@ class NavigationRailItem extends StatelessWidget {
               height: expandedHeight,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: _buildExpandedContent(context, t, labelOpacity: expansion, showLeading: false),
+                child: _buildExpandedContent(context, t, labelOpacity: expansion, showLeading: false, focused: focused),
               ),
             ),
           ),
@@ -371,7 +401,7 @@ class NavigationRailItem extends StatelessWidget {
             child: InkWell(
               canRequestFocus: false,
               onTap: onTap,
-              borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+              borderRadius: BorderRadius.circular(PlatformDetector.isTV() ? 12 : MonoTokens.radiusFull),
               child: UnconstrainedBox(
                 alignment: .centerLeft,
                 constrainedAxis: Axis.vertical,
@@ -470,6 +500,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const _kExplore = 'explore';
   static const _kNowPlaying = 'nowPlaying';
   static const _kLibraries = 'libraries';
+  static const _kFavorites = 'favorites';
+  static const _kCollections = 'collections';
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
@@ -497,6 +529,41 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// edge shadow. Every docked shape — collapsed, always-open, or D-pad
   /// focus-expanded — displaces content instead and stays transparent on TV.
   bool get _isFloatingPanel => _interactionExpanded && !widget.alwaysExpanded;
+
+  bool get _showFavorites =>
+      !widget.isOfflineMode && SettingsService.instance.read(SettingsService.pinFavoritesToSidebar);
+  bool get _showCollections =>
+      !widget.isOfflineMode && SettingsService.instance.read(SettingsService.pinCollectionsToSidebar);
+
+  void _openLibraryShortcut({required bool favorites}) {
+    final multiServer = context.read<MultiServerProvider>();
+    final libraries = context.read<LibrariesProvider>();
+    final hidden = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final title = favorites ? t.libraries.filterCategories.favorites : t.collections.title;
+    // The same profile-visible, non-hidden libraries as the sidebar itself.
+    final sources = [
+      for (final library in libraries.libraries)
+        if (!hidden.contains(library.globalKey) && multiServer.onlineServerIds.contains(library.serverId))
+          if (multiServer.getClientForServer(ServerId(library.serverId!)) case final client?)
+            (library: library, client: client),
+    ];
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => favorites && PlatformDetector.isTV()
+            ? SidebarFavoritesScreen(loadItems: () => fetchSidebarLibraryItems(favorites: true, sources: sources))
+            : HubDetailScreen(
+                hub: MediaHub(
+                  id: favorites ? 'sidebar_favorites' : 'sidebar_collections',
+                  title: title,
+                  type: favorites ? 'mixed' : 'collection',
+                  items: const [],
+                  more: true,
+                ),
+                loadItems: () => fetchSidebarLibraryItems(favorites: favorites, sources: sources),
+              ),
+      ),
+    );
+  }
 
   bool get _showDownloads => !PlatformDetector.isAppleTV();
 
@@ -628,6 +695,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _kExplore;
       case NavigationTabId.libraries:
         final libKey = widget.selectedLibraryKey;
+        if (PlatformDetector.isTV()) return libKey == null ? _kHome : '$sidebarLibraryPrefix$libKey';
         if (libKey != null && _librariesExpanded) {
           final visibleKey = '$_kLibraryItemPrefix:${_LibraryNavSection.visible.name}:$libKey';
           if (_mountedFocusNodeFor(visibleKey) != null) return visibleKey;
@@ -682,6 +750,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kHome,
       if (hasNowPlaying) _kNowPlaying,
       _kLibraries,
+      if (_showFavorites) _kFavorites,
+      if (_showCollections) _kCollections,
       if (hasExplore) _kExplore,
       _kSearch,
       if (_showDownloads) _kDownloads,
@@ -760,28 +830,32 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasExplore,
     required bool isCollapsed,
   }) {
-    return [
-      if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+    final visible = {
       if (!widget.isOfflineMode) ...[
         _kHome,
         if (hasNowPlaying) _kNowPlaying,
         _kLibraries,
-        // Library rows render inside ExcludeFocus(excluding: !_librariesExpanded
-        // || isCollapsed); keep the D-pad order in lockstep with that render
-        // condition so a collapsed rail never targets a focus-excluded row.
-        if (_librariesExpanded && !isCollapsed) ...[
-          ..._focusKeysForLibraryRows(visibleRows),
-          if (hasHiddenLibraries) ...[
-            _kHiddenLibraries,
-            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
-          ],
-        ],
+        if (_showFavorites) _kFavorites,
+        if (_showCollections) _kCollections,
         if (hasLiveTv) 'liveTv',
         if (hasExplore) _kExplore,
         _kSearch,
       ],
       if (_showDownloads) _kDownloads,
       _kSettings,
+    };
+    return [
+      if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
+      for (final key in resolveSidebarOrder(SettingsService.instance.read(SettingsService.sidebarOrder), visible)) ...[
+        key,
+        if (key == _kLibraries && _librariesExpanded && !isCollapsed) ...[
+          ..._focusKeysForLibraryRows(visibleRows),
+          if (hasHiddenLibraries) ...[
+            _kHiddenLibraries,
+            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
+          ],
+        ],
+      ],
       if (_showFullscreenToggle) _kFullscreen,
     ];
   }
@@ -900,6 +974,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
         SettingsService.instance.listenable(SettingsService.showExploreTab),
         SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
+        SettingsService.instance.listenable(SettingsService.pinFavoritesToSidebar),
+        SettingsService.instance.listenable(SettingsService.pinCollectionsToSidebar),
+        SettingsService.instance.listenable(SettingsService.sidebarOrder),
+        SettingsService.instance.listenable(SettingsService.sidebarPinnedLibraries),
+        SettingsService.instance.listenable(SettingsService.sidebarLibrariesConfigured),
       ]),
       builder: (context, _) {
         final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
@@ -919,8 +998,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           section: _LibraryNavSection.hidden,
           showServerHeaders: showServerHeaders,
         );
-        _focusTracker.pruneExcept(
-          _buildValidFocusKeys(
+        final flatLibraries = PlatformDetector.isTV();
+        final pins = pinnedSidebarLibraries(SettingsService.instance, visibleLibraries);
+        final pinnedLibraries = visibleLibraries.where((library) => pins.contains(library.globalKey)).toList();
+        _focusTracker.pruneExcept({
+          ..._buildValidFocusKeys(
             visibleRows: visibleRows,
             hiddenRows: hiddenRows,
             hasHiddenLibraries: hiddenLibraries.isNotEmpty,
@@ -928,16 +1010,131 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasNowPlaying: nowPlayingTrack != null,
             hasExplore: hasExplore,
           ),
-        );
-        final focusOrder = _buildFocusOrder(
-          visibleRows,
-          hiddenRows,
-          hasHiddenLibraries: hiddenLibraries.isNotEmpty,
-          hasLiveTv: hasLiveTv,
-          hasNowPlaying: nowPlayingTrack != null,
-          hasExplore: hasExplore,
-          isCollapsed: isCollapsed,
-        );
+          if (flatLibraries) ...pinnedLibraries.map(sidebarLibraryKey),
+        });
+        final primaryRows = <String, Widget>{
+          if (widget.isOfflineMode && widget.onReconnect != null)
+            _kReconnect: _buildReconnectItem(isCollapsed: isCollapsed),
+          if (!widget.isOfflineMode) ...{
+            'home': _buildNavItem(
+              icon: Symbols.home_rounded,
+              selectedIcon: Symbols.home_rounded,
+              label: Translations.of(context).common.home,
+              isSelected: widget.selectedTab == NavigationTabId.discover,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
+              focusNode: _focusTracker.get(_kHome),
+              isCollapsed: isCollapsed,
+            ),
+            if (nowPlayingTrack != null && musicService != null)
+              'nowPlaying': _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
+            if (flatLibraries)
+              for (final library in pinnedLibraries)
+                sidebarLibraryKey(library): _buildNavItem(
+                  icon: sidebarLibraryIcon(library),
+                  selectedIcon: sidebarLibraryIcon(library),
+                  label:
+                      _getNonUniqueLibraryNames(pinnedLibraries).contains(library.title) && library.serverName != null
+                      ? '${library.title} · ${library.serverName}'
+                      : library.title,
+                  isSelected:
+                      widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey,
+                  onTap: () => widget.onLibrarySelected(library.globalKey),
+                  focusNode: _focusTracker.get(sidebarLibraryKey(library)),
+                  isCollapsed: isCollapsed,
+                ),
+            if (!flatLibraries)
+              'libraries': _buildLibrariesSection(
+                visibleRows,
+                hiddenRows,
+                hiddenLibraries.length,
+                t,
+                isCollapsed: isCollapsed,
+              ),
+            if (_showFavorites)
+              'favorites': _buildNavItem(
+                selectedIcon: Symbols.favorite_rounded,
+                icon: Symbols.favorite_rounded,
+                label: Translations.of(context).libraries.filterCategories.favorites,
+                isSelected: false,
+                onTap: () => _openLibraryShortcut(favorites: true),
+                focusNode: _focusTracker.get(_kFavorites),
+                isCollapsed: isCollapsed,
+              ),
+            if (_showCollections)
+              'collections': _buildNavItem(
+                selectedIcon: Symbols.stacks_rounded,
+                icon: Symbols.stacks_rounded,
+                label: Translations.of(context).collections.title,
+                isSelected: false,
+                onTap: () => _openLibraryShortcut(favorites: false),
+                focusNode: _focusTracker.get(_kCollections),
+                isCollapsed: isCollapsed,
+              ),
+            if (hasLiveTv)
+              'liveTv': _buildNavItem(
+                icon: Symbols.live_tv_rounded,
+                selectedIcon: Symbols.live_tv_rounded,
+                label: Translations.of(context).navigation.liveTv,
+                isSelected: widget.selectedTab == NavigationTabId.liveTv,
+                onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
+                focusNode: _focusTracker.get('liveTv'),
+                isCollapsed: isCollapsed,
+              ),
+            if (hasExplore)
+              'explore': _buildNavItem(
+                icon: Symbols.explore_rounded,
+                selectedIcon: Symbols.explore_rounded,
+                label: Translations.of(context).navigation.explore,
+                isSelected: widget.selectedTab == NavigationTabId.explore,
+                onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
+                focusNode: _focusTracker.get(_kExplore),
+                isCollapsed: isCollapsed,
+              ),
+            'search': _buildNavItem(
+              icon: Symbols.search_rounded,
+              selectedIcon: Symbols.search_rounded,
+              label: Translations.of(context).common.search,
+              isSelected: widget.selectedTab == NavigationTabId.search,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.search),
+              focusNode: _focusTracker.get(_kSearch),
+              isCollapsed: isCollapsed,
+            ),
+          },
+          if (_showDownloads)
+            'downloads': _buildNavItem(
+              icon: Symbols.download_rounded,
+              selectedIcon: Symbols.download_rounded,
+              label: Translations.of(context).navigation.downloads,
+              isSelected: widget.selectedTab == NavigationTabId.downloads,
+              onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
+              focusNode: _focusTracker.get(_kDownloads),
+              isCollapsed: isCollapsed,
+            ),
+          'settings': _buildNavItem(
+            icon: Symbols.settings_rounded,
+            selectedIcon: Symbols.settings_rounded,
+            label: Translations.of(context).common.settings,
+            isSelected: widget.selectedTab == NavigationTabId.settings,
+            onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
+            focusNode: _focusTracker.get(_kSettings),
+            isCollapsed: isCollapsed,
+          ),
+        };
+        final orderedKeys = [
+          if (primaryRows.containsKey(_kReconnect)) _kReconnect,
+          ...resolveSidebarOrder(SettingsService.instance.read(SettingsService.sidebarOrder), primaryRows.keys),
+        ];
+        final focusOrder = flatLibraries
+            ? orderedKeys
+            : _buildFocusOrder(
+                visibleRows,
+                hiddenRows,
+                hasHiddenLibraries: hiddenLibraries.isNotEmpty,
+                hasLiveTv: hasLiveTv,
+                hasNowPlaying: nowPlayingTrack != null,
+                hasExplore: hasExplore,
+                isCollapsed: isCollapsed,
+              );
         _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(
           onTapOutside: (_) {
@@ -961,14 +1158,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 decoration: const BoxDecoration(),
                 child: Stack(
                   children: [
-                    // Rail surface. A docked rail is transparent on TV so the
-                    // full-bleed backdrop continues behind it; content is
-                    // pushed clear of it, never covered. A floating panel
-                    // covers content, so it paints its surface on every
-                    // platform (#2079).
+                    // Keep the collapsed TV strip transparent over artwork.
+                    // Expansion paints a quiet panel for legible labels;
+                    // the shell retains its existing width and content offset.
                     Positioned.fill(
                       child: AnimatedOpacity(
-                        opacity: PlatformDetector.isTV() && !_isFloatingPanel ? 0.0 : 1.0,
+                        opacity: PlatformDetector.isTV() && isCollapsed && !_isFloatingPanel ? 0.0 : 1.0,
                         // Shares the width morph's duration/curve: a shorter
                         // fade strands a fully grown, fully transparent panel
                         // over the content part-way through the collapse.
@@ -978,7 +1173,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                           duration: expandDuration,
                           curve: expandCurve,
                           decoration: BoxDecoration(
-                            color: t.surface,
+                            color: PlatformDetector.isTV() ? null : t.surface,
+                            gradient: PlatformDetector.isTV()
+                                ? LinearGradient(
+                                    colors: [t.surface.withValues(alpha: 0.98), t.surface.withValues(alpha: 0.85)],
+                                  )
+                                : null,
                             // Open rails read as an M3E panel: rounded
                             // trailing corners, extra-rounded plus an edge
                             // shadow while floating over content (modal)
@@ -1013,92 +1213,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                   padding: EdgeInsets.zero,
                                   clipBehavior: Clip.hardEdge,
                                   children: [
-                                    if (widget.isOfflineMode && widget.onReconnect != null) ...[
-                                      _buildReconnectItem(isCollapsed: isCollapsed),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    if (!widget.isOfflineMode) ...[
-                                      _buildNavItem(
-                                        icon: Symbols.home_rounded,
-                                        selectedIcon: Symbols.home_rounded,
-                                        label: Translations.of(context).common.home,
-                                        isSelected: widget.selectedTab == NavigationTabId.discover,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
-                                        focusNode: _focusTracker.get(_kHome),
-                                        isCollapsed: isCollapsed,
+                                    for (final key in orderedKeys)
+                                      Column(
+                                        key: ValueKey('sidebar_$key'),
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          primaryRows[key]!,
+                                          const SizedBox(height: _itemGap),
+                                        ],
                                       ),
-                                      const SizedBox(height: _itemGap),
-                                      // Now Playing — only while a music session is live.
-                                      if (nowPlayingTrack != null && musicService != null) ...[
-                                        _buildNowPlayingItem(nowPlayingTrack, musicService, isCollapsed: isCollapsed),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      _buildLibrariesSection(
-                                        visibleRows,
-                                        hiddenRows,
-                                        hiddenLibraries.length,
-                                        t,
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                      if (context.watch<MultiServerProvider>().hasLiveTv) ...[
-                                        _buildNavItem(
-                                          icon: Symbols.live_tv_rounded,
-                                          selectedIcon: Symbols.live_tv_rounded,
-                                          label: Translations.of(context).navigation.liveTv,
-                                          isSelected: widget.selectedTab == NavigationTabId.liveTv,
-                                          onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
-                                          focusNode: _focusTracker.get('liveTv'),
-                                          isCollapsed: isCollapsed,
-                                        ),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      if (hasExplore) ...[
-                                        _buildNavItem(
-                                          icon: Symbols.explore_rounded,
-                                          selectedIcon: Symbols.explore_rounded,
-                                          label: Translations.of(context).navigation.explore,
-                                          isSelected: widget.selectedTab == NavigationTabId.explore,
-                                          onTap: () => widget.onDestinationSelected(NavigationTabId.explore),
-                                          focusNode: _focusTracker.get(_kExplore),
-                                          isCollapsed: isCollapsed,
-                                        ),
-                                        const SizedBox(height: _itemGap),
-                                      ],
-                                      _buildNavItem(
-                                        icon: Symbols.search_rounded,
-                                        selectedIcon: Symbols.search_rounded,
-                                        label: Translations.of(context).common.search,
-                                        isSelected: widget.selectedTab == NavigationTabId.search,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.search),
-                                        focusNode: _focusTracker.get(_kSearch),
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    // Downloads (hidden on Apple TV — no user
-                                    // file storage)
-                                    if (_showDownloads) ...[
-                                      _buildNavItem(
-                                        icon: Symbols.download_rounded,
-                                        selectedIcon: Symbols.download_rounded,
-                                        label: Translations.of(context).navigation.downloads,
-                                        isSelected: widget.selectedTab == NavigationTabId.downloads,
-                                        onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
-                                        focusNode: _focusTracker.get(_kDownloads),
-                                        isCollapsed: isCollapsed,
-                                      ),
-                                      const SizedBox(height: _itemGap),
-                                    ],
-                                    _buildNavItem(
-                                      icon: Symbols.settings_rounded,
-                                      selectedIcon: Symbols.settings_rounded,
-                                      label: Translations.of(context).common.settings,
-                                      isSelected: widget.selectedTab == NavigationTabId.settings,
-                                      onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
-                                      focusNode: _focusTracker.get(_kSettings),
-                                      isCollapsed: isCollapsed,
-                                    ),
                                   ],
                                 ),
                               ),
@@ -1141,7 +1264,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       selectedIcon: selectedIcon,
       label: Text(
         label,
-        style: TextStyle(fontSize: 14, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400),
+        style: TextStyle(
+          fontSize: PlatformDetector.isTV() ? 15 : 14,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+        ),
         overflow: .ellipsis,
         maxLines: 1,
       ),

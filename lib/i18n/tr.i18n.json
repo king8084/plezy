@@ -222,6 +222,9 @@
     "gridView": "Izgara",
     "listView": "Liste",
     "showHeroSection": "Öne Çıkan Bölümünü Göster",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "İzlemeye Devam Et Eylemi",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Detayları Aç",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Altyazı Biçimlendirmesi",
     "subtitleStylingDescription": "Altyazı görünümünü özelleştirin",
     "smallSkipDuration": "Küçük Atlama Süresi",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Büyük Atlama Süresi",
     "rewindOnResume": "Devam Ederken Geri Sar",
     "secondsUnit": "${seconds} saniye",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Dinamik Aralığı Eşitle",
     "matchDynamicRangeDescription": "HDR içerik için HDR'yi aç, ardından SDR'ye geri dön",
     "displaySwitchDelay": "Ekran Değiştirme Gecikmesi",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tünelli Oynatma",
     "tunneledPlaybackDescription": "Video tünellemeyi kullan. HDR oynatmada siyah ekran görünüyorsa veya hareket takılıyorsa devre dışı bırakın.",
     "audioPassthrough": "Ses Doğrudan Geçişi (Passthrough)",
@@ -484,6 +491,7 @@
     "display": "Ekran",
     "libraryAndCards": "Kitaplık ve Kartlar",
     "homeScreen": "Ana Ekran",
+    "homeTextSize": "",
     "navigation": "Gezinme",
     "window": "Pencere",
     "liveTv": "Canlı TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Her yerde",
     "playerScopeLibrary": "Kitaplık başına",
     "playerScopeTitle": "Dizi veya film başına",
-    "exportDialogTitle": "Plezy ayarlarını dışa aktar"
+    "exportDialogTitle": "Plezy ayarlarını dışa aktar",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Yerleşik",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Farklı bir arama terimi deneyin",
     "searchYourMedia": "Medyanızda arayın",
     "enterTitleActorOrKeyword": "Başlık, oyuncu veya anahtar kelime girin",
-    "people": "Kişiler"
+    "people": "Kişiler",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} için Kısayol Ayarla",
@@ -727,6 +760,10 @@
     "viewDetails": "Detayları görüntüle",
     "goToSeries": "Diziye git",
     "shufflePlay": "Karışık Oynat",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Karışık oynatma çevrimdışıyken kullanılamaz",
     "fileInfo": "Dosya Bilgisi",
     "deleteEpisodeFromServer": "Bölümü sunucudan sil",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Medya ögesi başarıyla silindi",
     "mediaFailedToDelete": "Medya ögesi silinemedi",
     "rate": "Oyla",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Baştan Oynat",
     "playVersion": "Sürümü Oynat..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Zorunlu)",
     "osdSubtitlesOff": "Altyazı: Kapalı",
     "osdSubtitles": "Altyazı: ${track}",
-    "osdAudio": "Ses: ${track}"
+    "osdAudio": "Ses: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Keşfet",
     "noContentAvailable": "İçerik bulunmuyor",
     "addMediaToLibraries": "Kitaplıklarınıza biraz medya ekleyin",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV Dizisi",
     "minutesLeft": "${minutes} dk kaldı",
+    "durationLeft": "",
     "moreLikeThis": "Buna Benzerler",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} başlık",
       "other": "${n} başlık"
@@ -1220,7 +1272,9 @@
       "birthplace": "Doğum yeri",
       "dateWithAge": "${date} (${age} yaşında)",
       "dateWithAgeAtDeath": "${date} (${age} yaşında)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Arama başarısız: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Günlükleri Temizle",
     "copyLogs": "Günlükleri Kopyala",
-    "uploadLogs": "Günlükleri Yükle"
+    "uploadLogs": "Günlükleri Yükle",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy başlatılamadı",

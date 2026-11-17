@@ -21,6 +21,7 @@ import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -38,6 +39,12 @@ import 'main_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
+
+  /// TV keyboard for the search field: Plezy's docked overlay keeps results
+  /// visible and updating while typing (the Apple TV system keyboard covers
+  /// the whole screen). Tests of the platform-keyboard flow switch it back.
+  @visibleForTesting
+  static TvTextInputPresentation keyboardPresentation = TvTextInputPresentation.flutterOverlay;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -74,15 +81,30 @@ class _SearchScreenState extends State<SearchScreen>
   HiddenLibrariesProvider? _hiddenLibraries;
   Set<String> _lastSeenHiddenKeys = const {};
 
+  /// Meaning-based suggestions from the household smart-search index, shown
+  /// as a section *after* the instant results so focus and the visible list
+  /// never move when they arrive. Only for descriptive (3+ word) requests.
+  /// Dictation: the 🎤 button switches this one session to the system
+  /// keyboard (its remote microphone dictates); leaving the field switches
+  /// back to the docked keyboard.
+  bool _voiceInputActive = false;
+
+  List<SmartSuggestion> _smartSuggestions = const [];
+  bool _smartLoading = false;
+  AbortController? _smartAbort;
+
   @override
   void initState() {
     super.initState();
     FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
+    searchFocusNode.addListener(_onSearchFocusChanged);
     unawaited(_bindHiddenLibraries());
   }
 
   @override
   void dispose() {
+    _smartAbort?.abort();
+    searchFocusNode.removeListener(_onSearchFocusChanged);
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
@@ -119,6 +141,22 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   String get searchDebugLabel => 'Search';
+
+  /// With the household index answering in milliseconds, half the shared
+  /// pause keeps typing responsive; plain server search keeps the default.
+  @override
+  Duration get searchDebounce {
+    // A late keystroke callback can outlive the providers (e.g. after
+    // dispose): fall back to the shared pause rather than throwing.
+    if (!mounted) return super.searchDebounce;
+    try {
+      return context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable
+          ? const Duration(milliseconds: 250)
+          : super.searchDebounce;
+    } on ProviderNotFoundException {
+      return super.searchDebounce;
+    }
+  }
 
   @override
   Future<List<SearchHit>> performSearchQuery(String query) async {
@@ -164,10 +202,55 @@ class _SearchScreenState extends State<SearchScreen>
     _activeSearchAbort?.abort();
     _activeSearchAbort = null;
     _pendingSearchOutcome = null;
+    _cancelSmartSuggestions();
+  }
+
+  static bool _wantsSmartSuggestions(String query) => query.trim().split(RegExp(r'\s+')).length >= 3;
+
+  void _cancelSmartSuggestions() {
+    _smartAbort?.abort();
+    _smartAbort = null;
+    _smartLoading = false;
+    _smartSuggestions = const [];
+  }
+
+  Future<void> _loadSmartSuggestions(String query) async {
+    _cancelSmartSuggestions();
+    if (!_wantsSmartSuggestions(query)) return;
+    final multiServer = context.read<MultiServerProvider>();
+    final hiddenKeys = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final abort = AbortController();
+    _smartAbort = abort;
+    setState(() => _smartLoading = true);
+    List<SmartSuggestion> suggestions;
+    try {
+      suggestions = await multiServer.aggregationService.smartSuggestions(
+        query,
+        hiddenLibraryKeys: hiddenKeys,
+        abort: abort,
+      );
+    } catch (e) {
+      appLogger.d('Smart suggestions skipped', error: e);
+      suggestions = const [];
+    }
+    // Ignore answers for a query the user has already moved on from.
+    if (!mounted || !identical(_smartAbort, abort)) return;
+    final alreadyShown = {
+      for (final hit in searchResults.take(5))
+        if (hit is MediaSearchHit) hit.item.globalKey,
+    };
+    setState(() {
+      _smartLoading = false;
+      _smartSuggestions = [
+        for (final suggestion in suggestions)
+          if (!alreadyShown.contains(suggestion.item.globalKey)) suggestion,
+      ];
+    });
   }
 
   @override
   void onSearchError(Object error) {
+    _cancelSmartSuggestions();
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
     _resetFilter();
@@ -179,6 +262,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void onSearchCleared() {
+    _cancelSmartSuggestions();
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
     _resetFilter();
@@ -214,11 +298,30 @@ class _SearchScreenState extends State<SearchScreen>
       showAppSnackBar(context, t.messages.searchPartialResults);
     }
 
+    // After this frame's results render: the smart section only appends.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && searchController.text.trim() == query) unawaited(_loadSmartSuggestions(query));
+    });
+
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
     if (results.isEmpty) return;
     if (searchController.text.trim() != query) return; // user kept editing
     FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
+  }
+
+  bool get _usesDockedKeyboard =>
+      !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
+
+  void _onSearchFocusChanged() {
+    if (!searchFocusNode.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
+  }
+
+  void _startVoiceInput() {
+    setState(() => _voiceInputActive = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _tvTextInputController.focusAndOpenTextInput();
+    });
   }
 
   /// OSK "Search" / hardware Enter on TV additionally focuses the results
@@ -227,6 +330,9 @@ class _SearchScreenState extends State<SearchScreen>
   void handleSearchSubmit() {
     final query = searchController.text.trim();
     if (query.isEmpty) return;
+    // The docked keyboard stays up until asked: "Search" puts it away so the
+    // results can take focus.
+    if (_usesDockedKeyboard) _tvTextInputController.closeTextInput();
     if (searchResults.isEmpty || isSearching || query != lastSearchedQuery) {
       _focusResultsForQuery = query;
     }
@@ -539,6 +645,51 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  List<Widget> _buildSmartSuggestions(BuildContext context) {
+    if (_selectedFilter is! _AllResults) return const [];
+    if (!_smartLoading && _smartSuggestions.isEmpty) return const [];
+    final confirmed = [
+      for (final suggestion in _smartSuggestions)
+        if (suggestion.match == SmartSearchMatch.confirmed) suggestion.item,
+    ];
+    final possible = [
+      for (final suggestion in _smartSuggestions)
+        if (suggestion.match != SmartSearchMatch.confirmed) suggestion.item,
+    ];
+    return [
+      if (_smartLoading) _smartHeader(context, t.search.findingSmartMatches),
+      if (confirmed.isNotEmpty) ...[_smartHeader(context, t.search.smartMatches), _buildSmartList(context, confirmed)],
+      if (possible.isNotEmpty) ...[_smartHeader(context, t.search.possibleMatches), _buildSmartList(context, possible)],
+    ];
+  }
+
+  Widget _smartHeader(BuildContext context, String label) => SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Text(label, style: Theme.of(context).textTheme.titleSmall),
+    ),
+  );
+
+  Widget _buildSmartList(BuildContext context, List<MediaItem> items) {
+    final multiServer = context.watch<MultiServerProvider>();
+    final libraries = context.watch<LibrariesProvider>();
+    final showServerName = multiServer.totalServerCount > 1;
+    return buildResultsSliver(
+      childCount: items.length,
+      (context, index) => FocusableMediaCard(
+        key: Key('smart-${items[index].globalKey}'),
+        item: items[index],
+        viewModeOverride: ViewMode.list,
+        disableScale: true,
+        onRefresh: updateItem,
+        onListRefresh: refresh,
+        onNavigateLeft: _navigateToSidebar,
+        showServerName: showServerName,
+        libraryName: libraries.libraryLabelFor(items[index]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -554,6 +705,22 @@ class _SearchScreenState extends State<SearchScreen>
                 debugLabel: searchDebugLabel,
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
+                tvTextInputPresentation: _voiceInputActive
+                    ? TvTextInputPresentation.platform
+                    : SearchScreen.keyboardPresentation,
+                // The docked keyboard opens on Select, not merely on arriving at
+                // the tab, so landing on Search never hides the screen.
+                tvTextInputAutoOpenBehavior: _usesDockedKeyboard
+                    ? TvTextInputAutoOpenBehavior.never
+                    : TvTextInputAutoOpenBehavior.automatic,
+                // Dictation needs the system keyboard; only offered where the
+                // docked keyboard replaced it (Apple TV).
+                onVoiceInput:
+                    PlatformDetector.isAppleTV() &&
+                        SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
+                    ? _startVoiceInput
+                    : null,
+                voiceInputTooltip: t.search.voiceSearch,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: searchResults.isNotEmpty && !isSearching
                     ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)
@@ -583,7 +750,7 @@ class _SearchScreenState extends State<SearchScreen>
               SliverFillRemaining(
                 child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
               )
-            else if (searchResults.isEmpty)
+            else if (searchResults.isEmpty && !_smartLoading && _smartSuggestions.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,
@@ -595,6 +762,7 @@ class _SearchScreenState extends State<SearchScreen>
             else ...[
               if (_showFilterChips) _buildFilterChips(),
               _buildResultsList(context),
+              ..._buildSmartSuggestions(context),
             ],
           ],
         ),

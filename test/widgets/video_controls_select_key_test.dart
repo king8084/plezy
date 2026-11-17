@@ -25,6 +25,8 @@ import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
+import 'package:plezy/widgets/video_controls/video_control_button.dart';
+import 'package:plezy/widgets/video_controls/widgets/performance_overlay/performance_overlay.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 
 import '../test_helpers/media_items.dart';
@@ -395,6 +397,66 @@ void main() {
       expect(chrome.controlsVisible, isFalse);
       expect(focusLabel(), 'PlayerSurface');
     });
+
+    playerTest('center Select opens controls without toggling while hardware Play/Pause still works', (tester) async {
+      await press(tester, LogicalKeyboardKey.select);
+      expect(chrome.controlsVisible, isTrue);
+      expect(focusLabel(), 'PlayPause');
+      expect(toggles, 0);
+      await press(tester, LogicalKeyboardKey.mediaPlayPause);
+      expect(toggles, 1);
+      // Selecting an actual focused Play/Pause control remains an activation.
+      await press(tester, LogicalKeyboardKey.select);
+      expect(toggles, 2);
+    });
+
+    playerTest('stats icon is reachable with the remote and toggles the existing overlay', (tester) async {
+      await press(tester, LogicalKeyboardKey.select);
+      final stats = find.byWidgetPredicate(
+        (widget) => widget is VideoControlButton && widget.semanticLabel == t.videoSettings.performanceOverlay,
+      );
+      expect(stats, findsOneWidget);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isFalse);
+      // From transport controls, move through settings and tracks to stats.
+      for (var i = 0; i < 7 && focusLabel() != 'TrackControl2'; i++) {
+        await press(tester, LogicalKeyboardKey.arrowRight);
+      }
+      expect(focusLabel(), 'TrackControl2');
+      await press(tester, LogicalKeyboardKey.select);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isTrue);
+      expect(find.byType(PlayerPerformanceOverlay), findsOneWidget);
+      expect(toggles, 0);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(settings.read(SettingsService.showPerformanceOverlay), isFalse);
+      expect(find.byType(PlayerPerformanceOverlay), findsNothing);
+      expect(toggles, 0);
+    });
+
+    playerTest('configured forward and rewind steps drive both button numbers and seeks', (tester) async {
+      await settings.write(SettingsService.seekTimeSmall, 20);
+      await settings.write(SettingsService.seekTimeBackward, 15);
+      await press(tester, LogicalKeyboardKey.select);
+      final rewind = find.byWidgetPredicate(
+        (widget) =>
+            widget is VideoControlButton && widget.semanticLabel == t.videoControls.seekBackwardButton(seconds: 15),
+      );
+      final forward = find.byWidgetPredicate(
+        (widget) =>
+            widget is VideoControlButton && widget.semanticLabel == t.videoControls.seekForwardButton(seconds: 20),
+      );
+      expect(tester.widget<VideoControlButton>(rewind).iconText, '15');
+      expect(tester.widget<VideoControlButton>(forward).iconText, '20');
+      expect(find.descendant(of: rewind, matching: find.text('15')), findsOneWidget);
+      expect(find.descendant(of: forward, matching: find.text('20')), findsOneWidget);
+      await press(tester, LogicalKeyboardKey.arrowLeft);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(player.state.position, const Duration(minutes: 4, seconds: 45));
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      await press(tester, LogicalKeyboardKey.select);
+      expect(player.state.position, const Duration(minutes: 5, seconds: 5));
+      expect(toggles, 0);
+    });
   });
 
   // Declining a skip prompt is the mirror of taking it. Back used to fall
@@ -690,7 +752,7 @@ void main() {
     // turns the next Select into a chrome-raise, so pausing takes two presses
     // (#1890).
     playerTest(
-      'Select toggles playback on the first press after skipping the intro',
+      'Select opens controls without pausing after skipping the intro',
       markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
       (tester) async {
         // A remote is non-pointer input, so the app is already in keyboard
@@ -708,7 +770,8 @@ void main() {
 
         await press(tester, LogicalKeyboardKey.select);
 
-        expect(toggles, 1, reason: 'one press must toggle playback, not merely raise the chrome');
+        expect(toggles, 0, reason: 'center Select must not double as hardware Play/Pause');
+        expect(chrome.controlsVisible, isTrue);
       },
     );
   });

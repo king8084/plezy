@@ -45,6 +45,10 @@ mixin DebouncedMediaSearch<T extends StatefulWidget, R> on State<T> {
   /// Names the focus nodes and log lines.
   String get searchDebugLabel => widget.runtimeType.toString();
 
+  /// Pause after the last keystroke before searching. A screen backed by a
+  /// fast local index may shorten it; the shared default stays unchanged.
+  Duration get searchDebounce => searchDebounceDuration;
+
   /// Run the actual search. Non-cancellation errors flip [lastSearchFailed].
   Future<List<R>> performSearchQuery(String query);
 
@@ -127,7 +131,7 @@ mixin DebouncedMediaSearch<T extends StatefulWidget, R> on State<T> {
 
     _invalidateStaleInFlight(query);
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(searchDebounceDuration, () => runSearch(query));
+    _debounceTimer = Timer(searchDebounce, () => runSearch(query));
   }
 
   /// An in-flight search for text the field no longer shows can only land

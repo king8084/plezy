@@ -222,6 +222,9 @@
     "gridView": "Rutenett",
     "listView": "Liste",
     "showHeroSection": "Vis fremhevet seksjon",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Handling for «Fortsett å se»",
     "continueWatchingPlay": "Spill av",
     "continueWatchingDetails": "Åpne detaljer",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpass utseendet på undertekster",
     "smallSkipDuration": "Kort hoppvarighet",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Lang hoppvarighet",
     "rewindOnResume": "Spol tilbake ved gjenopptakelse",
     "secondsUnit": "${seconds} sekunder",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Tilpass dynamikkområde",
     "matchDynamicRangeDescription": "Slå på HDR for HDR-innhold, og deretter tilbake til SDR",
     "displaySwitchDelay": "Forsinkelse ved skjermbytte",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunnelert avspilling",
     "tunneledPlaybackDescription": "Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video eller bevegelser hakker.",
     "audioPassthrough": "Direkte lydutgang",
@@ -484,6 +491,7 @@
     "display": "Skjerm",
     "libraryAndCards": "Bibliotek og kort",
     "homeScreen": "Hjemmeskjerm",
+    "homeTextSize": "",
     "navigation": "Navigering",
     "window": "Vindu",
     "liveTv": "Direkte-TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Eksporter Plezy-innstillinger"
+    "exportDialogTitle": "Eksporter Plezy-innstillinger",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Innebygde",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Prøv et annet søkeord",
     "searchYourMedia": "Søk i mediene dine",
     "enterTitleActorOrKeyword": "Skriv inn tittel, skuespiller eller nøkkelord",
-    "people": "Personer"
+    "people": "Personer",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Angi snarvei for ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Vis detaljer",
     "goToSeries": "Gå til serie",
     "shufflePlay": "Tilfeldig avspilling",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Tilfeldig avspilling er ikke tilgjengelig uten nett",
     "fileInfo": "Filinformasjon",
     "deleteEpisodeFromServer": "Slett episode fra serveren",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Vurder",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Spill fra begynnelsen",
     "playVersion": "Spill av versjon..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (tvunget)",
     "osdSubtitlesOff": "Undertekster: Av",
     "osdSubtitles": "Undertekster: ${track}",
-    "osdAudio": "Lyd: ${track}"
+    "osdAudio": "Lyd: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Oppdag",
     "noContentAvailable": "Ikke noe innhold tilgjengelig",
     "addMediaToLibraries": "Legg til medier i bibliotekene dine",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min igjen",
+    "durationLeft": "",
     "moreLikeThis": "Mer som dette",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} tittel",
       "other": "${n} titler"
@@ -1220,7 +1272,9 @@
       "birthplace": "Fødested",
       "dateWithAge": "${date} (${age} år)",
       "dateWithAgeAtDeath": "${date} (${age} år gammel)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Søk mislyktes: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Tøm logger",
     "copyLogs": "Kopier logger",
-    "uploadLogs": "Last opp logger"
+    "uploadLogs": "Last opp logger",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kunne ikke starte",

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,7 @@ import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../models/catalog/catalog_item.dart';
 import '../navigation/main_screen_scope.dart';
@@ -14,9 +17,10 @@ import '../utils/layout_constants.dart';
 import '../utils/formatters.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
+import 'media_rating_badge.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
-  TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})
+  TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 80)})
     : _settleDelay = settleDelay,
       _debouncer = Debouncer(settleDelay),
       super(null);
@@ -70,6 +74,8 @@ class TvSpotlightScaffold extends StatelessWidget {
     required this.resolveClient,
     required this.foreground,
     this.hideSpoilers,
+    this.textScale = 1,
+    this.showNextHubPeek = true,
   });
 
   final List<MediaHub> hubs;
@@ -78,14 +84,30 @@ class TvSpotlightScaffold extends StatelessWidget {
   final TvSpotlightClientResolver resolveClient;
   final Widget foreground;
   final bool? hideSpoilers;
+  final double textScale;
+  final bool showNextHubPeek;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final settings = SettingsService.instance;
-    final scale = TvLayoutConstants.scaleForSize(size);
+    final scale = (size.height / 1080).clamp(0.5, 1.35).toDouble();
     final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
+    final readingGap = 8 * scale;
+    final items = hubs.expand((hub) => hub.items);
+    final hasEpisodes = items.any((item) => item.isEpisode);
+    final hasFiles = items.any((item) => item.isEpisode || item.isMovie || item.mediaVersions?.isNotEmpty == true);
+    // Reserve the complete episode header, including three smaller synopsis
+    // lines, independently of the selected title and poster-size preference.
+    // The rail uses this same limit when rendering; estimates cannot diverge.
+    final maxRailHeight = TvSpotlightLayout.maxRailHeight(
+      size,
+      textScale: textScale,
+      episodeTitle: hasEpisodes,
+      technicalRow: hasFiles,
+    );
     final railHeight = hubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -97,15 +119,10 @@ class TvSpotlightScaffold extends StatelessWidget {
             gridSpacing: settings.read(SettingsService.gridSpacing),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
             widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+            showNextHubPeek: showNextHubPeek,
+            maxHeight: maxRailHeight,
           );
-    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
-    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
-    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
+    final spotlightBottom = railHeight + readingGap;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
 
     return Material(
@@ -128,6 +145,7 @@ class TvSpotlightScaffold extends StatelessWidget {
                         item: spotlight,
                         client: resolveClient(spotlight),
                         hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
+                        textScale: textScale,
                         contentTop: spotlightTop,
                         contentBottom: spotlightBottom,
                         contentLeft: spotlightLeft + foregroundLeft,
@@ -140,7 +158,7 @@ class TvSpotlightScaffold extends StatelessWidget {
                 );
               },
             ),
-            foreground,
+            TvBrowseRailHeightLimit(maxHeight: maxRailHeight, child: foreground),
           ],
         ),
       ),
@@ -157,6 +175,7 @@ class _CatalogSpotlightBackground extends StatefulWidget {
     required this.contentBottom,
     required this.contentLeft,
     required this.targetWidthPx,
+    required this.textScale,
   });
 
   final MediaItem? item;
@@ -166,6 +185,7 @@ class _CatalogSpotlightBackground extends StatefulWidget {
   final double contentBottom;
   final double contentLeft;
   final int targetWidthPx;
+  final double textScale;
 
   @override
   State<_CatalogSpotlightBackground> createState() => _CatalogSpotlightBackgroundState();
@@ -175,11 +195,16 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
   CatalogItem? _catalogItem;
   MediaItem? _renderItem;
   Color? _accentColor;
+  MediaItem? _metadataFallback;
+  MediaItem? _technicalItem;
+  final Map<String, MediaItem> _metadataCache = {};
+  int _metadataRequest = 0;
 
   @override
   void initState() {
     super.initState();
     _rehydrateCatalogItem();
+    _loadMetadataFallback();
   }
 
   @override
@@ -189,6 +214,60 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
       _rehydrateCatalogItem();
     } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
       _projectArtwork();
+    }
+    if (!identical(widget.item, oldWidget.item) || widget.client != oldWidget.client) _loadMetadataFallback();
+  }
+
+  // Enrich the settled spotlight in the background, never on the Play path.
+  // Descriptive fields may come from the series; technical tags must belong
+  // to the exact focused episode/movie. Shared IDs use one cached request.
+  void _loadMetadataFallback() {
+    final request = ++_metadataRequest;
+    _metadataFallback = null;
+    _technicalItem = null;
+    final item = widget.item;
+    final client = widget.client;
+    if (item == null || client == null || item.catalogItem != null) return;
+
+    final needsDescription =
+        (!item.isEpisode && !mediaRatingsFor(item).any((rating) => rating.source.startsWith('rottenTomatoes'))) ||
+        item.genres?.any((genre) => genre.trim().isNotEmpty) != true ||
+        item.contentRating?.trim().isNotEmpty != true;
+    final version = item.mediaVersions?.firstOrNull;
+    final needsTechnical =
+        (item.isMovie || item.isEpisode) &&
+        (version == null ||
+            version.bitrate == null ||
+            version.bitrate! <= 0 ||
+            version.parts.isEmpty ||
+            version.parts.any((part) => part.sizeBytes == null || part.sizeBytes! <= 0));
+    final descriptionId = item.isEpisode ? item.grandparentId : item.id;
+    final ids = <String>{
+      if (needsDescription && descriptionId != null && descriptionId.isNotEmpty) descriptionId,
+      if (needsTechnical) item.id,
+    };
+    for (final id in ids) {
+      final key = '${client.serverId.value}:$id';
+      void apply(MediaItem detail) {
+        if (needsDescription && id == descriptionId) _metadataFallback = detail;
+        if (needsTechnical && id == item.id) _technicalItem = detail;
+      }
+
+      final cached = _metadataCache[key];
+      if (cached != null) {
+        apply(cached);
+        continue;
+      }
+      unawaited(() async {
+        try {
+          final detail = await client.fetchItem(id);
+          if (detail == null || !mounted) return;
+          _metadataCache[key] = detail;
+          if (request == _metadataRequest) setState(() => apply(detail));
+        } catch (_) {
+          // Missing metadata must never prevent browsing or playing the item.
+        }
+      }());
     }
   }
 
@@ -253,12 +332,15 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final accentColor = _accentColor;
     final background = TvSpotlightBackground(
       item: _renderItem,
+      ratingsFallback: _metadataFallback,
+      technicalItem: _technicalItem,
       client: widget.client,
       hideSpoilers: widget.hideSpoilers,
       contentTop: widget.contentTop,
       contentBottom: widget.contentBottom,
       contentLeft: widget.contentLeft,
       compact: true,
+      textScale: widget.textScale,
       metadataTrailing: _buildNextEpisodeMetadata(context),
     );
     if (accentColor == null) return background;

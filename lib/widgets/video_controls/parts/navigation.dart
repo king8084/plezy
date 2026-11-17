@@ -15,13 +15,23 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         player: widget.player,
         volumeController: widget.volumeController,
         metadata: widget.metadata,
+        onTogglePerformanceOverlay: PlatformDetector.isAppleTV()
+            ? () {
+                _restartHideTimerForCurrentPlaybackState();
+                unawaited(_settings.write(SettingsService.showPerformanceOverlay, !_showPerformanceOverlay));
+              }
+            : null,
+        showPerformanceOverlay: _showPerformanceOverlay,
         onNext: _abandoningBurst(widget.onNext),
+        onMarkPlayed: _abandoningBurst(widget.onMarkPlayed),
+        markPlayedPlaysNext: widget.markPlayedPlaysNext,
         onPrevious: _abandoningBurst(widget.onPrevious),
         onPlayPause: () => unawaited(_playOrPause()),
         chapters: _chapters,
         chaptersLoaded: _chaptersLoaded,
         showChapterMarkersOnTimeline: _showChapterMarkersOnTimeline,
         seekTimeSmall: _seekTimeSmall,
+        seekTimeBackward: _seekTimeBackward,
         onSeekToPreviousChapter: _seekToPreviousChapter,
         onSeekToNextChapter: _seekToNextChapter,
         onSeekBackward: () => unawaited(_seekByTime(forward: false)),

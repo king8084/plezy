@@ -222,6 +222,9 @@
     "gridView": "Tor",
     "listView": "Siyahı",
     "showHeroSection": "Xüsusi bölməni göstər",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "İzləməyə davam et əməliyyatı",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Ətraflı aç",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Altyazı tənzimləmələri",
     "subtitleStylingDescription": "Altyazı görünüşünü özünüləşdirin",
     "smallSkipDuration": "Kiçik ötürmə müddəti",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Böyük ötürmə müddəti",
     "rewindOnResume": "Davam edərkən geri sar",
     "secondsUnit": "${seconds} saniyə",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Dinamik diapazonu uyğunlaşdır",
     "matchDynamicRangeDescription": "HDR məzmun üçün HDR-ı açın, sonra SDR-a qayıdın",
     "displaySwitchDelay": "Ekran dəyişmə ləngiməsi",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tünellənmiş oynatma",
     "tunneledPlaybackDescription": "Video tünelləməni istifadə et. HDR oynatmada qara ekran görünürsə və ya hərəkət takılırsa söndürün.",
     "audioPassthrough": "Səsin birbaşa ötürülməsi (Passthrough)",
@@ -484,6 +491,7 @@
     "display": "Ekran",
     "libraryAndCards": "Kitabxana və kartlar",
     "homeScreen": "Ana ekran",
+    "homeTextSize": "",
     "navigation": "Naviqasiya",
     "window": "Pəncərə",
     "liveTv": "Canlı TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Hər yerdə",
     "playerScopeLibrary": "Kitabxana üzrə",
     "playerScopeTitle": "Serial və ya film üzrə",
-    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
+    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Daxili",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Fərqli axtarış sözü cəhd edin",
     "searchYourMedia": "Mediyanızda axtarın",
     "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin",
-    "people": "Şəxslər"
+    "people": "Şəxslər",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",
@@ -727,6 +760,10 @@
     "viewDetails": "Ətraflı bax",
     "goToSeries": "Seriala keç",
     "shufflePlay": "Qarışıq oynat",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Qarışıq oynatma oflayn rejimdə əlçatan deyil",
     "fileInfo": "Fayl məlumatı",
     "deleteEpisodeFromServer": "Seriyanı serverdən sil",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Media elementi uğurla silindi",
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
     "rate": "Qiymətləndir",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Əvvəldən oynat",
     "playVersion": "Versiyanı oynat..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (Məcburi)",
     "osdSubtitlesOff": "Altyazı: Söndürülüb",
     "osdSubtitles": "Altyazı: ${track}",
-    "osdAudio": "Səs: ${track}"
+    "osdAudio": "Səs: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Kəşf et",
     "noContentAvailable": "Məzmun əlçatan deyil",
     "addMediaToLibraries": "Kitabxanalarınıza bir az media əlavə edin",
@@ -1209,7 +1258,10 @@
     "movie": "Kino",
     "tvShow": "TV Şou",
     "minutesLeft": "${minutes} dəq qaldı",
+    "durationLeft": "",
     "moreLikeThis": "Buna bənzərlər",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} başlıq",
       "other": "${n} başlıq"
@@ -1220,7 +1272,9 @@
       "birthplace": "Doğum yeri",
       "dateWithAge": "${date} (${age} yaş)",
       "dateWithAgeAtDeath": "${date} (${age} yaşında)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Axtarış uğursuz oldu: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Jurnalları təmizlə",
     "copyLogs": "Jurnalları kopyala",
-    "uploadLogs": "Jurnalları yüklə"
+    "uploadLogs": "Jurnalları yüklə",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy başlaya bilmədi",

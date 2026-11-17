@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 
 import '../media/media_hub.dart';
@@ -11,14 +13,18 @@ import '../media/media_server_client.dart';
 import '../media/search_hit.dart';
 import '../media/title_copies.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
+import '../models/catalog/catalog_item.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
+import 'jellyfin_client.dart';
 import 'local_playback_history.dart';
 import 'multi_server_manager.dart';
+import 'smart_search/smart_search_client.dart';
 
 /// A row a successful response actually returned, paired with the immutable
 /// cache scope of the client that fetched it.
@@ -140,6 +146,17 @@ Set<String> _hiddenLibraryIdsOn(String serverId, Set<String>? hiddenLibraryKeys)
   return ids;
 }
 
+/// Stable ids of Home's smart-index rows (also their saved order/visibility keys).
+const String smartTopRatedHubId = 'plezy.smart.top_rated_unwatched';
+const String smartBecauseWatchedHubId = 'plezy.smart.because_you_watched';
+
+/// Titles per smart Home row.
+const int smartHomeRowLimit = 30;
+
+/// Outside recommenders (Simkl, Trakt) for a library movie or show: one
+/// best-first list per connected source.
+typedef ExternalTitleRecommender = Future<List<List<CatalogItem>>> Function(MediaKind kind, ExternalIds ids);
+
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
 /// [MediaServerClient] interface directly (resolved via
@@ -149,7 +166,10 @@ Set<String> _hiddenLibraryIdsOn(String serverId, Set<String>? hiddenLibraryKeys)
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
-  DataAggregationService(this._serverManager);
+  /// Household smart-search index; null disables it (tests, other platforms).
+  final SmartSearchClient? _smartSearch;
+
+  DataAggregationService(this._serverManager, {this._smartSearch});
 
   /// Online clients visible to the active profile, or the online clients in
   /// [serverIds]. A supplied set is already profile-scoped: delta refreshes
@@ -842,6 +862,9 @@ class DataAggregationService {
 
     final resultLimit = limit ?? defaultMediaSearchLimit;
     final fetchLimit = resultLimit < defaultMediaSearchLimit ? defaultMediaSearchLimit : resultLimit;
+    // Titles ranked by the smart index keep its order (it already ranked by
+    // meaning, filters and titles); identity, not equality, marks them.
+    final smartRanked = Set<MediaItem>.identity();
 
     final fetched = await _fanOut<SearchHit>(
       clients,
@@ -860,13 +883,29 @@ class DataAggregationService {
           abort: abort,
           excludedLibraryIds: excludedLibraryIds,
         );
-        final items = await _withinServerDeadline(
+        final smart = await _smartSearchTitles(serverId, client, query, excludedLibraryIds, abort);
+        // With the index, the server's own search only covers what the index
+        // does not (music and other libraries); without it, everything.
+        final serverSearchExcluded = smart == null ? excludedLibraryIds : {...excludedLibraryIds, ...smart.indexed};
+        final serverItems = await _withinServerDeadline(
           MediaServerTimeouts.searchServerDeadline,
           operation: 'Search on $serverId',
           parent: abort,
           run: (legAbort) =>
-              client.searchItems(query, limit: fetchLimit, abort: legAbort, excludedLibraryIds: excludedLibraryIds),
+              client.searchItems(query, limit: fetchLimit, abort: legAbort, excludedLibraryIds: serverSearchExcluded),
         );
+        final List<MediaItem> items;
+        if (smart == null) {
+          items = serverItems;
+        } else {
+          smartRanked.addAll(smart.items);
+          final smartIds = {for (final item in smart.items) item.id};
+          items = [
+            ...smart.items,
+            for (final item in serverItems)
+              if (!smartIds.contains(item.id)) item,
+          ];
+        }
         final people = await peopleFuture;
         appLogger.i(
           'Search completed on $serverId in ${stopwatch.elapsedMilliseconds}ms: '
@@ -891,11 +930,16 @@ class DataAggregationService {
     // and silently shrink what the user sees.
     final visible = _withoutHiddenLibraries(titles, hiddenLibraryKeys);
     // Titles first: equal scores keep input order, so a tie goes to the title.
-    final hits = rankSearchHits(
-      [for (final item in visible) MediaSearchHit(item), for (final person in people) PersonSearchHit(person)],
+    final ranked = rankSearchHits(
+      [
+        for (final item in visible)
+          if (!smartRanked.contains(item)) MediaSearchHit(item),
+        for (final person in people) PersonSearchHit(person),
+      ],
       query,
       limit: resultLimit,
     );
+    final hits = smartRanked.isEmpty ? ranked : _withSmartTitlesFirst(visible, smartRanked, ranked, query, resultLimit);
 
     appLogger.i(
       'Search aggregation completed: ${hits.length} results '
@@ -911,6 +955,341 @@ class DataAggregationService {
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
     );
+  }
+
+  /// Whether a visible server's smart-search index answered recently, so
+  /// search can afford a shorter typing pause (no network call).
+  bool get smartSearchKnownAvailable {
+    final smart = _smartSearch;
+    if (smart == null) return false;
+    return _serverManager.visibleOnlineClients.values.any(
+      (client) => client is JellyfinClient && smart.knownAvailable(client.connection),
+    );
+  }
+
+  /// Meaning-based suggestions from the household smart-search index for
+  /// [query] (the "AI" row): plot descriptions, famous scenes, vague memories.
+  /// Empty when no connected server has an index. Slower than [searchAcrossServers]
+  /// (it may ask the language model), so callers run it after instant results.
+  Future<List<SmartSuggestion>> smartSuggestions(
+    String query, {
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    if (smart == null || query.trim().isEmpty) return const [];
+    for (final MapEntry(key: serverId, value: client) in _serverManager.visibleOnlineClients.entries) {
+      if (client is! JellyfinClient) continue;
+      final connection = client.connection;
+      try {
+        if (!await smart.isAvailable(connection)) continue;
+        abort?.throwIfAborted();
+        final response = await smart.smart(connection, query);
+        abort?.throwIfAborted();
+        final wanted = response.visibleIds(_hiddenLibraryIdsOn(serverId, hiddenLibraryKeys));
+        final loaded = await client.fetchItemsInOrder([for (final w in wanted) w.id], abort: abort);
+        final libraryOf = {for (final w in wanted) w.id: w.libraryId};
+        final matchOf = <String, SmartSearchHit>{
+          for (final hit in response.results) ...{hit.id: hit, for (final copy in hit.copies) copy.id: hit},
+        };
+        return [
+          for (final item in loaded)
+            if (!(response.unwatchedOnly && item.isWatched))
+              if (matchOf[item.id] case final hit?)
+                SmartSuggestion(
+                  item: libraryOf[item.id] == null ? item : item.copyWith(libraryId: libraryOf[item.id]),
+                  match: hit.match,
+                  recalled: hit.recalled,
+                ),
+        ];
+      } catch (e) {
+        if (_isCancellation(e)) rethrow;
+        appLogger.w('Smart suggestions unavailable on $serverId', error: e);
+        smart.markUnavailable(connection);
+      }
+    }
+    return const [];
+  }
+
+  /// Home rows built from the household smart-search index: "Top rated you
+  /// haven't watched" and "Because you watched <title>" (seeded by the user's
+  /// most recent play). "Because you watched" blends the index's meaning-based
+  /// neighbours with Jellyfin's own similar titles and, through
+  /// [externalRecommendations], Simkl and Trakt; titles more sources agree on
+  /// rank first, and only titles in the library appear. Watched and partly
+  /// watched titles are removed for this viewer. Empty when no connected
+  /// server has an index; never throws except on cancellation.
+  Future<List<MediaHub>> smartHomeHubs({
+    Set<String>? hiddenLibraryKeys,
+    Set<String>? serverIds,
+    ExternalTitleRecommender? externalRecommendations,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    if (smart == null) return const [];
+    for (final MapEntry(key: serverId, value: client) in _clientsFor(serverIds).entries) {
+      if (client is! JellyfinClient) continue;
+      final connection = client.connection;
+      try {
+        if (!await smart.isAvailable(connection)) continue;
+        abort?.throwIfAborted();
+        final hidden = _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys);
+
+        Future<List<MediaItem>> notStarted(List<({String id, String? libraryId})> wanted) async {
+          // Over-fetch: watched titles drop out after loading.
+          final candidates = wanted.take(smartHomeRowLimit * 2).toList();
+          final loaded = await client.fetchItemsInOrder([for (final w in candidates) w.id], abort: abort);
+          final libraryOf = {for (final w in candidates) w.id: w.libraryId};
+          return [
+            for (final item in loaded)
+              if (!isStartedOrWatched(item))
+                if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+          ].take(smartHomeRowLimit).toList();
+        }
+
+        Future<MediaHub?> topRated() async {
+          final items = await notStarted((await smart.topRated(connection)).visibleIds(hidden));
+          if (items.isEmpty) return null;
+          return MediaHub(
+            id: smartTopRatedHubId,
+            identifier: smartTopRatedHubId,
+            title: t.discover.topRatedUnwatched,
+            type: 'mixed',
+            items: items,
+            size: items.length,
+            serverId: serverId,
+            serverName: client.serverName,
+          );
+        }
+
+        Future<MediaHub?> becauseYouWatched() async {
+          final recent = await client.fetchRecentlyPlayed(limit: 1, abort: abort);
+          if (recent.isEmpty) return null;
+          final seed = recent.first;
+          final isEpisode = seed.kind == MediaKind.episode;
+          final seedTitleId = isEpisode ? seed.grandparentId : seed.id;
+          if (seedTitleId == null) return null;
+          final seedKind = isEpisode ? MediaKind.show : seed.kind;
+
+          Future<List<String>> resolved(List<String> refs) async {
+            if (refs.isEmpty) return const [];
+            final response = await smart.resolve(connection, refs, seedId: seedTitleId);
+            return [for (final w in response.visibleIds(hidden)) w.id];
+          }
+
+          Future<List<List<String>>> bestEffort(String name, Future<List<List<String>>> Function() fetch) async {
+            try {
+              return await fetch();
+            } catch (e) {
+              if (_isCancellation(e)) rethrow;
+              appLogger.d('"Because you watched" source $name unavailable', error: e);
+              return const [];
+            }
+          }
+
+          String? sourceTitle;
+          final libraryOf = <String, String?>{};
+          final lists = await Future.wait([
+            bestEffort('index', () async {
+              final similar = await smart.similar(connection, seedTitleId);
+              sourceTitle = similar.sourceTitle;
+              final wanted = similar.response.visibleIds(hidden);
+              for (final w in wanted) {
+                libraryOf[w.id] = w.libraryId;
+              }
+              return [
+                [for (final w in wanted) w.id],
+              ];
+            }),
+            bestEffort('jellyfin', () async {
+              final hubs = await client.fetchRelatedHubs(seedTitleId, count: 20);
+              return [
+                await resolved([
+                  for (final hub in hubs)
+                    for (final item in hub.items) 'item:${item.id}',
+                ]),
+              ];
+            }),
+            if (externalRecommendations != null)
+              bestEffort('external', () async {
+                final external = await client.fetchExternalIds(seedTitleId);
+                if (!external.hasCatalogIds) return const [];
+                final perSource = await externalRecommendations(seedKind, external);
+                return Future.wait([
+                  for (final list in perSource) resolved([for (final item in list) ...catalogRecommendationRefs(item)]),
+                ]);
+              }),
+          ]);
+          final ranked = blendRecommendations([for (final sourceLists in lists) ...sourceLists]);
+          final title = sourceTitle ?? (isEpisode ? seed.grandparentTitle : seed.title);
+          if (title == null || title.isEmpty) return null;
+          final items = await notStarted([
+            for (final id in ranked)
+              if (id != seedTitleId) (id: id, libraryId: libraryOf[id]),
+          ]);
+          if (items.isEmpty) return null;
+          return MediaHub(
+            id: smartBecauseWatchedHubId,
+            identifier: smartBecauseWatchedHubId,
+            title: t.discover.becauseYouWatched(title: title),
+            type: 'mixed',
+            items: items,
+            size: items.length,
+            serverId: serverId,
+            serverName: client.serverName,
+          );
+        }
+
+        Future<MediaHub?> bestEffort(Future<MediaHub?> Function() build, String name) async {
+          try {
+            return await build();
+          } catch (e) {
+            if (_isCancellation(e)) rethrow;
+            appLogger.w('Smart Home row "$name" unavailable on $serverId', error: e);
+            return null;
+          }
+        }
+
+        final rows = await Future.wait([
+          bestEffort(topRated, 'top rated'),
+          bestEffort(becauseYouWatched, 'because you watched'),
+        ]);
+        abort?.throwIfAborted();
+        return [...rows.nonNulls];
+      } catch (e) {
+        if (_isCancellation(e)) rethrow;
+        appLogger.w('Smart Home rows unavailable on $serverId', error: e);
+      }
+    }
+    return const [];
+  }
+
+  /// One ranking from several best-first lists: each source adds 1/(rank+5)
+  /// per title, so titles several sources agree on rise to the top and a
+  /// source's own order still decides among the rest. Ties keep first sight.
+  @visibleForTesting
+  static List<String> blendRecommendations(List<List<String>> sources) {
+    final score = <String, double>{};
+    final firstSeen = <String, int>{};
+    var order = 0;
+    for (final source in sources) {
+      final seen = <String>{};
+      for (final (rank, id) in source.indexed) {
+        if (!seen.add(id)) continue;
+        score[id] = (score[id] ?? 0) + 1 / (rank + 5);
+        firstSeen.putIfAbsent(id, () => order++);
+      }
+    }
+    final ids = score.keys.toList()
+      ..sort((a, b) {
+        final byScore = score[b]!.compareTo(score[a]!);
+        return byScore != 0 ? byScore : firstSeen[a]!.compareTo(firstSeen[b]!);
+      });
+    return ids;
+  }
+
+  /// Watched, in progress, or (for a show) any episode played: Home's smart
+  /// rows only suggest titles the viewer has not started.
+  @visibleForTesting
+  static bool isStartedOrWatched(MediaItem item) =>
+      item.isWatched || (item.viewOffsetMs ?? 0) > 0 || (item.viewedLeafCount ?? 0) > 0;
+
+  /// The index lookup keys for an outside recommendation (every id it has).
+  @visibleForTesting
+  static List<String> catalogRecommendationRefs(CatalogItem item) {
+    final kind = switch (item.kind) {
+      MediaKind.movie => 'movie',
+      MediaKind.show => 'show',
+      _ => null,
+    };
+    if (kind == null) return const [];
+    final ids = item.ids;
+    return [
+      if (ids.imdb case final imdb? when imdb.isNotEmpty) '$kind:imdb:$imdb',
+      if (ids.tmdb case final tmdb?) '$kind:tmdb:$tmdb',
+      if (ids.tvdb case final tvdb?) '$kind:tvdb:$tvdb',
+    ];
+  }
+
+  /// Smart-index titles in the index's order, preceded only by people whose
+  /// name is exactly the query (an actor search still shows the actor first).
+  static List<SearchHit> _withSmartTitlesFirst(
+    List<MediaItem> visible,
+    Set<MediaItem> smartRanked,
+    List<SearchHit> ranked,
+    String query,
+    int limit,
+  ) {
+    final wanted = normalizeSearchText(query);
+    bool exactPerson(SearchHit hit) => hit is PersonSearchHit && normalizeSearchText(hit.person.name) == wanted;
+    return [
+      ...ranked.where(exactPerson),
+      for (final item in visible)
+        if (smartRanked.contains(item)) MediaSearchHit(item),
+      ...ranked.where((hit) => !exactPerson(hit)),
+    ].take(limit).toList();
+  }
+
+  /// Titles from the household smart-search index for a Jellyfin server, or
+  /// null to use the server's own search (index absent, unreachable, slow or
+  /// failing). Items are loaded through the user's own Jellyfin client.
+  Future<({List<MediaItem> items, Set<String> indexed})?> _smartSearchTitles(
+    String serverId,
+    MediaServerClient client,
+    String query,
+    Set<String> excludedLibraryIds,
+    AbortController? abort,
+  ) async {
+    final smart = _smartSearch;
+    if (smart == null || client is! JellyfinClient) return null;
+    try {
+      // Hard ceiling: whatever happens inside, ordinary search still runs.
+      return await _smartSearchTitlesUnbounded(
+        smart,
+        serverId,
+        client,
+        query,
+        excludedLibraryIds,
+        abort,
+      ).timeout(_smartSearchCeiling);
+    } catch (e) {
+      if (_isCancellation(e)) rethrow;
+      appLogger.w('Smart search unavailable on $serverId; using server search', error: e);
+      smart.markUnavailable(client.connection);
+      return null;
+    }
+  }
+
+  static const Duration _smartSearchCeiling = Duration(seconds: 4);
+
+  Future<({List<MediaItem> items, Set<String> indexed})?> _smartSearchTitlesUnbounded(
+    SmartSearchClient smart,
+    String serverId,
+    JellyfinClient client,
+    String query,
+    Set<String> excludedLibraryIds,
+    AbortController? abort,
+  ) async {
+    final connection = client.connection;
+    {
+      if (!await smart.isAvailable(connection)) return null;
+      abort?.throwIfAborted();
+      final stopwatch = Stopwatch()..start();
+      final response = await smart.instant(connection, query, limit: defaultMediaSearchLimit);
+      abort?.throwIfAborted();
+      final wanted = response.visibleIds(excludedLibraryIds);
+      final loaded = await client
+          .fetchItemsInOrder([for (final w in wanted) w.id], abort: abort)
+          .timeout(MediaServerTimeouts.searchServerDeadline);
+      final libraryOf = {for (final w in wanted) w.id: w.libraryId};
+      final items = [
+        for (final item in loaded)
+          if (!(response.unwatchedOnly && item.isWatched))
+            if (libraryOf[item.id] case final libraryId?) item.copyWith(libraryId: libraryId) else item,
+      ];
+      appLogger.i('Smart search on $serverId: ${items.length} titles in ${stopwatch.elapsedMilliseconds}ms');
+      return (items: items, indexed: response.indexedLibraries);
+    }
   }
 
   static const SearchAggregationResult _emptySearchResult = (

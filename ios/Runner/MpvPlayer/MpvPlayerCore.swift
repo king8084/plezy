@@ -22,6 +22,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     private var displayCriteriaWritePending = false
     private var displayModeSwitchWaiter: DisplayModeSwitchWaiter?
     private var displayModeSwitchWaiterGeneration = 0
+    private var displaySwitchObservers: [NSObjectProtocol] = []
+    private var displaySwitchStartedAt: CFTimeInterval?
+    private var displaySwitchEndedAt: CFTimeInterval?
+    private var displayCriteriaSetAt = CACurrentMediaTime()
+    private var displayCriteriaIsSdr = false
   #endif
 
   var isPipStarting = false
@@ -371,6 +376,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       let criteriaKey =
         "\(displayRange.rawValue)|\(refreshRate)|\(width)x\(height)|\(doviProfile)|\(doviLevel)|\(doviCompatibilityId ?? -1)"
+      displayCriteriaIsSdr = displayRange == .sdr
       if Self.activeDisplayCriteriaKey == criteriaKey && displayManager.preferredDisplayCriteria != nil {
         return true
       }
@@ -379,9 +385,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         refreshRate: refreshRate,
         formatDescription: formatDescription
       )
+      armDisplaySwitchObservation()
       displayManager.preferredDisplayCriteria = displayCriteria
       Self.activeDisplayCriteriaKey = criteriaKey
       displayCriteriaWritePending = true
+      recordDisplayDiagnostic("criteria SET range=\(displayRange.rawValue) fps=\(refreshRate) size=\(width)x\(height)")
       Self.log(
         "preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
       )
@@ -396,8 +404,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   /// this after the first video frame of a newly opened file, while paused,
   /// so playback resumes on the matched mode rather than mid-switch. Main
   /// thread only; completes exactly once, promptly when nothing is pending.
-  func awaitDisplayModeSwitch(extraDelayMs: Int, completion: @escaping () -> Void) {
+  func awaitDisplayModeSwitch(extraDelayMs: Int, allowSdrFastStart: Bool = false, completion: @escaping () -> Void) {
     #if os(tvOS)
+      // QMS SDR cadence changes do not need an app-imposed HDMI blackout
+      // gate. Keep the criteria request active, but start as soon as mpv has
+      // its first frame. An explicit extra-delay setting opts back into wait.
+      if Self.shouldUseSdrFastStart(
+        enabled: allowSdrFastStart, isSdr: displayCriteriaIsSdr, extraDelayMs: extraDelayMs)
+      {
+        recordDisplayDiagnostic("QMS SDR fast start wait skipped")
+        displayCriteriaWritePending = false
+        completion()
+        return
+      }
       waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
       // The waiter has consumed the pending write; a second call for the
       // same file must not re-arm the start window for it. Resetting here
@@ -409,6 +428,52 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   #if os(tvOS)
+    static func shouldUseSdrFastStart(enabled: Bool, isSdr: Bool, extraDelayMs: Int) -> Bool {
+      enabled && isSdr && extraDelayMs == 0
+    }
+
+    private func recordDisplayDiagnostic(_ message: String) {
+      let elapsed = Int((CACurrentMediaTime() - displayCriteriaSetAt) * 1000)
+      dispatchDelegateEvent(name: "display-diagnostic", data: ["message": "\(message) elapsedMs=\(elapsed)"])
+    }
+
+    // Arm at the write, before media opening. A switch can finish before the
+    // first decoded frame and its flag can lag the end notification. Starting
+    // observation only at the Dart wait loses that completion and adds a wait.
+    private func armDisplaySwitchObservation() {
+      removeDisplaySwitchObservers()
+      displaySwitchStartedAt = nil
+      displaySwitchEndedAt = nil
+      displayCriteriaSetAt = CACurrentMediaTime()
+      let center = NotificationCenter.default
+      displaySwitchObservers = [
+        center.addObserver(forName: .AVDisplayManagerModeSwitchStart, object: nil, queue: .main) { [weak self] _ in
+          self?.displaySwitchStartedAt = CACurrentMediaTime()
+          self?.recordDisplayDiagnostic("switch START")
+        },
+        center.addObserver(forName: .AVDisplayManagerModeSwitchEnd, object: nil, queue: .main) { [weak self] _ in
+          self?.displaySwitchEndedAt = CACurrentMediaTime()
+          self?.recordDisplayDiagnostic("switch END")
+        },
+      ]
+    }
+
+    private func removeDisplaySwitchObservers() {
+      for observer in displaySwitchObservers { NotificationCenter.default.removeObserver(observer) }
+      displaySwitchObservers.removeAll()
+    }
+
+    /// An observed end after the latest start is stronger evidence than the
+    /// display manager's lagging in-progress flag. Keep the existing settle
+    /// budget, but spend only what remains rather than starting it again.
+    static func remainingDisplaySettleMs(
+      startedAt: CFTimeInterval?, endedAt: CFTimeInterval?, now: CFTimeInterval, extraDelayMs: Int
+    ) -> Int? {
+      guard let endedAt, endedAt >= (startedAt ?? endedAt) else { return nil }
+      let budgetMs = 200 + max(0, min(extraDelayMs, 10_000))
+      return max(0, budgetMs - Int(max(0, now - endedAt) * 1000))
+    }
+
     private enum DisplayDynamicRange: String {
       case sdr = "SDR"
       case hdr10 = "HDR10"
@@ -418,9 +483,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     private func clearDisplayCriteria(_ displayManager: AVDisplayManager, reason: String) {
       guard Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil else { return }
+      armDisplaySwitchObservation()
       displayManager.preferredDisplayCriteria = nil
       Self.activeDisplayCriteriaKey = nil
+      displayCriteriaIsSdr = false
       displayCriteriaWritePending = true
+      recordDisplayDiagnostic("criteria CLEAR reason=\(reason)")
       Self.log("preferredDisplayCriteria cleared (\(reason))")
     }
 
@@ -431,7 +499,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       }
 
       let displayManager = window.avDisplayManager
+      if let remaining = Self.remainingDisplaySettleMs(
+        startedAt: displaySwitchStartedAt, endedAt: displaySwitchEndedAt,
+        now: CACurrentMediaTime(), extraDelayMs: extraDelayMs)
+      {
+        recordDisplayDiagnostic("wait observed completed switch remainingMs=\(remaining)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(remaining), execute: completion)
+        return
+      }
       let shouldWaitForStart = displayCriteriaWritePending
+      recordDisplayDiagnostic(
+        "wait pending=\(shouldWaitForStart) inProgress=\(displayManager.isDisplayModeSwitchInProgress) extraDelayMs=\(extraDelayMs)"
+      )
       if !shouldWaitForStart && !displayManager.isDisplayModeSwitchInProgress {
         completion()
         return
@@ -443,7 +522,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       let waiter = DisplayModeSwitchWaiter(
         displayManager: displayManager,
         shouldWaitForStart: shouldWaitForStart,
-        extraDelayMs: extraDelayMs
+        extraDelayMs: extraDelayMs,
+        diagnostic: { [weak self] message in self?.recordDisplayDiagnostic(message) }
       ) { [weak self] in
         if let self, self.displayModeSwitchWaiterGeneration == waiterGeneration {
           self.displayModeSwitchWaiter = nil
@@ -459,6 +539,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       private let shouldWaitForStart: Bool
       private let extraDelayMs: Int
       private let completion: () -> Void
+      private let diagnostic: (String) -> Void
       private var startObserver: NSObjectProtocol?
       private var endObserver: NSObjectProtocol?
       private var startWatchdog: DispatchWorkItem?
@@ -476,11 +557,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         displayManager: AVDisplayManager,
         shouldWaitForStart: Bool,
         extraDelayMs: Int,
+        diagnostic: @escaping (String) -> Void,
         completion: @escaping () -> Void
       ) {
         self.displayManager = displayManager
         self.shouldWaitForStart = shouldWaitForStart
         self.extraDelayMs = max(0, min(extraDelayMs, 10_000))
+        self.diagnostic = diagnostic
         self.completion = completion
       }
 
@@ -572,6 +655,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         cleanup()
 
         let delayMs = waited ? Self.settleMs + extraDelayMs : 0
+        diagnostic("wait complete reason=\(reason) waited=\(waited) settleMs=\(delayMs)")
         MpvPlayerCore.log(
           "display mode switch wait complete "
             + "(\(reason), waited: \(waited), extraDelayMs: \(extraDelayMs))"
@@ -821,6 +905,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       displayModeSwitchWaiter?.cancel(complete: true)
       displayModeSwitchWaiter = nil
+      removeDisplaySwitchObservers()
     #endif
 
     NotificationCenter.default.removeObserver(self)

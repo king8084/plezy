@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 
@@ -16,8 +18,21 @@ import 'package:plezy/media/library_change_event.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/catalog_item_ref.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/catalog/simkl_catalog_source.dart';
+import 'package:plezy/services/catalog/catalog_library_matcher.dart';
+import 'package:plezy/services/catalog/detail_recommendations.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
@@ -55,6 +70,7 @@ import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
@@ -62,6 +78,7 @@ import 'package:provider/provider.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
@@ -111,6 +128,216 @@ void main() {
     expect(titleText.style?.fontSize, isNotNull);
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
+
+  for (final outcome in ['success', 'disconnect', 'failure']) {
+    final disconnectWhileLoading = outcome == 'disconnect';
+    testWidgets('Seerr request shelf stays separate and does not block local detail: $outcome', (tester) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final movie = testMediaItem(
+        id: 'movie',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final owned = movie.copyWith(id: 'owned', title: 'Already in library');
+      final server = _FakeMediaServerClient(
+        show: movie,
+        childrenByParent: {},
+        externalIds: const ExternalIds(tmdb: 1),
+        relatedHubs: [
+          MediaHub(id: 'local-similar', title: t.discover.moreLikeThis, type: 'movie', items: [owned]),
+        ],
+      );
+      final multiServer = testMultiServer(clients: [server]).provider;
+      final response = Completer<http.Response>();
+      final httpClient = MockClient((request) async {
+        expect(request.method, 'GET');
+        if (request.url.path.endsWith('/settings/public')) return jsonResponse({}, status: 404);
+        expect(request.url.path, '/api/v1/movie/1/recommendations');
+        return response.future;
+      });
+      final seerrClient = SeerrClient(
+        const SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'owner',
+          userId: 1,
+          displayName: 'Owner',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+          secret: 'test',
+          cookie: 'test',
+          permissions: SeerrPermission.admin,
+          product: SeerrProduct.jellyseerr,
+        ),
+        httpClient: httpClient,
+        onSessionInvalidated: () {},
+      );
+      final source = SeerrCatalogSource(seerrClient);
+      final sources = _DetailSeerrSources(source);
+      addTearDown(() {
+        sources.dispose();
+        source.dispose();
+        seerrClient.dispose();
+      });
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(find.byKey(tvDetailRevealGateKey)).opacity, 1);
+      expect(tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs.single.title, t.discover.moreLikeThisOwned);
+      if (disconnectWhileLoading) sources.disconnect();
+      response.complete(
+        jsonResponse({
+          'page': 1,
+          'totalPages': 1,
+          'results': [
+            {'id': 2, 'title': 'A title to request'},
+          ],
+        }, status: outcome == 'failure' ? 500 : 200),
+      );
+      await tester.pumpAndSettle();
+      var hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      if (outcome == 'success') {
+        expect(hubs.map((hub) => hub.title), [t.discover.moreLikeThisOwned, t.discover.moreLikeThisRequest]);
+        expect(hubs.last.items.single.catalogItem?.ids.tmdb, 2);
+        expect(hubs.last.items.single.catalogItem?.source.name, 'seerr');
+        sources.disconnect();
+        await tester.pumpAndSettle();
+        hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      }
+      expect(hubs, hasLength(1));
+      expect(hubs.single.items.single.id, owned.id);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final disconnect in [false, true]) {
+    testWidgets('Simkl title shelf loads independently between owned and Seerr, disconnect=$disconnect', (
+      tester,
+    ) async {
+      await SettingsService.getInstance();
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final show = testMediaItem(
+        id: 'show',
+        kind: MediaKind.show,
+        title: 'Modern Family',
+        backend: MediaBackend.jellyfin,
+        serverId: 'server_1',
+      );
+      final local = testMediaItem(
+        id: 'owned',
+        kind: MediaKind.show,
+        title: 'Library show',
+        backend: MediaBackend.jellyfin,
+        serverId: 'server_1',
+        thumbPath: '/own-poster',
+      );
+      final server = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {},
+        externalIds: const ExternalIds(tmdb: 1),
+        relatedHubs: [
+          MediaHub(id: 'local-related', title: t.discover.moreLikeThis, type: 'show', items: [local]),
+        ],
+      );
+      final multiServer = testMultiServer(clients: [server]).provider;
+      final seerrClient = SeerrClient(
+        const SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'owner',
+          userId: 1,
+          displayName: 'Owner',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+          secret: 'test',
+          cookie: 'test',
+          permissions: SeerrPermission.admin,
+          product: SeerrProduct.jellyseerr,
+        ),
+        httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('/settings/public')) return jsonResponse({}, status: 404);
+          return jsonResponse({
+            'page': 1,
+            'totalPages': 1,
+            'results': [
+              {'id': 100, 'name': 'Seerr recommendation'},
+            ],
+          });
+        }),
+        onSessionInvalidated: () {},
+      );
+      final seerr = SeerrCatalogSource(seerrClient);
+      final gate = Completer<List<CatalogItem>>();
+      final simkl = _GatedSimklRecommendations(gate.future);
+      final sources = _DetailRecommendationSources(seerr, simkl);
+      addTearDown(() {
+        sources.dispose();
+        seerr.dispose();
+        seerrClient.dispose();
+      });
+      final matcher = _RecommendationMatcher(local);
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer),
+            ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+            Provider<CatalogLibraryMatcher>.value(value: matcher),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(find.byKey(tvDetailRevealGateKey)).opacity, 1);
+      expect(tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs.map((hub) => hub.title), [
+        t.discover.moreLikeThisOwned,
+        t.discover.moreLikeThisRequest,
+      ]);
+      if (disconnect) sources.disconnectSimkl();
+      gate.complete([
+        const CatalogItem(
+          source: CatalogSourceId.simkl,
+          kind: MediaKind.show,
+          title: 'Recommended',
+          ids: CatalogItemIds(simkl: 2, tmdb: 2),
+        ),
+      ]);
+      await tester.pumpAndSettle();
+      final hubs = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).hubs;
+      expect(hubs.map((hub) => hub.title), [
+        t.discover.moreLikeThisOwned,
+        if (!disconnect) t.discover.moreLikeThisSimkl,
+        t.discover.moreLikeThisRequest,
+      ]);
+      if (!disconnect) {
+        final recommended = hubs[1].items.single;
+        expect(recommended.id, local.id);
+        expect(recommended.thumbPath, local.thumbPath);
+        expect(RecommendationCardData.fromItem(recommended)!.availability, RecommendationAvailability.owned);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('TV detail exposes hero information as one semantic node', (tester) async {
     final semantics = tester.ensureSemantics();
@@ -299,7 +526,8 @@ void main() {
     expect(find.text('62%'), findsOneWidget);
     expect(find.text('87%'), findsOneWidget);
     expect(find.text('7.4'), findsOneWidget);
-    expect(find.byType(SvgPicture), findsNWidgets(3));
+    expect(find.byType(SvgPicture), findsNWidgets(2));
+    expect(tester.widget<Icon>(find.byIcon(Symbols.star_rounded)).color, const Color(0xFFB8860B));
     expect(find.textContaining('★ 6.2', findRichText: true), findsNothing);
     // The redundant type label no longer opens the line.
     expect(find.text('Movie'), findsNothing);
@@ -524,11 +752,157 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Specials'), findsNothing);
+    expect(find.text('Specials'), findsOneWidget); // Available as a tab, not an episode row.
+    final seasonHubs = tester
+        .widget<TvBrowseRail>(find.byType(TvBrowseRail))
+        .hubs
+        .where((hub) => hub.id.startsWith('detail_season_'));
+    expect(seasonHubs.single.items.map((item) => item.id), [episode1.id]);
     expect(find.text('S1E1'), findsOneWidget);
   });
 
-  testWidgets('TV detail exposes each season as its episode hub leading options item', (tester) async {
+  for (final canvas in [const Size(960, 540), const Size(1280, 720), const Size(1920, 1080)]) {
+    testWidgets('show info has five synopsis lines and clear actions above large rails at $canvas', (tester) async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.libraryDensity, LibraryDensity.max);
+      await settings.write(SettingsService.episodePosterMode, EpisodePosterMode.episodeThumbnail);
+      tester.view.physicalSize = canvas;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final show =
+          testMediaItem(
+            id: 'industry',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.show,
+            title: 'Industry',
+            summary: List.filled(15, 'Young graduates compete in international finance.').join(' '),
+            serverId: 'server_1',
+            year: 2020,
+            durationMs: 3420000,
+            contentRating: 'TV-MA',
+            roles: const [MediaRole(id: 'actor', tag: 'Cast Member')],
+          ).copyWith(
+            ratings: const [
+              MediaRatingSource(source: 'imdb', value: 7.5),
+              MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.1),
+            ],
+          );
+      final seasons = [
+        for (var i = 1; i <= 4; i++)
+          testMediaItem(
+            id: 's$i',
+            backend: show.backend,
+            kind: MediaKind.season,
+            title: 'Season $i',
+            index: i,
+            parentId: show.id,
+            serverId: show.serverId,
+          ),
+      ];
+      final episodes = [
+        for (var i = 1; i <= 8; i++)
+          testMediaItem(
+            id: 'e$i',
+            backend: show.backend,
+            kind: MediaKind.episode,
+            title: 'Episode $i',
+            summary: List.filled(15, 'An episode synopsis with plenty of text.').join(' '),
+            index: i,
+            parentIndex: 1,
+            parentId: 's1',
+            grandparentId: show.id,
+            serverId: show.serverId,
+          ),
+      ];
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {show.id: seasons, for (final season in seasons) season.id: episodes},
+        relatedHubs: [
+          MediaHub(id: 'related', title: 'Related', type: 'show', items: [show]),
+        ],
+      );
+      final provider = testMultiServer(clients: [client]).provider;
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final summary = find.byKey(const ValueKey('tv_detail_episode_summary'));
+      final actions = find.byKey(const ValueKey('tv_detail_actions'));
+      final tags = find.byKey(const ValueKey('tv_detail_technical_badges'));
+      final scale = TvLayoutConstants.scaleForSize(canvas);
+      expect(tester.widget<Text>(summary).style!.fontSize, 14 * scale);
+      expect(tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_title'))).style!.fontSize, 24 * scale);
+      expect(tester.widget<Text>(summary).maxLines, 4);
+      expect(tester.getBottomLeft(tags).dy, lessThan(tester.getTopLeft(summary).dy));
+      expect(tester.getBottomLeft(summary).dy, lessThan(tester.getTopLeft(actions).dy));
+      final firstCard = find.byType(MediaCard).first;
+      expect(tester.getBottomRight(firstCard).dy, lessThanOrEqualTo(canvas.height));
+      expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
+      final originalRailTop = tester.getTopLeft(find.byType(TvBrowseRail)).dy;
+      final episodeRailHeight = tester.getSize(find.byType(TvBrowseRail)).height;
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+      }
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
+      expect(tester.widget<Text>(summary).maxLines, 5);
+      expect(tester.widget<Text>(summary).style!.fontSize, 14 * scale);
+      expect(tester.getSize(summary).height, closeTo(5 * 14 * scale * 1.35, 0.01));
+      expect(
+        tester.getBottomLeft(actions).dy + 24 * scale,
+        lessThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),
+      );
+      expect(tester.getTopLeft(find.byType(TvBrowseRail)).dy, greaterThanOrEqualTo(originalRailTop));
+      // Return to the episode rail without changing its selected item.
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+      }
+      expect(tester.getTopLeft(find.byType(TvBrowseRail)).dy, originalRailTop);
+      // The taller cast/recommendation rows must fit too, not just the first
+      // wide episode card inside the rail's larger viewport.
+      for (var i = 0; i < 2; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+        expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+        expect(tester.getBottomRight(find.byType(TvBrowseRail)).dy, lessThanOrEqualTo(canvas.height));
+        if (i == 1) {
+          expect(tester.getSize(find.byType(TvBrowseRail)).height, greaterThan(episodeRailHeight));
+          final activeCard = find
+              .byWidgetPredicate(
+                (widget) => widget is MediaCard && widget.item is MediaItem && (widget.item as MediaItem).id == show.id,
+              )
+              .first;
+          final homeRailHeight = TvBrowseRailLayout.estimateHeight(
+            size: canvas,
+            hubs: [
+              MediaHub(id: 'related', title: 'Related', type: 'show', items: [show]),
+            ],
+            density: LibraryDensity.max,
+            episodePosterMode: EpisodePosterMode.episodeThumbnail,
+            tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+            showNextHubPeek: false,
+            maxHeight: TvSpotlightLayout.maxRailHeight(canvas, textScale: 1),
+          );
+          expect(tester.getSize(find.byType(TvBrowseRail)).height, closeTo(homeRailHeight, 0.01));
+          expect(
+            tester.getTopLeft(activeCard).dy,
+            greaterThanOrEqualTo(tester.getTopLeft(find.byType(TvBrowseRail)).dy),
+          );
+          expect(tester.getBottomRight(activeCard).dy, lessThanOrEqualTo(canvas.height));
+        }
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('TV detail keeps one season row with options and switches it from tabs', (tester) async {
     await SettingsService.getInstance();
 
     final show = testMediaItem(
@@ -613,19 +987,164 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // Every season hub surfaces its own season as the leading options item —
-    // the D-pad path to mark a whole season watched/unwatched (#2156).
-    final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    // Only the selected season occupies the rail; its whole-season options
+    // remain available before the first episode.
+    var rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(rail.leadingItemForHub, isNotNull);
-    final seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
-    expect(seasonHubs, hasLength(2));
+    var seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
     expect(rail.leadingItemForHub!(seasonHubs[0])?.id, season1.id);
-    expect(rail.leadingItemForHub!(seasonHubs[1])?.id, season2.id);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
+    await tester.tap(find.text('S2'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
+    expect(rail.leadingItemForHub!(seasonHubs.single)?.id, season2.id);
+    expect(seasonHubs.single.items.map((item) => item.id), [episode2.id]);
+    expect(tester.takeException(), isNull);
 
     // Non-season hubs (flatten episodes, actors, extras, related) get none.
     const flattenHub = MediaHub(id: 'detail_episodes', title: 'Episodes', type: 'episode', items: <MediaItem>[]);
     expect(rail.leadingItemForHub!(flattenHub), isNull);
   });
+  testWidgets('Continue Watching enters season 8 episode 14 with just that season in the rail', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final show =
+        testMediaItem(
+          id: 'modern-family',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.show,
+          title: 'Modern Family',
+          serverId: 'server_1',
+          serverName: 'Server',
+        ).copyWith(
+          roles: const [MediaRole(id: 'actor', tag: 'Cast Member')],
+        );
+    final seasons = [
+      for (var i = 1; i <= 11; i++)
+        testMediaItem(
+          id: 'season_$i',
+          backend: show.backend,
+          kind: MediaKind.season,
+          title: 'Season $i',
+          index: i,
+          parentId: show.id,
+          serverId: show.serverId,
+        ),
+    ];
+    final episodes = [
+      for (var i = 1; i <= 11; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: show.backend,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          index: i == 8 ? 14 : 1,
+          parentIndex: i,
+          parentId: seasons[i - 1].id,
+          grandparentId: show.id,
+          serverId: show.serverId,
+        ),
+    ];
+    final season8Episodes = [
+      for (var number = 1; number <= 22; number++)
+        episodes[7].copyWith(id: 's8e$number', index: number, title: 'Season 8 episode $number'),
+    ];
+    final season9Episodes = [
+      for (var number = 1; number <= 20; number++)
+        episodes[8].copyWith(id: 's9e$number', index: number, title: 'Season 9 episode $number'),
+    ];
+    final enteredEpisode = season8Episodes[13];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: seasons,
+        for (var i = 0; i < seasons.length; i++)
+          seasons[i].id: i == 7
+              ? season8Episodes
+              : i == 8
+              ? season9Episodes
+              : [episodes[i]],
+      },
+    )..onDeckEpisode = episodes[2]; // Explicit entry beats a different on-deck season.
+    final provider = testMultiServer(clients: [client]).provider;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: provider,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(
+            child: MediaDetailScreen(
+              metadata: show,
+              initialSeasonIndex: 8,
+              initialSeasonId: seasons[7].id,
+              initialEpisodeId: enteredEpisode.id,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final rail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    final seasonHubs = rail.hubs.where((hub) => hub.id.startsWith('detail_season_')).toList();
+    expect(seasonHubs, hasLength(1));
+    expect(seasonHubs.single.items.map((item) => item.id), season8Episodes.map((item) => item.id));
+    expect(seasonHubs.single.items, hasLength(22));
+    expect(rail.initialItemId, enteredEpisode.id);
+    final selectedTab = find.byWidgetPredicate((widget) => widget is FocusableTabChip && widget.isSelected);
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    expect(tester.getRect(selectedTab).left, greaterThanOrEqualTo(0));
+    expect(tester.getRect(selectedTab).right, lessThanOrEqualTo(1280));
+    expect(rail.hubs[1].id, 'detail_actors');
+    final tabsRect = tester.getRect(selectedTab);
+    expect(tabsRect.top, greaterThanOrEqualTo(tester.getRect(find.byType(AppBarBackButton)).bottom + 8));
+    expect(
+      tabsRect.bottom + 12,
+      lessThanOrEqualTo(tester.getRect(find.byKey(const ValueKey('tv_detail_information_semantics'))).top),
+    );
+    // Episodes -> actions -> information -> tabs follows their new visual order.
+    for (var i = 0; i < 3; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+    }
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_7');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_8');
+    // Moving across tabs does not switch until Select.
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S8');
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(tester.widget<FocusableTabChip>(selectedTab).label, 'S9');
+    final switchedRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(
+      switchedRail.hubs.where((hub) => hub.id.startsWith('detail_season_')).single.items.first.id,
+      season9Episodes.first.id,
+    );
+    expect(switchedRail.hubs[1].id, 'detail_actors');
+    var railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(railState.focusedMediaItem?.id, season9Episodes.first.id);
+    for (var i = 0; i < 4; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+    expect(railState.focusedMediaItem?.id, season9Episodes[4].id);
+    await tester.tap(find.text('S8'));
+    await tester.pumpAndSettle();
+    railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(railState.focusedMediaItem?.id, season8Episodes.first.id);
+    await tester.tap(find.text('S9'));
+    await tester.pumpAndSettle();
+    expect(railState.focusedMediaItem?.id, season9Episodes.first.id);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('TV detail reveal still waits for the supplemental sections', (tester) async {
     // Counterpart to the test above: the early paint does NOT move the TV
     // reveal. `_isTvDetailReadyToReveal` additionally requires extras, related
@@ -840,8 +1359,8 @@ void main() {
     // Every season tab is derived from the season list, so both appear
     // immediately. TV warms only the selected first page plus the adjacent first
     // page; it still does not walk the whole show or load page 2+.
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
     expect(client.childrenPageCalls.map((call) => call.parentId), containsAll([season1.id, season2.id]));
     expect(client.childrenPageCalls.every((call) => call.start == 0 && call.size == 200), isTrue);
   });
@@ -932,8 +1451,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsOneWidget);
-    expect(find.text('Season 2'), findsOneWidget);
+    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('S2'), findsOneWidget);
   });
 
   testWidgets('TV detail completes adjacent prefetch after focus moves to that season', (tester) async {
@@ -1023,9 +1542,7 @@ void main() {
     tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
     await tester.pump();
 
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.tap(find.text('S2'));
     await tester.pump();
     expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 2')), findsNothing);
 
@@ -1038,7 +1555,8 @@ void main() {
 
   testWidgets('TV detail hero, rail cards, and Play all follow the focused episode', (tester) async {
     final semantics = tester.ensureSemantics();
-    await SettingsService.getInstance();
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.libraryDensity, 7);
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -1064,14 +1582,17 @@ void main() {
       serverId: show.serverId,
       serverName: show.serverName,
     );
+    final season2 = season.copyWith(id: 'season_2', index: 2);
     final episode = testMediaItem(
       id: 'episode_1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
       title: 'The One Where the Title Matters',
       summary: 'The episode summary.',
+      rating: 7.2,
       index: 1,
       durationMs: 1380000,
+      viewOffsetMs: 9 * 60000,
       parentId: season.id,
       parentIndex: season.index,
       grandparentId: show.id,
@@ -1084,6 +1605,7 @@ void main() {
       backend: MediaBackend.jellyfin,
       kind: MediaKind.episode,
       title: 'The One After',
+      summary: 'The second episode summary.',
       index: 2,
       durationMs: 1500000,
       parentId: season.id,
@@ -1096,8 +1618,17 @@ void main() {
     final client = _FakeMediaServerClient(
       show: show,
       childrenByParent: {
-        show.id: [season],
+        show.id: [season, season2],
         season.id: [episode, episode2],
+        season2.id: [
+          episode.copyWith(
+            id: 'later_episode',
+            parentId: season2.id,
+            parentIndex: 2,
+            title: 'Later episode',
+            summary: 'Later summary.',
+          ),
+        ],
       },
     );
     final provider = testMultiServer(clients: [client]).provider;
@@ -1130,6 +1661,9 @@ void main() {
     expect(heroTitle, findsOneWidget);
     expect(tester.widget<Text>(heroTitle).data, 'The One Where the Title Matters');
     expect(find.text('The episode summary.'), findsOneWidget);
+    expect(find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The episode summary.')), findsNothing);
+    expect(tester.widget<Icon>(find.byIcon(Symbols.star_rounded)).color, const Color(0xFFB8860B));
+    expect(find.byIcon(Symbols.people_rounded), findsNothing);
     // The title sits above the episode's metadata line, inside the block that
     // opens the details sheet.
     final metadataLine = find.byType(FittedMetadataLine);
@@ -1139,6 +1673,7 @@ void main() {
       findsOneWidget,
     );
     expect(tester.getSemantics(information).label, contains('The Show, The One Where the Title Matters, S1 E1'));
+    expect(tester.getSemantics(information).label, contains('14 min left'));
 
     // Genres are the show's and never change while browsing: not a hero row.
     // They stay in the announcement because the sheet the block opens has them.
@@ -1161,8 +1696,17 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump(const Duration(milliseconds: 200));
     expect(tester.widget<Text>(heroTitle).data, 'The One After');
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_summary'))).data,
+      'The second episode summary.',
+    );
+    expect(
+      find.descendant(of: find.byType(TvBrowseRail), matching: find.text('The second episode summary.')),
+      findsNothing,
+    );
     expect(find.text('S1E2'), findsOneWidget);
     expect(find.text('S1E1'), findsNothing);
+    expect(tester.getSemantics(information).label, isNot(contains('min left')));
     semantics.dispose();
   });
 
@@ -1223,6 +1767,7 @@ void main() {
           'ratingKey': 'ep1',
           'type': 'episode',
           'title': 'Episode 1',
+          'summary': 'The episode synopsis from full metadata.',
           'parentRatingKey': season.id,
           'grandparentRatingKey': show.id,
           'parentIndex': 1,
@@ -1270,7 +1815,11 @@ void main() {
     // the episode's IMDb score.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
-    expect(announced(), contains('TMDB 77%, IMDb 7.8'));
+    expect(announced(), contains('IMDb 7.8, TMDB 77%'));
+    expect(
+      tester.widget<Text>(find.byKey(const ValueKey('tv_detail_episode_summary'))).data,
+      'The episode synopsis from full metadata.',
+    );
     expect(
       find.descendant(of: find.byKey(const ValueKey('tv_detail_information_semantics')), matching: find.text('7.8')),
       findsOneWidget,
@@ -1286,7 +1835,82 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('TV detail action row ends with the tracks Play will use, off the focus path', (tester) async {
+  testWidgets('Jellyfin season track previews are ready before episode focus without item fetches', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final show = testMediaItem(
+      id: 'show',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'Show',
+      serverId: 'server_1',
+    );
+    final season = testMediaItem(
+      id: 'season',
+      backend: show.backend,
+      kind: MediaKind.season,
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+    );
+    final episodes = [
+      for (var i = 1; i <= 2; i++)
+        testMediaItem(
+          id: 'ep$i',
+          backend: show.backend,
+          kind: MediaKind.episode,
+          title: 'Episode $i',
+          index: i,
+          parentIndex: 1,
+          parentId: season.id,
+          grandparentId: show.id,
+          serverId: show.serverId,
+          mediaVersions: [MediaVersion(id: 'source$i', videoResolution: '1080', videoCodec: 'hevc')],
+          raw: {
+            'MediaSources': [
+              {
+                'Id': 'source$i',
+                'DefaultAudioStreamIndex': 1,
+                'MediaStreams': [
+                  {'Type': 'Video', 'Index': 0, 'Codec': 'hevc', 'Width': 1920, 'Height': 1080},
+                  {'Type': 'Audio', 'Index': 1, 'Codec': i == 1 ? 'eac3' : 'aac', 'Language': 'eng', 'Channels': 2},
+                ],
+              },
+            ],
+          },
+        ),
+    ];
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season],
+        season.id: episodes,
+      },
+    );
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: testMultiServer(clients: [client]).provider,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: show)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(client.itemReads, 0);
+    expect(client.sourceReads, 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    final status = find.byKey(const ValueKey('detail_playback_tracks'));
+    expect(tester.widget<Semantics>(status).properties.label, contains('AAC'));
+    expect(client.itemReads, 0);
+    expect(client.sourceReads, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('TV episode tracks sit above the synopsis, off the focus path', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
@@ -1383,15 +2007,11 @@ void main() {
     final audioText = find.textContaining('English');
     expect(audioText, findsOneWidget);
 
-    // At the screen's right edge — outside the hero's 60% text column, not
-    // right-aligned within it — sitting on the action row's baseline, in the
-    // hero's own ink rather than the muted chip colour.
+    // A dedicated full-width badge row precedes the synopsis and actions.
     final bar = tester.getRect(find.byType(FocusableActionBar));
     final statusRect = tester.getRect(status);
-    expect(statusRect.right, closeTo(1920 - 24, 1)); // spotlightLeft at this scale
-    expect(statusRect.left, greaterThan(1920 * 0.60));
-    expect(statusRect.bottom, closeTo(bar.bottom, 1));
-    expect(statusRect.center.dy, greaterThan(bar.center.dy));
+    expect(statusRect.left, closeTo(24, 1));
+    expect(statusRect.bottom, lessThan(bar.top));
     final ink = tester.widget<Text>(audioText).style!.color!;
     expect(ink.a, 1.0);
 
@@ -3375,7 +3995,52 @@ Map<String, dynamic> _previewItem(
   };
 }
 
+class _GatedSimklRecommendations extends Fake implements SimklCatalogSource {
+  _GatedSimklRecommendations(this.result);
+  final Future<List<CatalogItem>> result;
+  @override
+  Future<List<CatalogItem>> fetchTitleRecommendations(MediaKind kind, ExternalIds external) => result;
+}
+
+class _RecommendationMatcher extends Fake implements CatalogLibraryMatcher {
+  _RecommendationMatcher(this.owned);
+  final MediaItem owned;
+  @override
+  Future<LibraryLookupResult> match(CatalogItem item) async => (
+    items: [owned],
+    succeededServerIds: {'server_1'},
+    failedServerIds: <String>{},
+    cancelledServerIds: <String>{},
+    unqueriedServerIds: <String>{},
+  );
+}
+
+class _DetailRecommendationSources extends CatalogSourcesProvider {
+  _DetailRecommendationSources(this.seerrSource, this.simklSource);
+  @override
+  final SeerrCatalogSource seerrSource;
+  @override
+  SimklCatalogSource? simklSource;
+  void disconnectSimkl() {
+    simklSource = null;
+    notifyListeners();
+  }
+}
+
+class _DetailSeerrSources extends CatalogSourcesProvider {
+  _DetailSeerrSources(this.source);
+  SeerrCatalogSource? source;
+  @override
+  SeerrCatalogSource? get seerrSource => source;
+  void disconnect() {
+    source = null;
+    notifyListeners();
+  }
+}
+
 class _FakeMediaServerClient implements MediaServerClient {
+  @override
+  final authenticationSessionId = Object();
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
   final Map<String, Future<List<MediaItem>>> childrenPageFutures;
@@ -3388,6 +4053,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final Map<String, MediaSourceInfo> mediaSourcesById;
   final Map<String, Map<String, dynamic>> rawItems;
+  final List<MediaHub> relatedHubs;
+  final ExternalIds externalIds;
   Completer<void>? sourceGate;
   int itemReads = 0;
   int sourceReads = 0;
@@ -3417,6 +4084,8 @@ class _FakeMediaServerClient implements MediaServerClient {
     this.childrenPageErrors = const {},
     this.pendingPlayableDescendants,
     this.mediaSourcesById = const {},
+    this.relatedHubs = const [],
+    this.externalIds = const ExternalIds(),
     Map<String, Map<String, dynamic>>? rawItems,
   }) : rawItems = rawItems ?? {},
        childrenPageFuturesByStart = childrenPageFuturesByStart ?? {};
@@ -3527,7 +4196,10 @@ class _FakeMediaServerClient implements MediaServerClient {
   }
 
   @override
-  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
+  Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => relatedHubs;
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async => externalIds;
 
   @override
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {

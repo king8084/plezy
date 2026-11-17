@@ -1,0 +1,9 @@
+# Installed with: pip install --no-deps --require-hashes -r requirements.txt
+# Exact files tested on the owner's PC (Python 3.14). No model hubs/downloaders.
+numpy==2.5.4 --hash=sha256:d549420b8858885cea8838a727842249218b9c1da24dd517e25c9c7a948310a3
+onnxruntime==1.32.0 --hash=sha256:48b878f9551d465aa79ee94ecaf49a1f6b5d27f2975efa775ded374db14d0af1
+flatbuffers==25.12.19 --hash=sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4
+packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+protobuf==7.36.2 --hash=sha256:89f23aa53c24553a2416fd4fd1ec06f74fa42b14b546d8883128813f775bbfd2
+tokenizers==0.23.3 --hash=sha256:376851d22bcf9d650a5c3090bb83e6cf9e895fbf0595369fa4cd43c1f69b5f87
+websockets==17.4 --hash=sha256:ef03fb4b3685df0ed9dc6a074a090f030345cad2c23c61818da3e08e693a9caa

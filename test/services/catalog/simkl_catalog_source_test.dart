@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
@@ -212,6 +213,73 @@ void main() {
     tearDown(() {
       source.dispose();
       client.dispose();
+    });
+
+    test('title recommendations use viewers recommendations, stay generous and coalesce/cache', () async {
+      final gate = Completer<http.Response>();
+      responder = (request) {
+        if (request.url.path == '/redirect') {
+          expect(request.url.queryParameters['imdb'], 'ttmodernfamily');
+          return _json(null, status: 302, headers: {'location': 'https://simkl.com/tv/1/modern-family/'});
+        }
+        expect(request.url.path, '/tv/1');
+        return gate.future;
+      };
+      final first = source.fetchTitleRecommendations(MediaKind.show, const ExternalIds(imdb: 'ttmodernfamily'));
+      final second = source.fetchTitleRecommendations(MediaKind.show, const ExternalIds(imdb: 'ttmodernfamily'));
+      gate.complete(
+        _json({
+          'ids': {'simkl': 1},
+          'users_recommendations': [
+            for (var i = 2; i < 38; i++)
+              {
+                'title': 'Recommended $i',
+                'type': 'tv',
+                'ids': {'simkl': i, 'tmdb': i + 100},
+                'ratings': {
+                  'imdb': {'rating': 8.1, 'votes': 12345},
+                },
+              },
+            {
+              'title': 'Duplicate',
+              'ids': {'simkl': 2},
+            },
+            {
+              'title': 'Self',
+              'ids': {'simkl': 1},
+            },
+          ],
+          'similar': [
+            {
+              'title': 'Do not use genre similar',
+              'ids': {'simkl': 999},
+            },
+          ],
+        }),
+      );
+      final results = await Future.wait([first, second]);
+      expect(results.first, hasLength(36));
+      expect(results.first.any((item) => item.ids.simkl == 999), isFalse);
+      expect(results.first.first.ratings!.single.source, 'imdb');
+      expect(results.first.first.ratings!.single.votes, 12345);
+      expect(requests, hasLength(2));
+      await source.fetchTitleRecommendations(MediaKind.show, const ExternalIds(imdb: 'ttmodernfamily'));
+      expect(requests, hasLength(2));
+    });
+
+    test('no viewer recommendations does not fall back to similar', () async {
+      responder = (request) => request.url.path == '/redirect'
+          ? _json(null, status: 302, headers: {'location': 'https://simkl.com/tv/1/title/'})
+          : _json({
+              'ids': {'simkl': 1},
+              'similar': [
+                {
+                  'title': 'Similar',
+                  'ids': {'simkl': 2},
+                },
+              ],
+            });
+      expect(await source.fetchTitleRecommendations(MediaKind.show, const ExternalIds(tmdb: 1)), isEmpty);
     });
 
     test('trending uses CDN, coerces ids, builds images, and serves page two from cache', () async {

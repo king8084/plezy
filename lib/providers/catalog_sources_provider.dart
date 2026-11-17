@@ -37,6 +37,7 @@ import 'seerr_account_provider.dart';
 import 'trackers_provider.dart';
 import '../utils/platform_detector.dart';
 import '../utils/app_logger.dart';
+import '../utils/external_ids.dart';
 
 typedef PlexDiscoverSessionSupplier = Future<PlexDiscoverSession?> Function();
 
@@ -154,6 +155,34 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   /// Request action and sheet) that need Seerr's client beyond the
   /// [CatalogSource] interface.
   SeerrCatalogSource? get seerrSource => _seerr.source;
+  SimklCatalogSource? get simklSource => _simkl.source;
+
+  /// What each connected recommender (Simkl, Trakt) suggests for viewers of a
+  /// library movie or show, one best-first list per source. A source that is
+  /// not connected, fails or is slow contributes nothing.
+  Future<List<List<CatalogItem>>> titleRecommendations(MediaKind kind, ExternalIds external) async {
+    Future<List<CatalogItem>> bestEffort(String name, Future<List<CatalogItem>> Function() fetch) async {
+      try {
+        return await fetch().timeout(_titleRecommendationsTimeout);
+      } catch (error) {
+        appLogger.d('$name title recommendations unavailable', error: error);
+        return const [];
+      }
+    }
+
+    final simkl = _simkl.source;
+    final trakt = _trakt.source;
+    final lists = await Future.wait([
+      if (simkl != null) bestEffort('Simkl', () => simkl.fetchTitleRecommendations(kind, external)),
+      if (trakt != null) bestEffort('Trakt', () => trakt.fetchRelatedFor(kind, external)),
+    ]);
+    return [
+      for (final list in lists)
+        if (list.isNotEmpty) list,
+    ];
+  }
+
+  static const Duration _titleRecommendationsTimeout = Duration(milliseconds: 2500);
 
   /// The source whose rows the Explore tab shows: the user's persisted pick
   /// when it is still connected, otherwise the first connected source.

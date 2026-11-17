@@ -2113,6 +2113,7 @@ class _MainScreenState extends State<MainScreen>
                     viewportWidth: viewportWidth,
                     selectLibrary: _selectLibrary,
                     openSettings: _openSettings,
+                    openSearch: () => _selectTab(NavigationTabId.search),
                     child: SideNavigationScope(
                       child: Stack(
                         clipBehavior: Clip.hardEdge,

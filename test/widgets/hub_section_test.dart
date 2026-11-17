@@ -312,7 +312,7 @@ void main() {
 
     double expectedFor(GridSpacing spacing) => TvBrowseRailLayout.cardWidthFor(
       availableWidth: 960,
-      density: LibraryDensity.defaultValue,
+      density: 4, // The tvOS default is one step larger than the shared default.
       useWideLayout: true,
       scale: TvLayoutConstants.scaleForSize(const Size(960, 540)),
       horizontalPadding: TvLayoutConstants.shelfHorizontalInset * 2,

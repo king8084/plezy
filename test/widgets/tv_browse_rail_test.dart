@@ -554,6 +554,70 @@ void main() {
     expect(snapshots.every((widget) => widget.controller.allowSnapshotting), isFalse);
   });
 
+  testWidgets('Back returns to the first item of the first row before leaving the rail', (tester) async {
+    final serverManager = MultiServerManager();
+    MediaItem movie(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: id);
+    final first = MediaHub(
+      id: 'continue_watching',
+      title: 'Continue',
+      type: 'movie',
+      items: [movie('a'), movie('b')],
+      size: 2,
+    );
+    final second = MediaHub(id: 'recent', title: 'Recent', type: 'movie', items: [movie('c'), movie('d')], size: 2);
+    final key = GlobalKey<TvBrowseRailState>();
+    var leftRail = 0;
+
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => testMultiServerProvider(serverManager),
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  key: key,
+                  focusMemory: focusMemory,
+                  hubs: [first, second],
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                  onBack: () {
+                    if (!key.currentState!.focusFirstItemOfFirstHubIfElsewhere()) leftRail++;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final rail = key.currentState!;
+    rail.requestFocus();
+    await tester.pump();
+    expect(rail.isOnFirstItemOfFirstHub, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(rail.isOnFirstItemOfFirstHub, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(rail.isOnFirstItemOfFirstHub, isTrue, reason: 'first Back goes to the first item');
+    expect(leftRail, 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(leftRail, 1, reason: 'second Back leaves for the sidebar');
+  });
+
   testWidgets('active hub header uses theme foreground in light mode', (tester) async {
     final serverManager = MultiServerManager();
     final theme = monoTheme(MonoPalette.light);
@@ -719,7 +783,7 @@ void main() {
     final metrics = TvBrowseRailLayout.metricsForHub(
       hub: hub,
       availableWidth: 1280 - TvBrowseRailLayout.horizontalInsetForScale(scale),
-      density: LibraryDensity.defaultValue,
+      density: SettingsService.instance.read(SettingsService.libraryDensity),
       episodePosterMode: EpisodePosterMode.seriesPoster,
       scale: scale,
       fullCardLayout: true,
@@ -1038,7 +1102,7 @@ void main() {
     final metrics = TvBrowseRailLayout.metricsForHub(
       hub: hub,
       availableWidth: size.width - TvBrowseRailLayout.horizontalInsetForScale(scale),
-      density: LibraryDensity.defaultValue,
+      density: SettingsService.instance.read(SettingsService.libraryDensity),
       episodePosterMode: EpisodePosterMode.seriesPoster,
       scale: scale,
       gridSpacing: SettingsService.instance.read(SettingsService.gridSpacing),
@@ -2991,12 +3055,15 @@ void main() {
     // Default focus is the first episode — the options slot adds no step to
     // normal playback.
     expect(focusedItemIds.last, 'episode_1');
+    final rail = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    expect(rail.focusedMediaItem?.id, 'episode_1');
 
     // LEFT moves onto the options slot instead of exiting to the sidebar.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
     expect(sidebarRequests, 0);
+    expect(rail.focusedMediaItem, isNull, reason: 'Play must not launch the last episode from the options slot');
 
     // Select opens the season's context menu instead of activating an item.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
@@ -3014,6 +3081,7 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
     expect(focusedItemIds.last, 'episode_1');
+    expect(rail.focusedMediaItem?.id, 'episode_1');
 
     // From the options slot, LEFT exits to the sidebar as before.
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);

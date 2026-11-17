@@ -35,6 +35,7 @@ class LogEntry {
 /// Fed by [MemoryAwareLogPrinter.log()]; console output goes through the
 /// logger's default [ConsoleOutput].
 class MemoryLogOutput {
+  static void Function(String message)? playbackDiagnosticSink;
   static const int maxLogSizeBytes = 5 * 1024 * 1024;
   static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
@@ -42,6 +43,7 @@ class MemoryLogOutput {
   /// Append [entry], evicting the oldest entries once the buffer exceeds
   /// [maxLogSizeBytes] — O(1) with ListQueue.
   static void add(LogEntry entry) {
+    playbackDiagnosticSink?.call(entry.message);
     _logs.add(entry);
     _currentSize += entry.estimatedSize;
     while (_currentSize > maxLogSizeBytes && _logs.isNotEmpty) {

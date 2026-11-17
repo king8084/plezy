@@ -222,6 +222,9 @@
     "gridView": "グリッド",
     "listView": "リスト",
     "showHeroSection": "注目コンテンツを表示",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "視聴中の操作",
     "continueWatchingPlay": "再生",
     "continueWatchingDetails": "詳細を開く",
@@ -278,6 +281,8 @@
     "subtitleStyling": "字幕スタイル",
     "subtitleStylingDescription": "字幕の外観をカスタマイズ",
     "smallSkipDuration": "短いスキップ時間",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "長いスキップ時間",
     "rewindOnResume": "再開時に巻き戻し",
     "secondsUnit": "${seconds}秒",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "ダイナミックレンジを合わせる",
     "matchDynamicRangeDescription": "HDRコンテンツではHDRに切り替え、その後SDRに戻します",
     "displaySwitchDelay": "ディスプレイ切り替え遅延",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "トンネル再生",
     "tunneledPlaybackDescription": "動画トンネリングを使用します。HDR再生で画面が黒くなる場合や動きがカクつく場合は無効にしてください。",
     "audioPassthrough": "オーディオパススルー",
@@ -484,6 +491,7 @@
     "display": "ディスプレイ",
     "libraryAndCards": "ライブラリとカード",
     "homeScreen": "ホーム画面",
+    "homeTextSize": "",
     "navigation": "ナビゲーション",
     "window": "ウィンドウ",
     "liveTv": "ライブTV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "すべて",
     "playerScopeLibrary": "ライブラリごと",
     "playerScopeTitle": "作品ごと",
-    "exportDialogTitle": "Plezyの設定をエクスポート"
+    "exportDialogTitle": "Plezyの設定をエクスポート",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "標準",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "別の検索語をお試しください",
     "searchYourMedia": "メディアを検索",
     "enterTitleActorOrKeyword": "タイトル、俳優、またはキーワードを入力",
-    "people": "人物"
+    "people": "人物",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}のショートカットを設定",
@@ -727,6 +760,10 @@
     "viewDetails": "詳細を表示",
     "goToSeries": "シリーズへ移動",
     "shufflePlay": "シャッフル再生",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "オフラインではシャッフルを利用できません",
     "fileInfo": "ファイル情報",
     "deleteEpisodeFromServer": "サーバーからエピソードを削除",
@@ -758,6 +795,8 @@
     "mediaDeletedSuccessfully": "メディアアイテムを正常に削除しました",
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
     "rate": "評価",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "最初から再生",
     "playVersion": "バージョンを選んで再生…"
   },
@@ -904,7 +943,10 @@
     "forcedTrack": "${label}（強制）",
     "osdSubtitlesOff": "字幕: オフ",
     "osdSubtitles": "字幕: ${track}",
-    "osdAudio": "音声: ${track}"
+    "osdAudio": "音声: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1181,6 +1223,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "探す",
     "noContentAvailable": "コンテンツがありません",
     "addMediaToLibraries": "ライブラリにメディアを追加してください",
@@ -1205,7 +1254,10 @@
     "movie": "映画",
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分",
+    "durationLeft": "",
     "moreLikeThis": "似ている作品",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n}作品"
     },
@@ -1215,7 +1267,9 @@
       "birthplace": "出生地",
       "dateWithAge": "${date}（${age}歳）",
       "dateWithAgeAtDeath": "${date}（${age}歳没）"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "検索に失敗しました: ${error}",
@@ -1387,7 +1441,15 @@
   "logs": {
     "clearLogs": "ログをクリア",
     "copyLogs": "ログをコピー",
-    "uploadLogs": "ログをアップロード"
+    "uploadLogs": "ログをアップロード",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezyを起動できませんでした",

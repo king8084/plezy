@@ -89,6 +89,49 @@ class SeerrCatalogSource implements CatalogSource {
     return _toPage(await results, await origin).items;
   }
 
+  /// Recommendations absent from the linked server with no active request.
+  /// Up to three pages keep the shelf useful after availability filtering.
+  /// Selecting a card still enters the existing explicit Request flow.
+  Future<List<CatalogItem>> fetchRequestableRecommendations(MediaKind kind, int tmdbId) async {
+    if ((kind != MediaKind.movie && kind != MediaKind.show) || !canRequest(kind)) return const [];
+    Future<SeerrPage<SeerrMedia>> load(int page) => kind == MediaKind.movie
+        ? client.getMovieRecommendations(tmdbId, page: page)
+        : client.getTvRecommendations(tmdbId, page: page);
+    final firstPage = load(1);
+    final originFuture = _tmdbImageOrigin();
+    var page = await firstPage;
+    final origin = await originFuture;
+    final seen = <int>{tmdbId};
+    final items = <CatalogItem>[];
+    for (var number = 1; number <= 3; number++) {
+      if (!canRequest(kind)) return const [];
+      for (final media in page.items) {
+        if (media.displayTitle.isNotEmpty && seen.add(media.id) && _canOfferRequest(media.mediaInfo)) {
+          items.add(_toCatalogItem(media, origin));
+        }
+      }
+      if (!page.hasMore || page.items.isEmpty || number == 3) break;
+      try {
+        page = await load(number + 1);
+      } catch (error) {
+        appLogger.d('Seerr recommendation continuation unavailable', error: error);
+        break; // Preserve the recommendations already fetched.
+      }
+    }
+    return items;
+  }
+
+  bool _canOfferRequest(SeerrMediaInfo? info) {
+    if (info == null) return true;
+    final product = client.session.product;
+    bool missing(SeerrMediaStatus status) => status == SeerrMediaStatus.unknown || status == SeerrMediaStatus.deleted;
+    if (!missing(info.status(product)) || !missing(info.status4k(product))) return false;
+    return info.requests?.any(
+          (request) => request.status == SeerrRequestStatus.pending || request.status == SeerrRequestStatus.approved,
+        ) !=
+        true;
+  }
+
   @override
   Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
     final tmdbId = item.ids.tmdb;

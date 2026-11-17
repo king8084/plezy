@@ -266,7 +266,7 @@ import TVServices
 
   final class SystemShelfPlugin: NSObject, FlutterPlugin {
     static let schemaVersion = 3
-    static let appGroupIdentifier = "group.com.edde746.plezy"
+    static let appGroupIdentifier = ShelfSourceStore.appGroupIdentifier
     static let cacheDataKey = "PlezySystemShelfCacheData"
     static let sourcesKey = "PlezySystemShelfSources"
     static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"

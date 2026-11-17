@@ -29,6 +29,9 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   final void Function(String libraryGlobalKey)? selectLibrary;
   final VoidCallback? openSettings;
 
+  /// Switch to the Search tab with its input focused (Home's Search action).
+  final VoidCallback? openSearch;
+
   const MainScreenFocusScope({
     super.key,
     required this.focusSidebar,
@@ -39,6 +42,7 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
     this.viewportWidth,
     this.selectLibrary,
     this.openSettings,
+    this.openSearch,
     required super.child,
   });
 
@@ -49,6 +53,11 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   static MainScreenFocusScope? of(BuildContext context, {bool listen = true}) {
     if (listen) return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
     return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
+  }
+
+  /// Opens the Search tab without registering an inherited dependency.
+  static void openSearchOf(BuildContext context) {
+    of(context, listen: false)?.openSearch?.call();
   }
 
   /// Focuses the sidebar without registering an inherited dependency.

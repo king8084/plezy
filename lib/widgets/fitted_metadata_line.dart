@@ -46,9 +46,10 @@ class MetadataLineIconText extends MetadataLinePart {
 /// The attributed-score slot. Every score shares this one slot so the bullet
 /// separators don't multiply with the number of sources.
 class MetadataLineRatings extends MetadataLinePart {
-  const MetadataLineRatings(this.ratings, {required super.dropPriority});
+  const MetadataLineRatings(this._ratings, {required super.dropPriority});
 
-  final List<MediaRatingSource> ratings;
+  final List<MediaRatingSource> _ratings;
+  List<MediaRatingSource> get ratings => orderedMediaRatings(_ratings);
 }
 
 /// A single-line metadata strip that sheds its least useful parts instead of
@@ -67,6 +68,7 @@ class FittedMetadataLine extends StatelessWidget {
     this.ratingIconSize,
     this.ratingSpacing,
     this.ratingEntrySpacing,
+    this.goldRatingStars = false,
   });
 
   /// Style shared by every text part, the separators, and the badge values.
@@ -81,6 +83,7 @@ class FittedMetadataLine extends StatelessWidget {
 
   /// Gap between adjacent badges inside the ratings slot.
   final double? ratingEntrySpacing;
+  final bool goldRatingStars;
 
   /// Also for callers that append their own trailing widget to the line.
   static const String separator = '  •  ';
@@ -129,6 +132,7 @@ class FittedMetadataLine extends StatelessWidget {
                     textDirection: textDirection,
                     iconSize: iconSize,
                     spacing: badgeGap,
+                    goldStars: goldRatingStars,
                   ),
               ],
             },
@@ -204,6 +208,7 @@ class FittedMetadataLine extends StatelessWidget {
               iconSize: iconSize,
               spacing: badgeGap,
               entrySpacing: entryGap,
+              goldStars: goldRatingStars,
             ),
           });
         }

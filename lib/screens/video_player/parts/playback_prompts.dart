@@ -106,7 +106,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value && !serverStopped) {
         _logVideoCompleted('action=presentNext pip');
-        unawaited(_playNext());
+        unawaited(_autoAdvance());
         return;
       }
 
@@ -122,7 +122,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       // straight into the next episode.
       if (autoPlayEnabled && (skipAutoPlayCountdown || countdownSeconds == 0)) {
         _logVideoCompleted('action=presentNext autoplay');
-        unawaited(_playNext());
+        unawaited(_autoAdvance());
         return;
       }
 
@@ -164,6 +164,22 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     );
   }
 
+  /// An automatic advance (countdown, instant autoplay, PiP). After the
+  /// owner-chosen number of these in a row with no remote press, the next
+  /// episode asks "Still watching?" shortly after it starts (off by default).
+  Future<void> _autoAdvance() async {
+    _unattendedAutoAdvances++;
+    await _playNext();
+    if (!mounted) return;
+    final limit = SettingsService.instance.read(SettingsService.stillWatchingAfterEpisodes);
+    if (limit <= 0 || _unattendedAutoAdvances < limit) return;
+    _unattendedAutoAdvances = 0;
+    _stillWatchingAfterAdvanceTimer?.cancel();
+    _stillWatchingAfterAdvanceTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && !_showStillWatchingPrompt) _showStillWatchingDialog();
+    });
+  }
+
   void _startAutoPlayTimer() {
     if (!_canNavigateMediaItems()) return;
     _episode.autoPlayTimer?.cancel();
@@ -181,7 +197,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       _episode.autoPlayCountdown.value = nextCountdown;
       if (nextCountdown <= 0) {
         timer.cancel();
-        _playNext();
+        unawaited(_autoAdvance());
       }
     });
   }

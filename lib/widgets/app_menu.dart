@@ -78,6 +78,8 @@ Future<T?> showAppMenu<T>(
   Rect? anchorRect,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
+  Listenable? entriesListenable,
+  AppMenuEntryBuilder<T>? entriesBuilder,
 }) {
   assert(position != null || anchorRect != null, 'showAppMenu requires a position or anchorRect');
 
@@ -87,12 +89,17 @@ Future<T?> showAppMenu<T>(
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.transparent,
     transitionDuration: const Duration(milliseconds: 120),
-    pageBuilder: (dialogContext, _, _) => _AppMenuPopup<T>(
+    pageBuilder: (dialogContext, _, _) => _LiveMenuEntries<T>(
       entries: entries,
-      position: position,
-      anchorRect: anchorRect,
-      anchorAlignment: anchorAlignment,
-      focusFirstItem: focusFirstItem,
+      listenable: entriesListenable,
+      entriesBuilder: entriesBuilder,
+      builder: (liveEntries) => _AppMenuPopup<T>(
+        entries: liveEntries,
+        position: position,
+        anchorRect: anchorRect,
+        anchorAlignment: anchorAlignment,
+        focusFirstItem: focusFirstItem,
+      ),
     ),
     transitionBuilder: (dialogContext, animation, _, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
@@ -254,6 +261,8 @@ Future<T?> showAdaptiveAppMenu<T>(
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
   bool isScrollControlled = false,
+  Listenable? entriesListenable,
+  AppMenuEntryBuilder<T>? entriesBuilder,
 }) {
   // ThemeData.platform follows the real target platform by default, including
   // Android TV and tvOS, while remaining overrideable in widget tests.
@@ -263,7 +272,12 @@ Future<T?> showAdaptiveAppMenu<T>(
       context,
       showDragHandle: true,
       isScrollControlled: isScrollControlled,
-      builder: (context) => AppMenuSheet<T>(title: title, entries: entries, focusFirstItem: focusFirstItem),
+      builder: (context) => _LiveMenuEntries<T>(
+        entries: entries,
+        listenable: entriesListenable,
+        entriesBuilder: entriesBuilder,
+        builder: (liveEntries) => AppMenuSheet<T>(title: title, entries: liveEntries, focusFirstItem: focusFirstItem),
+      ),
     );
   }
 
@@ -274,7 +288,28 @@ Future<T?> showAdaptiveAppMenu<T>(
     anchorRect: anchorRect,
     anchorAlignment: anchorAlignment,
     focusFirstItem: focusFirstItem,
+    entriesListenable: entriesListenable,
+    entriesBuilder: entriesBuilder,
   );
+}
+
+class _LiveMenuEntries<T> extends StatelessWidget {
+  const _LiveMenuEntries({
+    required this.entries,
+    required this.listenable,
+    required this.entriesBuilder,
+    required this.builder,
+  });
+
+  final List<AppMenuEntry<T>> entries;
+  final Listenable? listenable;
+  final AppMenuEntryBuilder<T>? entriesBuilder;
+  final Widget Function(List<AppMenuEntry<T>>) builder;
+
+  @override
+  Widget build(BuildContext context) => listenable == null || entriesBuilder == null
+      ? builder(entries)
+      : ListenableBuilder(listenable: listenable!, builder: (context, _) => builder(entriesBuilder!(context)));
 }
 
 Alignment _transitionAlignment(BuildContext context, {Offset? position, Rect? anchorRect}) {
@@ -488,6 +523,7 @@ class _AppMenuListState<T> extends State<AppMenuList<T>> {
 
   Widget _buildItem(AppMenuItem<T> item, {required bool initialFocusAssigned}) {
     return AppMenuItemTile<T>(
+      key: ValueKey(item.value),
       item: item,
       focusNode: initialFocusAssigned ? _initialFocusNode : null,
       onPressed: item.enabled ? () => widget.onSelected(item.value) : null,

@@ -1,7 +1,11 @@
+import '../../../media/media_item_types.dart';
 import 'dart:async';
 import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/removed_continue_watching_provider.dart';
+import '../../../utils/media_navigation_helper.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/hub_vertical_navigation.dart';
@@ -54,6 +58,27 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final TvSpotlightController _spotlight = TvSpotlightController();
   HubFocusMemory _hubFocusMemory = HubFocusMemory();
+  RemovedContinueWatchingProvider? _removed;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final removed = context.watch<RemovedContinueWatchingProvider?>();
+    if (identical(removed, _removed)) return;
+    _removed?.removeListener(_onRemovedChanged);
+    _removed = removed;
+    _removed?.addListener(_onRemovedChanged);
+  }
+
+  void _onRemovedChanged() {
+    if (mounted) unawaited(loadItems());
+  }
+
+  Future<bool> _openTvLibraryDetails(MediaHub hub, MediaItem item) async {
+    if (!item.isMovie && !item.isShow && !item.isSeason && !item.isEpisode) return false;
+    await navigateToMediaItemDetails(context, item, onRefresh: updateItem);
+    return true;
+  }
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
 
@@ -68,6 +93,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   @override
   void dispose() {
+    _removed?.removeListener(_onRemovedChanged);
     _spotlight.dispose();
     super.dispose();
   }
@@ -201,6 +227,14 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               libraryKind: widget.library.kind,
             ),
           );
+    await _removed?.ensureInitialized();
+    await _removed?.observeItems(hubs.expand((hub) => hub.items).toList());
+    final visible = _removed?.filterHubs(hubs);
+    if (visible != null) {
+      hubs
+        ..clear()
+        ..addAll(visible);
+    }
     hubs.removeWhere((hub) => hub.items.isEmpty);
 
     // Move Continue Watching hub to the front if present
@@ -345,6 +379,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 iconForHub: (hub, _) => hubIconFor(hub),
                 onFocusedItemChanged: _setSpotlightItem,
                 onRefresh: updateItem,
+                onActivateItem: PlatformDetector.isAppleTV() ? _openTvLibraryDetails : null,
                 onRemoveFromContinueWatching: _refreshContinueWatching,
                 isContinueWatchingHub: _isContinueWatchingHub,
                 usesContinueWatchingAction: _usesContinueWatchingAction,

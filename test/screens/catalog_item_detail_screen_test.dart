@@ -27,6 +27,9 @@ import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
+import 'package:plezy/services/catalog/mdblist_catalog_source.dart';
+import 'package:plezy/services/trackers/mdblist/mdblist_client.dart';
+import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
@@ -334,7 +337,7 @@ class _ExtrasClient implements MediaServerClient {
 
 Future<void> _pumpDetail(
   WidgetTester tester,
-  _FakeCatalogSource source, {
+  CatalogSource source, {
   List<MediaItem> matches = const [],
   List<MediaServerClient> clients = const [],
   bool pushedRoute = false,
@@ -930,6 +933,229 @@ void main() {
 
     expect(find.text('Secret identity'), findsOneWidget);
     expect(find.text(t.explore.detail.revealSpoilerTags), findsNothing);
+  });
+
+  for (final kind in [MediaKind.movie, MediaKind.show]) {
+    testWidgets('Seerr ${kind.name} headline uses cached MDBList IMDb score/votes while details are pending', (
+      tester,
+    ) async {
+      final ratingsResponse = Completer<http.Response>();
+      final detailResponse = Completer<http.Response>();
+      final ratingPaths = <String>[];
+      final mdblistClient = MdblistClient(
+        TrackerSession(
+          accessToken: 'test',
+          refreshToken: 'test',
+          createdAt: 0,
+          expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 86400,
+        ),
+        onSessionInvalidated: () {},
+        httpClient: MockClient((request) async {
+          ratingPaths.add(request.url.path);
+          return ratingsResponse.future;
+        }),
+      );
+      addTearDown(mdblistClient.dispose);
+      final mdblist = MdblistCatalogSource(mdblistClient);
+      final seerrClient = SeerrClient(
+        const SeerrSession(
+          baseUrl: 'https://seerr.example.com',
+          method: SeerrAuthMethod.local,
+          identifier: 'test',
+          secret: '',
+          cookie: 'test',
+          userId: 1,
+          permissions: SeerrPermission.request,
+          displayName: 'Test',
+          instanceLabel: 'Seerr',
+          createdAt: 0,
+        ),
+        onSessionInvalidated: () {},
+        httpClient: MockClient((request) async {
+          if (request.url.path.endsWith('/recommendations')) {
+            return http.Response('{"page":1,"totalPages":1,"results":[]}', 200);
+          }
+          if (request.url.path.endsWith('/settings/public')) return http.Response('{}', 404);
+          return detailResponse.future;
+        }),
+      );
+      addTearDown(seerrClient.dispose);
+      final item = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: kind,
+        title: 'Request Title',
+        rating: 6.1,
+        votes: 999,
+        ids: const CatalogItemIds(tmdb: 1),
+      );
+      await _pumpDetail(tester, mdblist, item: item, seerr: SeerrCatalogSource(seerrClient), pushedRoute: true);
+      expect(ratingPaths, [kind == MediaKind.movie ? '/tmdb/movie/1' : '/tmdb/show/1']);
+      expect(find.text('6.1 (999 votes)'), findsNothing);
+      ratingsResponse.complete(
+        http.Response(
+          jsonEncode({
+            'ratings': [
+              {'source': 'imdb', 'value': 8.5, 'votes': 12000},
+              {'source': 'tmdb', 'value': 61, 'votes': 999},
+            ],
+          }),
+          200,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('IMDb 8.5 (12K votes)'), findsOneWidget);
+      expect(detailResponse.isCompleted, isFalse); // Seerr cannot hold the rating back.
+      detailResponse.complete(
+        http.Response(
+          jsonEncode({
+            'id': 1,
+            'title': 'Request Title',
+            'name': 'Request Title',
+            'voteAverage': 6.1,
+            'voteCount': 999,
+          }),
+          200,
+        ),
+      );
+      await tester.pumpAndSettle();
+      // A second visit reuses the profile's existing ratings cache.
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open catalog'));
+      await tester.pumpAndSettle();
+      expect(find.text('IMDb 8.5 (12K votes)'), findsOneWidget);
+      expect(ratingPaths, hasLength(1));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final mode in [ViewMode.grid, ViewMode.list]) {
+    testWidgets('Seerr $mode card uses detail IMDb cache and never native TMDB', (tester) async {
+      final response = Completer<http.Response>();
+      var calls = 0;
+      final client = MdblistClient(
+        TrackerSession(
+          accessToken: 'test',
+          refreshToken: 'test',
+          createdAt: 0,
+          expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 86400,
+        ),
+        onSessionInvalidated: () {},
+        httpClient: MockClient((request) {
+          calls++;
+          return response.future;
+        }),
+      );
+      addTearDown(client.dispose);
+      final source = MdblistCatalogSource(client);
+      final sources = _FakeCatalogSourcesProvider(source);
+      final multi = testMultiServerProvider(MultiServerManager());
+      addTearDown(sources.dispose);
+      addTearDown(multi.dispose);
+      const item = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: MediaKind.show,
+        title: 'Are We There Yet?',
+        year: 2010,
+        rating: 6.6,
+        votes: 999,
+        ids: CatalogItemIds(tmdb: 1),
+      );
+      Future<void> pumpCard(CatalogItem card) async {
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<CatalogSourcesProvider>.value(value: sources),
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multi),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(MonoPalette.dark),
+              home: Scaffold(
+                body: Center(
+                  child: SizedBox(
+                    width: 360,
+                    height: 500,
+                    child: MediaCard(item: card.toMediaItem(), viewModeOverride: mode, onTap: () {}),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      bool hasText(String part) => find
+          .byWidgetPredicate(
+            (widget) => widget is Text && (widget.data ?? widget.textSpan?.toPlainText() ?? '').contains(part),
+          )
+          .evaluate()
+          .isNotEmpty;
+      await pumpCard(item);
+      expect(calls, 1);
+      expect(hasText('6.6'), isFalse);
+      response.complete(
+        http.Response(
+          jsonEncode({
+            'ratings': [
+              {'source': 'imdb', 'value': 5.6, 'votes': 1990},
+              {'source': 'tmdb', 'value': 66, 'votes': 999},
+            ],
+          }),
+          200,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(hasText('★ 5.6 (1.99K)'), isTrue);
+      expect(hasText('IMDb'), isFalse);
+      expect(hasText('votes'), isFalse);
+      expect(hasText('(999)'), isFalse);
+      expect(hasText('6.6'), isFalse);
+      // Opening the title uses the same cached response as the card.
+      final ratings = await sources.communityRatingsForCatalogItem(item).last;
+      expect(ratings.firstWhere((rating) => rating.source == 'imdb').value, 5.6);
+      expect(calls, 1);
+      // Same identity/item refresh retains the subscription and cached score.
+      await pumpCard(item);
+      expect(hasText('★ 5.6 (1.99K)'), isTrue);
+      expect(hasText('IMDb'), isFalse);
+      expect(hasText('votes'), isFalse);
+      expect(hasText('(999)'), isFalse);
+      expect(calls, 1);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Seerr omits the headline instead of substituting TMDB when IMDb is unavailable', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.show,
+      title: 'Unrated Request',
+      rating: 6.1,
+      votes: 999,
+      ids: CatalogItemIds(tmdb: 1),
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+    await _pumpDetail(tester, source, item: item);
+    expect(find.text('6.1 (999 votes)'), findsNothing);
+    expect(find.textContaining('IMDb'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Seerr never pairs IMDb with the native TMDB vote count', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.show,
+      title: 'IMDb without votes',
+      rating: 6.1,
+      votes: 999,
+      ratings: [MediaRatingSource(source: 'imdb', value: 8.5)],
+      ids: CatalogItemIds(tmdb: 1),
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+    await _pumpDetail(tester, source, item: item);
+    expect(find.text('IMDb 8.5'), findsOneWidget);
+    expect(find.textContaining('999 votes'), findsNothing);
   });
 
   testWidgets('ratings row labels every score source without a brand mark', (tester) async {

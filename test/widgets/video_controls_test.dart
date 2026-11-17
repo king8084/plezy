@@ -1174,6 +1174,80 @@ void main() {
     });
   });
 
+  group('mark played button', () {
+    Future<void> pumpControls(WidgetTester tester, {VoidCallback? onMarkPlayed, bool playsNext = false}) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      await initializeDateFormatting('en');
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      final settings = await SettingsService.getInstance();
+      final player = FakeSyncPlayer();
+      addTearDown(player.dispose);
+      final volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      addTearDown(volume.dispose);
+      final watchTogether = WatchTogetherProvider();
+      addTearDown(watchTogether.dispose);
+      await tester.pumpWidget(
+        ChangeNotifierProvider<WatchTogetherProvider>.value(
+          value: watchTogether,
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1000,
+                height: 700,
+                child: DesktopVideoControls(
+                  useDpadNavigation: false,
+                  player: player,
+                  volumeController: volume,
+                  metadata: testMediaItem(id: 'episode'),
+                  onPlayPause: () {},
+                  onNext: () {},
+                  onMarkPlayed: onMarkPlayed,
+                  markPlayedPlaysNext: playsNext,
+                  chapters: const [],
+                  chaptersLoaded: true,
+                  seekTimeSmall: 10,
+                  onSeekToPreviousChapter: () {},
+                  onSeekToNextChapter: () {},
+                  onSeek: (_) {},
+                  onSeekEnd: (_) {},
+                  getReplayIcon: (_) => Icons.replay,
+                  getForwardIcon: (_) => Icons.forward_10,
+                  trackControlsState: const TrackControlsState(canControl: true),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('an episode offers mark played and play next', (tester) async {
+      var presses = 0;
+      await pumpControls(tester, onMarkPlayed: () => presses++, playsNext: true);
+      await tester.tap(find.bySemanticsLabel(t.videoControls.markPlayedAndNextButton).last);
+      await tester.pump();
+      expect(presses, 1);
+    });
+
+    testWidgets('a movie offers mark played', (tester) async {
+      await pumpControls(tester, onMarkPlayed: () {});
+      expect(find.bySemanticsLabel(t.videoControls.markPlayedButton), findsWidgets);
+      expect(find.bySemanticsLabel(t.videoControls.markPlayedAndNextButton), findsNothing);
+    });
+
+    testWidgets('no callback, no button (live TV, guests in a room)', (tester) async {
+      await pumpControls(tester);
+      expect(find.bySemanticsLabel(t.videoControls.markPlayedButton), findsNothing);
+      expect(find.bySemanticsLabel(t.videoControls.markPlayedAndNextButton), findsNothing);
+    });
+  });
+
   group('play/pause callback routing', () {
     testWidgets('desktop button delegates without issuing a player command', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);

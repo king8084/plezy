@@ -171,6 +171,12 @@ class SeerrClient {
   Future<SeerrPage<SeerrMedia>> getTvRecommendations(int tmdbId, {int page = 1}) =>
       _mediaPage('/tv/$tmdbId/recommendations', page, 'tv');
 
+  Future<SeerrPage<SeerrMedia>> getSimilarMovies(int tmdbId, {int page = 1}) =>
+      _mediaPage('/movie/$tmdbId/similar', page, 'movie');
+
+  Future<SeerrPage<SeerrMedia>> getSimilarTv(int tmdbId, {int page = 1}) =>
+      _mediaPage('/tv/$tmdbId/similar', page, 'tv');
+
   /// [localized] adds the app locale as `language`. Only the two paged
   /// discover routes opt out; everywhere else Seerr treats it as the display
   /// language, which is what we want.

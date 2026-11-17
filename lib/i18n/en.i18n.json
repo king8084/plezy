@@ -222,6 +222,9 @@
     "gridView": "Grid",
     "listView": "List",
     "showHeroSection": "Show Hero Section",
+    "removedContinueWatching": "Removed from Continue Watching",
+    "removedContinueWatchingDescription": "Restore shows and movies removed from this profile.",
+    "restoreContinueWatching": "Restore to Continue Watching",
     "continueWatchingAction": "Continue Watching Action",
     "continueWatchingPlay": "Play",
     "continueWatchingDetails": "Open Details",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Subtitle Styling",
     "subtitleStylingDescription": "Customize subtitle appearance",
     "smallSkipDuration": "Small Skip Duration",
+    "forwardSkipDuration": "Fast Forward Duration",
+    "backwardSkipDuration": "Rewind Duration",
     "largeSkipDuration": "Large Skip Duration",
     "rewindOnResume": "Rewind on Resume",
     "secondsUnit": "${seconds} seconds",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Match Dynamic Range",
     "matchDynamicRangeDescription": "Switch HDR on for HDR content, then back to SDR",
     "displaySwitchDelay": "Display Switch Delay",
+    "qmsFastStart": "QMS fast start for SDR",
+    "qmsFastStartDescription": "Start SDR video without a display-switch wait. Turn off if your display blanks at startup.",
     "tunneledPlayback": "Tunneled Playback",
     "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
@@ -484,6 +491,7 @@
     "display": "Display",
     "libraryAndCards": "Library & Cards",
     "homeScreen": "Home Screen",
+    "homeTextSize": "Home text size",
     "navigation": "Navigation",
     "window": "Window",
     "liveTv": "Live TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export Plezy settings"
+    "exportDialogTitle": "Export Plezy settings",
+    "pinnedHomeCollections": "Pinned Home collections",
+    "pinnedHomeCollectionsDescription": "Manage saved rows, including collections that are no longer available",
+    "pinnedCollectionUnavailable": "Collection unavailable",
+    "customizeSidebar": "Customize sidebar",
+    "customizeSidebarDescription": "Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.",
+    "pinToSidebar": "Pin to sidebar",
+    "unpinFromSidebar": "Unpin from sidebar",
+    "sidebarMoveUp": "Move up",
+    "sidebarMoveDown": "Move down",
+    "homeAndSidebar": "Home & Sidebar",
+    "homeAndSidebarDescription": "Home rows, sidebar, pinned collections and libraries",
+    "homeRows": "Home rows",
+    "homeRowsEmpty": "Open Home once to load its rows, then come back here.",
+    "sidebarAndLibraries": "Sidebar and libraries",
+    "hiddenFromHome": "Hidden from Home",
+    "showRowOnHome": "Show on Home",
+    "hideRowFromHome": "Hide from Home",
+    "stillWatchingAfterEpisodes": "Ask \"Still watching?\"",
+    "stillWatchingAfterEpisodesOff": "Off",
+    "stillWatchingAfterEpisodesCount": "After ${count} episodes play on their own (no remote press)",
+    "episodesInARow": "After ${count} episodes"
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Try a different search term",
     "searchYourMedia": "Search your media",
     "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
-    "people": "People"
+    "people": "People",
+    "findingSmartMatches": "Finding smart matches…",
+    "smartMatches": "Smart matches",
+    "possibleMatches": "Possible matches",
+    "voiceSearch": "Voice search (dictation)"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",
@@ -765,6 +798,8 @@
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
+    "addToFavorites": "Add to favorites",
+    "unfavorite": "Unfavorite",
     "playFromBeginning": "Play from Beginning",
     "playVersion": "Play Version..."
   },
@@ -911,7 +946,10 @@
     "forcedTrack": "${label} (Forced)",
     "osdSubtitlesOff": "Subtitles: Off",
     "osdSubtitles": "Subtitles: ${track}",
-    "osdAudio": "Audio: ${track}"
+    "osdAudio": "Audio: ${track}",
+    "markPlayedButton": "Mark as played",
+    "markPlayedAndNextButton": "Mark as played and play next",
+    "markPlayedFailed": "Could not mark as played"
   },
   "userStatus": {},
   "messages": {
@@ -1189,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "Top rated you haven't watched",
+    "becauseYouWatched": "Because you watched ${title}",
+    "moveRowUp": "Move up",
+    "moveRowDown": "Move down",
+    "readFullDescription": "Read full description",
+    "readMore": "Read more",
+    "noDescription": "No description available.",
     "title": "Discover",
     "noContentAvailable": "No content available",
     "addMediaToLibraries": "Add some media to your libraries",
@@ -1213,7 +1258,10 @@
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
+    "durationLeft": "${duration} left",
     "moreLikeThis": "More Like This",
+    "moreLikeThisOwned": "More Like This — In Your Library",
+    "moreLikeThisRequest": "More Like This — Request",
     "titleCount": {
       "one": "${n} title",
       "other": "${n} titles"
@@ -1224,7 +1272,9 @@
       "birthplace": "Birthplace",
       "dateWithAge": "${date} (age ${age})",
       "dateWithAgeAtDeath": "${date} (aged ${age})"
-    }
+    },
+    "moreLikeThisSimkl": "More Like This — Simkl",
+    "needRequest": "Need request"
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",
@@ -1396,7 +1446,15 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
-    "uploadLogs": "Upload Logs"
+    "uploadLogs": "Upload Logs",
+    "sharePlaybackDiagnostics": "Share playback diagnostics",
+    "playbackDiagnosticsConsent": "Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.",
+    "enableSharing": "Enable sharing",
+    "stopSharing": "Stop sharing",
+    "copyLink": "Copy link",
+    "playbackDiagnosticsLink": "Playback diagnostics link",
+    "playbackDiagnosticsLinkDescription": "Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n$urls",
+    "playbackDiagnosticsShareFailed": "Could not share playback diagnostics. Please try again."
   },
   "startup": {
     "failedTitle": "Plezy could not start",

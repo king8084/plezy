@@ -1,3 +1,4 @@
+import 'package:plezy/providers/removed_continue_watching_provider.dart';
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
@@ -18,6 +20,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/library_events/library_event_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/home_pinned_collections.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/library_content_notifier.dart';
@@ -140,6 +143,7 @@ class _FakeClient implements MediaServerClient {
   final String serverNameValue;
   final List<String> fetchedItemIds = [];
   MediaItem? itemResult;
+  List<MediaItem> collectionItems = const [];
   final _PushChannel channel = _PushChannel();
 
   @override
@@ -167,6 +171,16 @@ class _FakeClient implements MediaServerClient {
     fetchedItemIds.add(id);
     return itemResult;
   }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchCollectionPage(
+    String id, {
+    int? start,
+    int? size,
+    dynamic abort,
+    String? libraryId,
+    String? libraryTitle,
+  }) async => LibraryPage(items: collectionItems, totalCount: collectionItems.length);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -198,6 +212,7 @@ void main() {
   late _FakeAggregationService aggregation;
   late MultiServerProvider multiServer;
   late HiddenLibrariesProvider hiddenLibraries;
+  late RemovedContinueWatchingProvider removed;
   late LibrariesProvider libraries;
   late DiscoverProvider provider;
   late List<(String, List<MediaItem>)> shelfSyncs;
@@ -221,10 +236,13 @@ void main() {
     hiddenLibraries = HiddenLibrariesProvider();
     await hiddenLibraries.ensureInitialized();
     libraries = LibrariesProvider();
+    removed = RemovedContinueWatchingProvider(profileId: 'profile-a');
+    await removed.ensureInitialized();
     provider = DiscoverProvider(
       multiServer,
       hiddenLibraries,
       libraries,
+      removedContinueWatching: removed,
       profileId: 'profile-a',
       isProfileBinding: () => isBinding,
       isRefreshBlocked: () => playbackActive,
@@ -235,6 +253,7 @@ void main() {
 
   void disposeFixture() {
     provider.dispose();
+    removed.dispose();
     libraries.dispose();
     hiddenLibraries.dispose();
     multiServer.dispose();
@@ -242,6 +261,26 @@ void main() {
 
   setUp(initializeFixture);
   tearDown(disposeFixture);
+
+  test('removed series stays out of Home, View All and launcher shelf until restored', () async {
+    final episode = _item('e14', grandparentId: 'show');
+    final other = _item('other', grandparentId: 'other-show');
+    aggregation.onDeckResult = () => [episode, other];
+    aggregation.hubsResult = () => [
+      _hub('recent', items: [episode]),
+    ];
+    await provider.load();
+    await removed.remove(episode);
+    await provider.load();
+    expect(provider.onDeck.map((item) => item.id), ['other']);
+    expect((await provider.loadAllContinueWatching()).map((item) => item.id), ['other']);
+    expect(provider.hubs.single.items, [episode]);
+    await pumpEventQueue();
+    expect(shelfSyncs.last.$2.map((item) => item.id), ['other']);
+    await removed.restore(removed.entries.single.key);
+    await provider.load();
+    expect(provider.onDeck.map((item) => item.id), ['e14', 'other']);
+  });
 
   test('load publishes on-deck and hubs; concurrent calls coalesce', () async {
     aggregation.onDeckResult = () => [_item('a')];
@@ -1267,6 +1306,28 @@ void main() {
     expect(aggregation.lastHubsServerIds, {'server_2'});
     expect(provider.onDeck.map((i) => i.id), containsAll(['a', 'b']));
     expect(provider.hubs.map((h) => h.id), containsAll(['hub-1', 'hub-2']));
+  });
+
+  test('repeated failed hub reconnect keeps one pinned row and reuses its title', () async {
+    client.itemResult = testMediaItem(
+      id: 'collection',
+      backend: MediaBackend.plex,
+      kind: MediaKind.collection,
+      title: 'My collection',
+      serverId: 'server_1',
+    );
+    client.collectionItems = [_item('movie', kind: MediaKind.movie)];
+    await SettingsService.instance.write(SettingsService.homePinnedCollections, [
+      homePinnedCollectionKey('server_1', 'collection'),
+    ]);
+    aggregation.hubSucceededServerIds = const {};
+    aggregation.hubFailedServerIds = const {'server_1'};
+    await provider.load();
+    expect(provider.hubs.where((hub) => hub.identifier == 'pinned_collection'), hasLength(1));
+    await provider.syncToOnlineServers({'server_1'});
+    await provider.syncToOnlineServers({'server_1'});
+    expect(provider.hubs.where((hub) => hub.identifier == 'pinned_collection'), hasLength(1));
+    expect(client.fetchedItemIds.where((id) => id == 'collection'), hasLength(1));
   });
 
   test('delta failure keeps the loaded state and retries on the next emission', () async {

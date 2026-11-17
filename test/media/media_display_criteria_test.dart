@@ -2,6 +2,49 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_display_criteria.dart';
 
 void main() {
+  group('Apple TV display preflight', () {
+    test('accepts complete SDR and HDR metadata', () {
+      expect(
+        const MediaDisplayCriteria(fps: 23.976, width: 3840, height: 2160, transfer: 'bt709').canPreflightAppleTv,
+        isTrue,
+      );
+      expect(
+        const MediaDisplayCriteria(fps: 24, width: 3840, height: 2160, transfer: 'smpte2084').canPreflightAppleTv,
+        isTrue,
+      );
+    });
+
+    test('skips incomplete or invalid source metadata', () {
+      expect(const MediaDisplayCriteria(fps: 24, width: 3840, height: 2160).canPreflightAppleTv, isFalse);
+      expect(
+        const MediaDisplayCriteria(fps: 24, width: 3840, height: 2160, doviProfile: 8).canPreflightAppleTv,
+        isFalse,
+      );
+      expect(
+        const MediaDisplayCriteria(
+          fps: 24,
+          width: 3840,
+          height: 2160,
+          doviProfile: 8,
+          doviLevel: 6,
+        ).canPreflightAppleTv,
+        isFalse,
+      );
+      expect(
+        const MediaDisplayCriteria(fps: 0, width: 3840, height: 2160, transfer: 'bt709').canPreflightAppleTv,
+        isFalse,
+      );
+      expect(
+        const MediaDisplayCriteria(fps: double.nan, width: 3840, height: 2160, transfer: 'bt709').canPreflightAppleTv,
+        isFalse,
+      );
+      expect(
+        const MediaDisplayCriteria(fps: 24, width: 0, height: 2160, transfer: 'bt709').canPreflightAppleTv,
+        isFalse,
+      );
+    });
+  });
+
   group('classifyMediaDisplayColor', () {
     final cases = [
       const _ColorCase('Dolby Vision', MediaDisplayColorType.dolbyVision, isDolbyVision: true),

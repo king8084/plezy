@@ -122,4 +122,23 @@ void main() {
 
     expect(labeled, bare);
   });
+
+  testWidgets('detail episode grid cards leave the synopsis to the focused hero', (tester) async {
+    Future<void> pump() => tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(MonoPalette.dark),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 240,
+              child: MediaCard(item: _episode(), showTitleImplied: true, viewModeOverride: ViewMode.grid),
+            ),
+          ),
+        ),
+      ),
+    );
+    await pump();
+    expect(find.text(_longSummary), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

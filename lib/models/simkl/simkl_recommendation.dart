@@ -2,6 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../utils/json_utils.dart';
 import 'simkl_ids.dart';
+import 'simkl_rating.dart';
 
 part 'simkl_recommendation.g.dart';
 
@@ -21,6 +22,7 @@ class SimklRecommendation {
   @JsonKey(name: 'users_percent')
   final String? usersPercent;
   final SimklIds ids;
+  final SimklRatings? ratings;
 
   const SimklRecommendation({
     this.title,
@@ -32,6 +34,7 @@ class SimklRecommendation {
     this.usersCount,
     this.usersPercent,
     required this.ids,
+    this.ratings,
   });
 
   factory SimklRecommendation.fromJson(Map<String, dynamic> json) => _$SimklRecommendationFromJson(json);

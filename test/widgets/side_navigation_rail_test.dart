@@ -14,6 +14,7 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
+import 'package:plezy/navigation/sidebar_destinations.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
@@ -24,6 +25,8 @@ import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
+import 'package:plezy/screens/hub_detail_screen.dart';
+import 'package:plezy/screens/sidebar_favorites_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/multi_server_fixtures.dart';
@@ -174,6 +177,75 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
+  testWidgets('sidebar pins remain top-level, follow saved order and open their own grids', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.pinFavoritesToSidebar, true);
+    await settings.write(SettingsService.pinCollectionsToSidebar, true);
+    await settings.write(SettingsService.librariesSectionExpanded, false);
+    await settings.write(SettingsService.sidebarOrder, ['favorites', 'settings', 'collections', 'home', 'libraries']);
+    final key = GlobalKey<SideNavigationRailState>();
+    await _pumpBasicRail(tester, sideNavKey: key, alwaysExpanded: true, isSidebarFocused: true);
+    expect(find.text('Favorites'), findsOneWidget);
+    expect(find.text('Collections'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Favorites')).dy, lessThan(tester.getTopLeft(find.text('Settings')).dy));
+    expect(find.text('Libraries'), findsNothing);
+    expect(tester.getTopLeft(find.text('Collections')).dy, lessThan(tester.getTopLeft(find.text('Search')).dy));
+    final favorite = tester.widget<NavigationRailItem>(find.widgetWithText(NavigationRailItem, 'Favorites'));
+    favorite.focusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, contains('settings'));
+    // A pin works even when the Libraries group is collapsed.
+    await tester.tap(find.text('Favorites'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SidebarFavoritesScreen), findsOneWidget);
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Collections'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<HubDetailScreen>(find.byType(HubDetailScreen)).hub.id, 'sidebar_collections');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
+    await settings.write(SettingsService.pinFavoritesToSidebar, false);
+    await tester.pumpAndSettle();
+    expect(find.text('Favorites'), findsNothing);
+    expect(find.text('Collections'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('TV library pins are top-level, sortable, and restore selected focus', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final settings = await SettingsService.getInstance();
+    final movie = _library(id: 'movies', title: 'Movies', serverId: ServerId('server-a'), serverName: 'Server');
+    final tv = _library(id: 'tv', title: 'TV Shows', serverId: ServerId('server-a'), serverName: 'Server');
+    await settings.write(SettingsService.sidebarLibrariesConfigured, true);
+    await settings.write(SettingsService.sidebarPinnedLibraries, [movie.globalKey]);
+    await settings.write(SettingsService.sidebarOrder, [sidebarLibraryKey(movie), 'home', 'settings']);
+    final railKey = GlobalKey<SideNavigationRailState>();
+    await _pumpBasicRail(
+      tester,
+      sideNavKey: railKey,
+      alwaysExpanded: true,
+      selectedTab: NavigationTabId.libraries,
+      selectedLibraryKey: movie.globalKey,
+      libraries: [movie, tv],
+    );
+    expect(find.text('Libraries'), findsNothing);
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('TV Shows'), findsNothing);
+    expect(tester.getTopLeft(find.text('Movies')).dy, lessThan(tester.getTopLeft(find.text('Home')).dy));
+    railKey.currentState!.focusActiveItem();
+    await tester.pumpAndSettle();
+    final row = tester.widget<NavigationRailItem>(find.widgetWithText(NavigationRailItem, 'Movies'));
+    expect(row.focusNode.hasFocus, isTrue);
+    await settings.write(SettingsService.sidebarPinnedLibraries, [movie.globalKey, tv.globalKey]);
+    await tester.pumpAndSettle();
+    expect(find.text('TV Shows'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('closed TV rail is slim and keeps primary icons centered', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
@@ -275,7 +347,7 @@ void main() {
     expect(_railItemDecoration(tester, homeItem)?.borderRadius, BorderRadius.circular(MonoTokens.radiusFull));
   });
 
-  testWidgets('expanded TV rail keeps a transparent surface', (tester) async {
+  testWidgets('expanded TV rail paints a readable panel', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
     await SettingsService.getInstance();
@@ -319,7 +391,7 @@ void main() {
     final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
 
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+    expect(_railSurfaceOpacity(tester).opacity, 1.0);
   });
 
   testWidgets('expanded rail keeps selected background outside sidebar keyboard focus', (tester) async {
@@ -677,6 +749,7 @@ void main() {
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
 
     await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
 
     expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
@@ -737,6 +810,7 @@ void main() {
     expect(_railSurfaceOpacity(tester).opacity, 1.0);
 
     await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
 
     expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
@@ -765,7 +839,7 @@ void main() {
     expect(surface.curve, SideNavigationRailState.expandCurve);
   });
 
-  testWidgets('TV always-open rail stays transparent', (tester) async {
+  testWidgets('TV always-open rail keeps the readable panel', (tester) async {
     await TvDetectionService.getInstance();
     TvDetectionService.setForceTVSync(true);
 
@@ -773,7 +847,7 @@ void main() {
 
     final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
-    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+    expect(_railSurfaceOpacity(tester).opacity, 1.0);
   });
 
   testWidgets('Apple TV D-pad focus skips hidden downloads item', (tester) async {
@@ -824,8 +898,7 @@ void main() {
     sideNavKey.currentState!.focusActiveItem();
     await tester.pumpAndSettle();
 
-    // Home -> Libraries -> Search -> Settings. Downloads is hidden on Apple TV.
-    await _press(tester, LogicalKeyboardKey.arrowDown);
+    // Home -> Search -> Settings. Libraries and Downloads are absent on Apple TV.
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.enter);

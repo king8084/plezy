@@ -95,6 +95,8 @@ class AppleTvRemoteTouchService {
   final Rect? Function() _focusedItemRect;
 
   bool _listening = false;
+  DateTime? _lastPlaybackActionAt;
+  String? _lastPlaybackActionSource;
   bool _nativeKeyHandlerRegistered = false;
   bool _touchActive = false;
   double _startX = 0;
@@ -143,10 +145,18 @@ class AppleTvRemoteTouchService {
   bool handleNativeKeyEvent(KeyEvent event) {
     _log('native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)}');
     if (_isMediaPlaybackKey(event.logicalKey)) {
-      _log('consume native media key reason=direct-playback-action');
+      if (event is KeyDownEvent) {
+        _emitPlayPause('keyboard', _keyName(event.logicalKey));
+      }
       return true;
     }
     return _duplicateInputGuard.handleNativeKeyEvent(event);
+  }
+
+  /// Routes a system media command through the same duplicate guard as UIKit
+  /// and Flutter key events, which can also report the same remote press.
+  void handleMediaControlPlayback(String detail) {
+    _emitPlayPause('media_control', detail);
   }
 
   Future<void> handleMessage(dynamic arguments) async {
@@ -184,13 +194,29 @@ class AppleTvRemoteTouchService {
       case 'play_pause':
         final source = arguments['source'] is String ? arguments['source'] as String : 'native';
         final detail = arguments['detail'] is String ? arguments['detail'] as String : null;
-        _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
-        _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
+        _emitPlayPause(source, detail);
       case 'loc':
         break;
       default:
         break;
     }
+  }
+
+  void _emitPlayPause(String source, String? detail) {
+    final now = _now();
+    final previous = _lastPlaybackActionAt;
+    // UIKit and Flutter can report the same remote press through both paths.
+    if (previous != null &&
+        _lastPlaybackActionSource != source &&
+        now.difference(previous).abs() < const Duration(milliseconds: 250)) {
+      _log('ignore duplicate play/pause from $source');
+      return;
+    }
+    _lastPlaybackActionAt = now;
+    _lastPlaybackActionSource = source;
+    appLogger.i('Apple TV remote: playback action source=$source detail=$detail');
+    _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
+    _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
   }
 
   (double, double)? _positionFrom(Map<dynamic, dynamic> arguments) {

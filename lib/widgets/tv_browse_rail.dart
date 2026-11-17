@@ -42,6 +42,20 @@ import 'sliver_child_memo.dart';
 
 const _inactiveArtworkDimAlpha = 0.3;
 
+/// A spotlight can reserve text space without changing rail settings or
+/// constraining overlays/toolbars elsewhere in its foreground.
+class TvBrowseRailHeightLimit extends InheritedWidget {
+  const TvBrowseRailHeightLimit({super.key, required this.maxHeight, required super.child});
+
+  final double maxHeight;
+
+  static double? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TvBrowseRailHeightLimit>()?.maxHeight;
+
+  @override
+  bool updateShouldNotify(TvBrowseRailHeightLimit oldWidget) => maxHeight != oldWidget.maxHeight;
+}
+
 class TvBrowseRailLayoutMetrics {
   final bool isPersonHub;
   final bool isMixedHub;
@@ -134,10 +148,35 @@ class TvBrowseRailLayout {
     return hubStripHeightForScale(scale) + activeRailHeight;
   }
 
-  static double viewportHeightFor({required int hubCount, required double scale, required double sectionHeight}) {
-    final peekHeight = hubCount > 1 ? nextHubPeekHeightForScale(scale) : 0.0;
-    return sectionHeight + peekHeight;
+  static double viewportHeightFor({
+    required int hubCount,
+    required double scale,
+    required double sectionHeight,
+    bool showNextHubPeek = true,
+  }) {
+    final peekHeight = showNextHubPeek && hubCount > 1 ? nextHubPeekHeightForScale(scale) : 0.0;
+    // Rows include 18 scaled pixels of trailing scroll padding. When the next
+    // row's preview is hidden, use 12 of those for the header above instead.
+    return sectionHeight + peekHeight - (showNextHubPeek ? 0 : 12 * scale);
   }
+
+  static double activeRailHeightLimit({
+    required double maxHeight,
+    required double scale,
+    required bool showNextHubPeek,
+    required int hubCount,
+  }) => math.max(
+    0,
+    maxHeight -
+        railTopPaddingForScale(scale) -
+        railBottomPaddingForScale(scale) -
+        viewportHeightFor(
+          hubCount: hubCount,
+          scale: scale,
+          sectionHeight: hubStripHeightForScale(scale),
+          showNextHubPeek: showNextHubPeek,
+        ),
+  );
 
   static bool isPersonHub(MediaHub hub) => hub.type == 'person';
 
@@ -156,7 +195,7 @@ class TvBrowseRailLayout {
     final usableWidth = (availableWidth - horizontalPadding).clamp(1.0, double.infinity).toDouble();
     final gapCount = targetCards > 1 ? targetCards - 1 : 0.0;
     final fittedWidth = (usableWidth - (itemGap * gapCount)) / targetCards;
-    return fittedWidth.clamp(minWidth, maxWidth).toDouble();
+    return fittedWidth.clamp(minWidth, maxWidth).toDouble() * LibraryDensity.extraLargeScale(density);
   }
 
   static TvBrowseRailLayoutMetrics metricsForHub({
@@ -170,6 +209,7 @@ class TvBrowseRailLayout {
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
     bool hasLeading = false,
+    double? maxHeight,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
@@ -199,12 +239,19 @@ class TvBrowseRailLayout {
       horizontalPadding: railEdgePadding * 2,
       itemGap: itemGap,
     );
-    final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
+    final aspectRatio = (isPersonHub || isSquareHub) ? 1.0 : (useWideLayout ? 16 / 9 : 2 / 3);
+    // Keep captions, heading and focus padding at their normal sizes. Only
+    // artwork gives way when the spotlight needs more reading space.
+    final maxPosterHeight = maxHeight == null
+        ? double.infinity
+        : math.max(1, maxHeight - labelHeight - focusExtra - 22 * scale - 1);
+    final maxCardWidth = maxPosterHeight * aspectRatio + (fullCardLayout ? 0 : 6 * scale);
+    final cardWidth = math.min(baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale), maxCardWidth);
     final posterWidth = fullCardLayout ? cardWidth : cardWidth - (6 * scale);
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (22 * scale);
 
@@ -236,8 +283,9 @@ class TvBrowseRailLayout {
     GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
+    double? maxHeight,
   }) {
-    var maxHeight = 0.0;
+    var tallestHeight = 0.0;
     for (final hub in hubs) {
       final metrics = metricsForHub(
         hub: hub,
@@ -249,10 +297,11 @@ class TvBrowseRailLayout {
         gridSpacing: gridSpacing,
         tallPosterScale: tallPosterScale,
         widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
+        maxHeight: maxHeight,
       );
-      if (metrics.height > maxHeight) maxHeight = metrics.height;
+      if (metrics.height > tallestHeight) tallestHeight = metrics.height;
     }
-    return maxHeight;
+    return tallestHeight;
   }
 
   static double estimatedMaxScrollExtent({
@@ -312,6 +361,8 @@ class TvBrowseRailLayout {
     GridSpacing gridSpacing = GridSpacing.tight,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
+    bool showNextHubPeek = true,
+    double? maxHeight,
   }) {
     if (hubs.isEmpty) return 0;
 
@@ -331,12 +382,25 @@ class TvBrowseRailLayout {
       gridSpacing: gridSpacing,
       tallPosterScale: tallPosterScale,
       widePosterScale: widePosterScale,
+      maxHeight: maxHeight == null
+          ? null
+          : activeRailHeightLimit(
+              maxHeight: maxHeight,
+              scale: scale,
+              showNextHubPeek: showNextHubPeek,
+              hubCount: hubs.length,
+            ),
     );
 
     final sectionHeight = hubSectionHeightFor(scale: scale, activeRailHeight: railHeight);
 
     return railTopPaddingForScale(scale) +
-        viewportHeightFor(hubCount: hubs.length, scale: scale, sectionHeight: sectionHeight) +
+        viewportHeightFor(
+          hubCount: hubs.length,
+          scale: scale,
+          sectionHeight: sectionHeight,
+          showNextHubPeek: showNextHubPeek,
+        ) +
         railBottomPaddingForScale(scale);
   }
 }
@@ -401,6 +465,8 @@ class TvBrowseRail extends StatefulWidget {
   /// from [MainScreenFocusScope] (offset aspect) inside the bleed widget
   /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
   final double? backgroundBleedLeft;
+  final bool fitActiveHub;
+  final bool showNextHubPeek;
 
   const TvBrowseRail({
     super.key,
@@ -432,6 +498,8 @@ class TvBrowseRail extends StatefulWidget {
     this.widePosterScaleForHub,
     this.showTitleImpliedForHub,
     this.backgroundBleedLeft,
+    this.fitActiveHub = false,
+    this.showNextHubPeek = true,
   });
 
   @override
@@ -495,9 +563,51 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
 
+  /// Only a focused media slot can be launched by a hardware Play command.
+  MediaItem? get focusedMediaItem {
+    final hub = _activeHub;
+    return _focusNode.hasFocus && hub != null ? _itemAtSlot(hub, _itemIndex) : null;
+  }
+
   void requestFocus() {
     _notifyFocusedItem();
     _focusNode.requestFocus();
+  }
+
+  /// Explicit container changes (such as a season tab) start at its first
+  /// media card, independently of the old column or this hub's prior memory.
+  void focusFirstItemInHub(String hubId) {
+    final index = widget.hubs.indexWhere((hub) => hub.id == hubId);
+    if (index < 0) return;
+    _hubIndex = index;
+    final hub = widget.hubs[index];
+    _itemIndex = _defaultSlotFor(hub);
+    _hasUserInteracted = true;
+    _hasUserChangedHub = true;
+    _hasUserChangedItem = true;
+    _displacedFocusItem = null;
+    _pendingLeadingAutoAdvanceHubKey = hub.items.isEmpty && _isLeadingSlot(hub, _itemIndex) ? _hubKey(hub) : null;
+    _focusModel.set(_hubIndex, _itemIndex);
+    _rememberFocus(hub);
+    _notifyFocusedItem();
+    _notifyActiveHubChanged();
+    _scrollToItemAfterLayout(animate: false);
+    _scrollActiveHubToTop(animate: false);
+    _focusNode.requestFocus();
+  }
+
+  /// Whether focus sits on the first item of the first row.
+  bool get isOnFirstItemOfFirstHub {
+    if (widget.hubs.isEmpty) return true;
+    return _hubIndex == 0 && _itemIndex == _defaultSlotFor(widget.hubs.first);
+  }
+
+  /// Back on the home rail: go to the first row's first item when elsewhere.
+  /// Returns false when already there, so the caller can move on (sidebar).
+  bool focusFirstItemOfFirstHubIfElsewhere() {
+    if (isOnFirstItemOfFirstHub) return false;
+    focusFirstItemInHub(widget.hubs.first.id);
+    return true;
   }
 
   /// [requestFocus] as the screen's first focus: held, not dropped, while a
@@ -1239,163 +1349,182 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         SettingsService.tvFullCardLayout,
         SettingsService.gridSpacing,
       ],
-      builder: (context) => LayoutBuilder(
-        builder: (context, constraints) {
-          final svc = SettingsService.instance;
-          final theme = Theme.of(context);
-          final scale = _scale(context);
-          final horizontalInset = _horizontalInset(context);
-          final interactionExpansion = TvBrowseRailLayout.railInteractionExpansionForScale(
-            scale,
-          ).clamp(0.0, horizontalInset).toDouble();
-          final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
-          final availableWidth = (width - horizontalInset).clamp(1.0, double.infinity).toDouble();
-          final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
-          final density = svc.read(SettingsService.libraryDensity);
-          final episodePosterMode = svc.read(SettingsService.episodePosterMode);
-          final fullCardLayout = svc.read(SettingsService.tvFullCardLayout);
-          final gridSpacing = svc.read(SettingsService.gridSpacing);
-          final modes = [for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode];
-          final wideScales = [
-            for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
-          ];
-          final metricsByHub = [
-            for (var i = 0; i < widget.hubs.length; i++)
-              TvBrowseRailLayout.metricsForHub(
-                hub: widget.hubs[i],
-                availableWidth: availableWidth,
-                density: density,
-                episodePosterMode: modes[i],
-                scale: scale,
-                fullCardLayout: fullCardLayout,
-                gridSpacing: gridSpacing,
-                tallPosterScale: widget.tallPosterScale,
-                widePosterScale: wideScales[i],
-                hasLeading: _hasLeadingFor(widget.hubs[i]),
-              ),
-          ];
-          final sectionHeights = [
-            for (final metrics in metricsByHub)
-              TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height),
-          ];
-          final offsets = <double>[];
-          var nextOffset = 0.0;
-          for (final height in sectionHeights) {
-            offsets.add(nextOffset);
-            nextOffset += height;
-          }
-          _sectionOffsets = offsets;
-          _sectionHeights = sectionHeights;
+      builder: (context) => ListenableSelector<int>(
+        listenable: _focusModel,
+        selector: () => widget.fitActiveHub ? _focusModel.hubIndex : 0,
+        builder: (context, _, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            final svc = SettingsService.instance;
+            final theme = Theme.of(context);
+            final scale = _scale(context);
+            final horizontalInset = _horizontalInset(context);
+            final interactionExpansion = TvBrowseRailLayout.railInteractionExpansionForScale(
+              scale,
+            ).clamp(0.0, horizontalInset).toDouble();
+            final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+            final availableWidth = (width - horizontalInset).clamp(1.0, double.infinity).toDouble();
+            final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
+            final density = svc.read(SettingsService.libraryDensity);
+            final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+            final fullCardLayout = svc.read(SettingsService.tvFullCardLayout);
+            final gridSpacing = svc.read(SettingsService.gridSpacing);
+            final modes = [
+              for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode,
+            ];
+            final wideScales = [
+              for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
+            ];
+            final heightLimit = TvBrowseRailHeightLimit.of(context);
+            final metricsByHub = [
+              for (var i = 0; i < widget.hubs.length; i++)
+                TvBrowseRailLayout.metricsForHub(
+                  hub: widget.hubs[i],
+                  availableWidth: availableWidth,
+                  density: density,
+                  episodePosterMode: modes[i],
+                  scale: scale,
+                  fullCardLayout: fullCardLayout,
+                  gridSpacing: gridSpacing,
+                  tallPosterScale: widget.tallPosterScale,
+                  widePosterScale: wideScales[i],
+                  hasLeading: _hasLeadingFor(widget.hubs[i]),
+                  maxHeight: heightLimit == null
+                      ? null
+                      : TvBrowseRailLayout.activeRailHeightLimit(
+                          maxHeight: heightLimit,
+                          scale: scale,
+                          showNextHubPeek: widget.showNextHubPeek,
+                          hubCount: widget.hubs.length,
+                        ),
+                ),
+            ];
+            final sectionHeights = [
+              for (final metrics in metricsByHub)
+                TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height),
+            ];
+            final offsets = <double>[];
+            var nextOffset = 0.0;
+            for (final height in sectionHeights) {
+              offsets.add(nextOffset);
+              nextOffset += height;
+            }
+            _sectionOffsets = offsets;
+            _sectionHeights = sectionHeights;
 
-          var viewportSectionHeight = 0.0;
-          for (final height in sectionHeights) {
-            if (height > viewportSectionHeight) viewportSectionHeight = height;
-          }
-          final viewportHeight = TvBrowseRailLayout.viewportHeightFor(
-            hubCount: widget.hubs.length,
-            scale: scale,
-            sectionHeight: viewportSectionHeight,
-          );
-          final bottomPadding = (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
-          _sectionMaxScrollExtent = (nextOffset + bottomPadding - viewportHeight)
-              .clamp(0.0, double.infinity)
-              .toDouble();
-          final totalHeight =
-              TvBrowseRailLayout.railTopPaddingForScale(scale) +
-              viewportHeight +
-              TvBrowseRailLayout.railBottomPaddingForScale(scale);
-          return Focus(
-            focusNode: _focusNode,
-            onKeyEvent: _handleKeyEvent,
-            child: Align(
-              alignment: .bottomCenter,
-              heightFactor: 1,
-              child: SizedBox(
-                height: totalHeight,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _RailBleedPositioned(
-                      width: width,
-                      targetBleedLeft: widget.backgroundBleedLeft,
-                      child: RasterizedGradient(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            theme.scaffoldBackgroundColor.withValues(alpha: 0),
-                            theme.scaffoldBackgroundColor.withValues(alpha: 0.7),
-                          ],
+            var viewportSectionHeight = 0.0;
+            for (final height in sectionHeights) {
+              if (height > viewportSectionHeight) viewportSectionHeight = height;
+            }
+            if (widget.fitActiveHub) {
+              viewportSectionHeight = sectionHeights[_hubIndex.clamp(0, sectionHeights.length - 1)];
+            }
+            final viewportHeight = TvBrowseRailLayout.viewportHeightFor(
+              hubCount: widget.hubs.length,
+              scale: scale,
+              sectionHeight: viewportSectionHeight,
+              showNextHubPeek: widget.showNextHubPeek,
+            );
+            final bottomPadding = (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
+            _sectionMaxScrollExtent = (nextOffset + bottomPadding - viewportHeight)
+                .clamp(0.0, double.infinity)
+                .toDouble();
+            final totalHeight =
+                TvBrowseRailLayout.railTopPaddingForScale(scale) +
+                viewportHeight +
+                TvBrowseRailLayout.railBottomPaddingForScale(scale);
+            return Focus(
+              focusNode: _focusNode,
+              onKeyEvent: _handleKeyEvent,
+              child: Align(
+                alignment: .bottomCenter,
+                heightFactor: 1,
+                child: SizedBox(
+                  height: totalHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _RailBleedPositioned(
+                        width: width,
+                        targetBleedLeft: widget.backgroundBleedLeft,
+                        child: RasterizedGradient(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.7),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: .fromLTRB(
-                        horizontalInset,
-                        TvBrowseRailLayout.railTopPaddingForScale(scale),
-                        0,
-                        TvBrowseRailLayout.railBottomPaddingForScale(scale),
-                      ),
-                      child: ClipRect(
-                        clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
-                        child: ExcludeSemantics(
-                          // Both axes animate during D-pad navigation. Keeping
-                          // the individual headers/cards in the semantics tree
-                          // makes Android recompute every moving node's bounds
-                          // on every frame when an accessibility service is
-                          // active. A fixed proxy below exposes the same active
-                          // selection and actions without tracking that motion.
-                          child: SizedBox(
-                            height: viewportHeight,
-                            child: _buildHubSectionList(
-                              modes: modes,
-                              metricsByHub: metricsByHub,
-                              sectionHeights: sectionHeights,
-                              scale: scale,
-                              fullCardLayout: fullCardLayout,
-                              leftOverflow: horizontalInset,
-                              interactionExpansion: interactionExpansion,
-                              railViewportWidth: railViewportWidth,
-                              bottomPadding: bottomPadding,
+                      Padding(
+                        padding: .fromLTRB(
+                          horizontalInset,
+                          TvBrowseRailLayout.railTopPaddingForScale(scale),
+                          0,
+                          TvBrowseRailLayout.railBottomPaddingForScale(scale),
+                        ),
+                        child: ClipRect(
+                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
+                          child: ExcludeSemantics(
+                            // Both axes animate during D-pad navigation. Keeping
+                            // the individual headers/cards in the semantics tree
+                            // makes Android recompute every moving node's bounds
+                            // on every frame when an accessibility service is
+                            // active. A fixed proxy below exposes the same active
+                            // selection and actions without tracking that motion.
+                            child: SizedBox(
+                              height: viewportHeight,
+                              child: _buildHubSectionList(
+                                modes: modes,
+                                metricsByHub: metricsByHub,
+                                sectionHeights: sectionHeights,
+                                scale: scale,
+                                fullCardLayout: fullCardLayout,
+                                leftOverflow: horizontalInset,
+                                interactionExpansion: interactionExpansion,
+                                railViewportWidth: railViewportWidth,
+                                bottomPadding: bottomPadding,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      left: horizontalInset,
-                      top: TvBrowseRailLayout.railTopPaddingForScale(scale),
-                      right: 0,
-                      height: viewportHeight,
-                      child: _buildSemanticSelectionProxy(context),
-                    ),
-                    // Unfocused-rail dim: a scrim quad on top instead of
-                    // AnimatedOpacity, which would keep a full-viewport
-                    // saveLayer alive every frame (see AnimatedDimScrim).
-                    // Bled under the side nav like the background gradient,
-                    // so its edge doesn't seam against the nav.
-                    _RailBleedPositioned(
-                      width: width,
-                      targetBleedLeft: widget.backgroundBleedLeft,
-                      child: ListenableSelector<bool>(
-                        listenable: _focusModel,
-                        selector: () => _focusModel.railHasFocus,
-                        builder: (context, railHasFocus, _) => AnimatedDimScrim(
-                          dimmed: !railHasFocus,
-                          color: theme.scaffoldBackgroundColor,
-                          alpha: _unfocusedRailDimAlpha,
-                          // The band's top edge cuts across the spotlight
-                          // artwork; ramp the dim in instead.
-                          fadeTop: 36 * scale,
+                      Positioned(
+                        left: horizontalInset,
+                        top: TvBrowseRailLayout.railTopPaddingForScale(scale),
+                        right: 0,
+                        height: viewportHeight,
+                        child: _buildSemanticSelectionProxy(context),
+                      ),
+                      // Unfocused-rail dim: a scrim quad on top instead of
+                      // AnimatedOpacity, which would keep a full-viewport
+                      // saveLayer alive every frame (see AnimatedDimScrim).
+                      // Bled under the side nav like the background gradient,
+                      // so its edge doesn't seam against the nav.
+                      _RailBleedPositioned(
+                        width: width,
+                        targetBleedLeft: widget.backgroundBleedLeft,
+                        child: ListenableSelector<bool>(
+                          listenable: _focusModel,
+                          selector: () => _focusModel.railHasFocus,
+                          builder: (context, railHasFocus, _) => AnimatedDimScrim(
+                            dimmed: !railHasFocus,
+                            color: theme.scaffoldBackgroundColor,
+                            alpha: _unfocusedRailDimAlpha,
+                            // The band's top edge cuts across the spotlight
+                            // artwork; ramp the dim in instead.
+                            fadeTop: 36 * scale,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

@@ -222,6 +222,9 @@
     "gridView": "Gitter",
     "listView": "Liste",
     "showHeroSection": "Vis udvalgt indhold",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "Handling for \"Fortsæt med at se\"",
     "continueWatchingPlay": "Afspil",
     "continueWatchingDetails": "Åbn detaljer",
@@ -278,6 +281,8 @@
     "subtitleStyling": "Undertekststil",
     "subtitleStylingDescription": "Tilpas underteksters udseende",
     "smallSkipDuration": "Kort spring",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "Langt spring",
     "rewindOnResume": "Spol tilbage ved genoptagelse",
     "secondsUnit": "${seconds} sekunder",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "Tilpas dynamikområdet",
     "matchDynamicRangeDescription": "Slå HDR til for HDR-indhold og derefter tilbage til SDR",
     "displaySwitchDelay": "Forsinkelse ved skærmskift",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "Tunneleret afspilning",
     "tunneledPlaybackDescription": "Brug videotunneling. Slå fra, hvis HDR-afspilning viser sort video, eller bevægelser hakker.",
     "audioPassthrough": "Lyd-passthrough",
@@ -484,6 +491,7 @@
     "display": "Skærm",
     "libraryAndCards": "Bibliotek og kort",
     "homeScreen": "Startskærm",
+    "homeTextSize": "",
     "navigation": "Navigation",
     "window": "Vindue",
     "liveTv": "Live TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Pr. bibliotek",
     "playerScopeTitle": "Pr. serie eller film",
-    "exportDialogTitle": "Eksportér Plezy-indstillinger"
+    "exportDialogTitle": "Eksportér Plezy-indstillinger",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "Indbygget",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "Prøv en anden søgning",
     "searchYourMedia": "Søg i dine medier",
     "enterTitleActorOrKeyword": "Indtast titel, skuespiller eller nøgleord",
-    "people": "Personer"
+    "people": "Personer",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Indstil genvej for ${actionName}",
@@ -727,6 +760,10 @@
     "viewDetails": "Vis detaljer",
     "goToSeries": "Gå til serie",
     "shufflePlay": "Afspil tilfældigt",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "Tilfældig afspilning er ikke tilgængelig offline",
     "fileInfo": "Filinfo",
     "deleteEpisodeFromServer": "Slet episode fra serveren",
@@ -761,6 +798,8 @@
     "mediaDeletedSuccessfully": "Mediet blev slettet",
     "mediaFailedToDelete": "Mediet kunne ikke slettes",
     "rate": "Bedøm",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "Afspil fra begyndelsen",
     "playVersion": "Afspil version..."
   },
@@ -907,7 +946,10 @@
     "forcedTrack": "${label} (tvunget)",
     "osdSubtitlesOff": "Undertekster: Fra",
     "osdSubtitles": "Undertekster: ${track}",
-    "osdAudio": "Lyd: ${track}"
+    "osdAudio": "Lyd: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1185,6 +1227,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "Opdag",
     "noContentAvailable": "Intet indhold tilgængeligt",
     "addMediaToLibraries": "Tilføj medier til dine biblioteker",
@@ -1209,7 +1258,10 @@
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min tilbage",
+    "durationLeft": "",
     "moreLikeThis": "Mere som dette",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "one": "${n} titel",
       "other": "${n} titler"
@@ -1220,7 +1272,9 @@
       "birthplace": "Fødested",
       "dateWithAge": "${date} (${age} år)",
       "dateWithAgeAtDeath": "${date} (${age} år)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "Søgning mislykkedes: ${error}",
@@ -1392,7 +1446,15 @@
   "logs": {
     "clearLogs": "Ryd logfiler",
     "copyLogs": "Kopiér logfiler",
-    "uploadLogs": "Upload logfiler"
+    "uploadLogs": "Upload logfiler",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy kunne ikke starte",

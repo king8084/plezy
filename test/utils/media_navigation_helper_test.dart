@@ -2,11 +2,56 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_navigation_helper.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
+  test('hardware Play ignores both card activation preferences', () {
+    expect(
+      shouldOpenEpisodeDetailsForActivation(
+        playDirectly: true,
+        forcePlayback: true,
+        continueWatchingAction: ContinueWatchingAction.details,
+        episodeAction: EpisodeAction.details,
+      ),
+      isFalse,
+    );
+  });
+
+  test('hardware Play keeps episode startup free of extra server lookups', () async {
+    final client = _PlaybackClient();
+    final episode = testMediaItem(kind: MediaKind.episode);
+    expect(await resolveDirectPlaybackItem(client, episode), same(episode));
+    expect(client.lookups, 0);
+  });
+
+  test('hardware Play on a show resumes its On Deck episode on the same server', () async {
+    final client = _PlaybackClient()..onDeck = testMediaItem(id: 'resume', kind: MediaKind.episode);
+    final show = testMediaItem(id: 'show', kind: MediaKind.show, serverId: 'server-1');
+    final target = await resolveDirectPlaybackItem(client, show);
+    expect(target?.id, 'resume');
+    expect(target?.serverId, 'server-1');
+    expect(client.lookups, 1);
+  });
+
+  test('hardware Play on a season selects its first unwatched episode in order', () async {
+    final client = _PlaybackClient()
+      ..episodes = [
+        testMediaItem(id: 'three', kind: MediaKind.episode, parentIndex: 1, index: 3),
+        testMediaItem(id: 'one', kind: MediaKind.episode, parentIndex: 1, index: 1, viewCount: 1),
+        testMediaItem(id: 'two', kind: MediaKind.episode, parentIndex: 1, index: 2),
+      ];
+    final season = testMediaItem(id: 'season', kind: MediaKind.season, serverId: 'server-1');
+    expect((await resolveDirectPlaybackItem(client, season))?.id, 'two');
+  });
+
+  test('hardware Play handles an empty show without launching its container', () async {
+    expect(await resolveDirectPlaybackItem(_PlaybackClient(), testMediaItem(kind: MediaKind.show)), isNull);
+  });
+
   test('episode detail target opens parent show and focuses season episode', () {
     final episode = testMediaItem(
       id: 'episode-1',
@@ -101,4 +146,28 @@ void main() {
       );
     });
   });
+}
+
+class _PlaybackClient implements MediaServerClient {
+  MediaItem? onDeck;
+  List<MediaItem> episodes = [];
+  int lookups = 0;
+
+  @override
+  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
+    String id, {
+    void Function(MediaItem item)? onItemReady,
+  }) async {
+    lookups++;
+    return (item: null, onDeckEpisode: onDeck);
+  }
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    lookups++;
+    return episodes;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

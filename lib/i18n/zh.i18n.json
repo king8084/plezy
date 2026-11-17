@@ -222,6 +222,9 @@
     "gridView": "网格视图",
     "listView": "列表视图",
     "showHeroSection": "显示精选内容区",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "继续观看操作",
     "continueWatchingPlay": "播放",
     "continueWatchingDetails": "打开详情",
@@ -278,6 +281,8 @@
     "subtitleStyling": "字幕样式",
     "subtitleStylingDescription": "调整字幕外观",
     "smallSkipDuration": "短跳过时长",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "长跳过时长",
     "rewindOnResume": "恢复时回退",
     "secondsUnit": "${seconds} 秒",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "匹配动态范围",
     "matchDynamicRangeDescription": "HDR 内容切换到 HDR，随后切回 SDR",
     "displaySwitchDelay": "显示切换延迟",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "隧道播放",
     "tunneledPlaybackDescription": "使用视频隧道模式。若播放 HDR 内容时出现黑屏或画面卡顿，请将其关闭。",
     "audioPassthrough": "音频直通",
@@ -484,6 +491,7 @@
     "display": "显示",
     "libraryAndCards": "媒体库与卡片",
     "homeScreen": "主屏幕",
+    "homeTextSize": "",
     "navigation": "导航",
     "window": "窗口",
     "liveTv": "直播电视",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "所有位置",
     "playerScopeLibrary": "按媒体库",
     "playerScopeTitle": "按剧集或电影",
-    "exportDialogTitle": "导出 Plezy 设置"
+    "exportDialogTitle": "导出 Plezy 设置",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "内置",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "尝试不同的搜索词",
     "searchYourMedia": "搜索媒体",
     "enterTitleActorOrKeyword": "输入标题、演员或关键词",
-    "people": "人物"
+    "people": "人物",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",
@@ -727,6 +760,10 @@
     "viewDetails": "查看详情",
     "goToSeries": "前往剧集",
     "shufflePlay": "随机播放",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "离线时无法随机播放",
     "fileInfo": "文件信息",
     "deleteEpisodeFromServer": "从服务器删除单集",
@@ -758,6 +795,8 @@
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "从头播放",
     "playVersion": "播放版本…"
   },
@@ -904,7 +943,10 @@
     "forcedTrack": "${label}（强制）",
     "osdSubtitlesOff": "字幕：关闭",
     "osdSubtitles": "字幕：${track}",
-    "osdAudio": "音频：${track}"
+    "osdAudio": "音频：${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1181,6 +1223,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "发现",
     "noContentAvailable": "没有可用内容",
     "addMediaToLibraries": "请向你的媒体库添加一些媒体",
@@ -1205,7 +1254,10 @@
     "movie": "电影",
     "tvShow": "电视剧",
     "minutesLeft": "剩余 ${minutes} 分钟",
+    "durationLeft": "",
     "moreLikeThis": "更多类似内容",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n} 个标题"
     },
@@ -1215,7 +1267,9 @@
       "birthplace": "出生地",
       "dateWithAge": "${date}（${age} 岁）",
       "dateWithAgeAtDeath": "${date}（享年 ${age} 岁）"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "搜索失败：${error}",
@@ -1387,7 +1441,15 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
-    "uploadLogs": "上传日志"
+    "uploadLogs": "上传日志",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy 无法启动",

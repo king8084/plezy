@@ -614,6 +614,15 @@ class Translations$settings$en {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Removed from Continue Watching'
+	String get removedContinueWatching => 'Removed from Continue Watching';
+
+	/// en: 'Restore shows and movies removed from this profile.'
+	String get removedContinueWatchingDescription => 'Restore shows and movies removed from this profile.';
+
+	/// en: 'Restore to Continue Watching'
+	String get restoreContinueWatching => 'Restore to Continue Watching';
+
 	/// en: 'Continue Watching Action'
 	String get continueWatchingAction => 'Continue Watching Action';
 
@@ -781,6 +790,12 @@ class Translations$settings$en {
 
 	/// en: 'Small Skip Duration'
 	String get smallSkipDuration => 'Small Skip Duration';
+
+	/// en: 'Fast Forward Duration'
+	String get forwardSkipDuration => 'Fast Forward Duration';
+
+	/// en: 'Rewind Duration'
+	String get backwardSkipDuration => 'Rewind Duration';
 
 	/// en: 'Large Skip Duration'
 	String get largeSkipDuration => 'Large Skip Duration';
@@ -1181,6 +1196,12 @@ class Translations$settings$en {
 	/// en: 'Display Switch Delay'
 	String get displaySwitchDelay => 'Display Switch Delay';
 
+	/// en: 'QMS fast start for SDR'
+	String get qmsFastStart => 'QMS fast start for SDR';
+
+	/// en: 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.'
+	String get qmsFastStartDescription => 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.';
+
 	/// en: 'Tunneled Playback'
 	String get tunneledPlayback => 'Tunneled Playback';
 
@@ -1400,6 +1421,9 @@ class Translations$settings$en {
 	/// en: 'Home Screen'
 	String get homeScreen => 'Home Screen';
 
+	/// en: 'Home text size'
+	String get homeTextSize => 'Home text size';
+
 	/// en: 'Navigation'
 	String get navigation => 'Navigation';
 
@@ -1495,6 +1519,69 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+
+	/// en: 'Pinned Home collections'
+	String get pinnedHomeCollections => 'Pinned Home collections';
+
+	/// en: 'Manage saved rows, including collections that are no longer available'
+	String get pinnedHomeCollectionsDescription => 'Manage saved rows, including collections that are no longer available';
+
+	/// en: 'Collection unavailable'
+	String get pinnedCollectionUnavailable => 'Collection unavailable';
+
+	/// en: 'Customize sidebar'
+	String get customizeSidebar => 'Customize sidebar';
+
+	/// en: 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.'
+	String get customizeSidebarDescription => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.';
+
+	/// en: 'Pin to sidebar'
+	String get pinToSidebar => 'Pin to sidebar';
+
+	/// en: 'Unpin from sidebar'
+	String get unpinFromSidebar => 'Unpin from sidebar';
+
+	/// en: 'Move up'
+	String get sidebarMoveUp => 'Move up';
+
+	/// en: 'Move down'
+	String get sidebarMoveDown => 'Move down';
+
+	/// en: 'Home & Sidebar'
+	String get homeAndSidebar => 'Home & Sidebar';
+
+	/// en: 'Home rows, sidebar, pinned collections and libraries'
+	String get homeAndSidebarDescription => 'Home rows, sidebar, pinned collections and libraries';
+
+	/// en: 'Home rows'
+	String get homeRows => 'Home rows';
+
+	/// en: 'Open Home once to load its rows, then come back here.'
+	String get homeRowsEmpty => 'Open Home once to load its rows, then come back here.';
+
+	/// en: 'Sidebar and libraries'
+	String get sidebarAndLibraries => 'Sidebar and libraries';
+
+	/// en: 'Hidden from Home'
+	String get hiddenFromHome => 'Hidden from Home';
+
+	/// en: 'Show on Home'
+	String get showRowOnHome => 'Show on Home';
+
+	/// en: 'Hide from Home'
+	String get hideRowFromHome => 'Hide from Home';
+
+	/// en: 'Ask "Still watching?"'
+	String get stillWatchingAfterEpisodes => 'Ask "Still watching?"';
+
+	/// en: 'Off'
+	String get stillWatchingAfterEpisodesOff => 'Off';
+
+	/// en: 'After ${count} episodes play on their own (no remote press)'
+	String stillWatchingAfterEpisodesCount({required Object count}) => 'After ${count} episodes play on their own (no remote press)';
+
+	/// en: 'After ${count} episodes'
+	String episodesInARow({required Object count}) => 'After ${count} episodes';
 }
 
 // Path: themeEditor
@@ -1607,6 +1694,18 @@ class Translations$search$en {
 
 	/// en: 'People'
 	String get people => 'People';
+
+	/// en: 'Finding smart matches…'
+	String get findingSmartMatches => 'Finding smart matches…';
+
+	/// en: 'Smart matches'
+	String get smartMatches => 'Smart matches';
+
+	/// en: 'Possible matches'
+	String get possibleMatches => 'Possible matches';
+
+	/// en: 'Voice search (dictation)'
+	String get voiceSearch => 'Voice search (dictation)';
 }
 
 // Path: hotkeys
@@ -2114,6 +2213,12 @@ class Translations$mediaMenu$en {
 	/// en: 'Rate'
 	String get rate => 'Rate';
 
+	/// en: 'Add to favorites'
+	String get addToFavorites => 'Add to favorites';
+
+	/// en: 'Unfavorite'
+	String get unfavorite => 'Unfavorite';
+
 	/// en: 'Play from Beginning'
 	String get playFromBeginning => 'Play from Beginning';
 
@@ -2541,6 +2646,15 @@ class Translations$videoControls$en {
 
 	/// en: 'Audio: ${track}'
 	String osdAudio({required Object track}) => 'Audio: ${track}';
+
+	/// en: 'Mark as played'
+	String get markPlayedButton => 'Mark as played';
+
+	/// en: 'Mark as played and play next'
+	String get markPlayedAndNextButton => 'Mark as played and play next';
+
+	/// en: 'Could not mark as played'
+	String get markPlayedFailed => 'Could not mark as played';
 }
 
 // Path: messages
@@ -3277,6 +3391,27 @@ class Translations$discover$en {
 
 	// Translations
 
+	/// en: 'Top rated you haven't watched'
+	String get topRatedUnwatched => 'Top rated you haven\'t watched';
+
+	/// en: 'Because you watched ${title}'
+	String becauseYouWatched({required Object title}) => 'Because you watched ${title}';
+
+	/// en: 'Move up'
+	String get moveRowUp => 'Move up';
+
+	/// en: 'Move down'
+	String get moveRowDown => 'Move down';
+
+	/// en: 'Read full description'
+	String get readFullDescription => 'Read full description';
+
+	/// en: 'Read more'
+	String get readMore => 'Read more';
+
+	/// en: 'No description available.'
+	String get noDescription => 'No description available.';
+
 	/// en: 'Discover'
 	String get title => 'Discover';
 
@@ -3349,8 +3484,17 @@ class Translations$discover$en {
 	/// en: '${minutes} min left'
 	String minutesLeft({required Object minutes}) => '${minutes} min left';
 
+	/// en: '${duration} left'
+	String durationLeft({required Object duration}) => '${duration} left';
+
 	/// en: 'More Like This'
 	String get moreLikeThis => 'More Like This';
+
+	/// en: 'More Like This — In Your Library'
+	String get moreLikeThisOwned => 'More Like This — In Your Library';
+
+	/// en: 'More Like This — Request'
+	String get moreLikeThisRequest => 'More Like This — Request';
 
 	/// en: '(one) {${n} title} (other) {${n} titles}'
 	String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -3359,6 +3503,12 @@ class Translations$discover$en {
 	);
 
 	late final Translations$discover$person$en person = Translations$discover$person$en.internal(_root);
+
+	/// en: 'More Like This — Simkl'
+	String get moreLikeThisSimkl => 'More Like This — Simkl';
+
+	/// en: 'Need request'
+	String get needRequest => 'Need request';
 }
 
 // Path: errors
@@ -3653,6 +3803,30 @@ class Translations$logs$en {
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
+
+	/// en: 'Share playback diagnostics'
+	String get sharePlaybackDiagnostics => 'Share playback diagnostics';
+
+	/// en: 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.'
+	String get playbackDiagnosticsConsent => 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.';
+
+	/// en: 'Enable sharing'
+	String get enableSharing => 'Enable sharing';
+
+	/// en: 'Stop sharing'
+	String get stopSharing => 'Stop sharing';
+
+	/// en: 'Copy link'
+	String get copyLink => 'Copy link';
+
+	/// en: 'Playback diagnostics link'
+	String get playbackDiagnosticsLink => 'Playback diagnostics link';
+
+	/// en: 'Share this private LAN link with your developer. Keep Plezy open while it is read. $urls'
+	String playbackDiagnosticsLinkDescription({required Object urls}) => 'Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n${urls}';
+
+	/// en: 'Could not share playback diagnostics. Please try again.'
+	String get playbackDiagnosticsShareFailed => 'Could not share playback diagnostics. Please try again.';
 }
 
 // Path: startup
@@ -8331,6 +8505,9 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.removedContinueWatching' => 'Removed from Continue Watching',
+			'settings.removedContinueWatchingDescription' => 'Restore shows and movies removed from this profile.',
+			'settings.restoreContinueWatching' => 'Restore to Continue Watching',
 			'settings.continueWatchingAction' => 'Continue Watching Action',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
@@ -8387,6 +8564,8 @@ extension on Translations {
 			'settings.subtitleStyling' => 'Subtitle Styling',
 			'settings.subtitleStylingDescription' => 'Customize subtitle appearance',
 			'settings.smallSkipDuration' => 'Small Skip Duration',
+			'settings.forwardSkipDuration' => 'Fast Forward Duration',
+			'settings.backwardSkipDuration' => 'Rewind Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
 			'settings.rewindOnResume' => 'Rewind on Resume',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
@@ -8520,6 +8699,8 @@ extension on Translations {
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
+			'settings.qmsFastStart' => 'QMS fast start for SDR',
+			'settings.qmsFastStartDescription' => 'Start SDR video without a display-switch wait. Turn off if your display blanks at startup.',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
@@ -8593,6 +8774,7 @@ extension on Translations {
 			'settings.display' => 'Display',
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
+			'settings.homeTextSize' => 'Home text size',
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
 			'settings.liveTv' => 'Live TV',
@@ -8625,6 +8807,29 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'settings.pinnedHomeCollections' => 'Pinned Home collections',
+			'settings.pinnedHomeCollectionsDescription' => 'Manage saved rows, including collections that are no longer available',
+			'settings.pinnedCollectionUnavailable' => 'Collection unavailable',
+			'settings.customizeSidebar' => 'Customize sidebar',
+			'settings.customizeSidebarDescription' => 'Pin your libraries and shortcuts. Use ↑ / ↓ to move an item. On the remote, use Left / Right to choose a control, then Select.',
+			'settings.pinToSidebar' => 'Pin to sidebar',
+			'settings.unpinFromSidebar' => 'Unpin from sidebar',
+			'settings.sidebarMoveUp' => 'Move up',
+			'settings.sidebarMoveDown' => 'Move down',
+			'settings.homeAndSidebar' => 'Home & Sidebar',
+			_ => null,
+		} ?? switch (path) {
+			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
+			'settings.homeRows' => 'Home rows',
+			'settings.homeRowsEmpty' => 'Open Home once to load its rows, then come back here.',
+			'settings.sidebarAndLibraries' => 'Sidebar and libraries',
+			'settings.hiddenFromHome' => 'Hidden from Home',
+			'settings.showRowOnHome' => 'Show on Home',
+			'settings.hideRowFromHome' => 'Hide from Home',
+			'settings.stillWatchingAfterEpisodes' => 'Ask "Still watching?"',
+			'settings.stillWatchingAfterEpisodesOff' => 'Off',
+			'settings.stillWatchingAfterEpisodesCount' => ({required Object count}) => 'After ${count} episodes play on their own (no remote press)',
+			'settings.episodesInARow' => ({required Object count}) => 'After ${count} episodes',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -8643,8 +8848,6 @@ extension on Translations {
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
@@ -8670,6 +8873,10 @@ extension on Translations {
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
 			'search.people' => 'People',
+			'search.findingSmartMatches' => 'Finding smart matches…',
+			'search.smartMatches' => 'Smart matches',
+			'search.possibleMatches' => 'Possible matches',
+			'search.voiceSearch' => 'Voice search (dictation)',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -8851,6 +9058,8 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
+			'mediaMenu.addToFavorites' => 'Add to favorites',
+			'mediaMenu.unfavorite' => 'Unfavorite',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
 			'rateSheet.title' => 'Rate',
@@ -8986,6 +9195,9 @@ extension on Translations {
 			'videoControls.osdSubtitlesOff' => 'Subtitles: Off',
 			'videoControls.osdSubtitles' => ({required Object track}) => 'Subtitles: ${track}',
 			'videoControls.osdAudio' => ({required Object track}) => 'Audio: ${track}',
+			'videoControls.markPlayedButton' => 'Mark as played',
+			'videoControls.markPlayedAndNextButton' => 'Mark as played and play next',
+			'videoControls.markPlayedFailed' => 'Could not mark as played',
 			'messages.markedAsWatched' => 'Marked as watched',
 			'messages.markedAsUnwatched' => 'Marked as unwatched',
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
@@ -9119,6 +9331,8 @@ extension on Translations {
 			'profiles.removeConnectionTitle' => 'Remove connection?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
 			'profiles.pinProtectionLabel' => 'PIN protection',
@@ -9161,8 +9375,6 @@ extension on Translations {
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
@@ -9233,6 +9445,13 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
+			'discover.topRatedUnwatched' => 'Top rated you haven\'t watched',
+			'discover.becauseYouWatched' => ({required Object title}) => 'Because you watched ${title}',
+			'discover.moveRowUp' => 'Move up',
+			'discover.moveRowDown' => 'Move down',
+			'discover.readFullDescription' => 'Read full description',
+			'discover.readMore' => 'Read more',
+			'discover.noDescription' => 'No description available.',
 			'discover.title' => 'Discover',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
@@ -9257,13 +9476,18 @@ extension on Translations {
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
+			'discover.durationLeft' => ({required Object duration}) => '${duration} left',
 			'discover.moreLikeThis' => 'More Like This',
+			'discover.moreLikeThisOwned' => 'More Like This — In Your Library',
+			'discover.moreLikeThisRequest' => 'More Like This — Request',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title', other: '${n} titles', ), 
 			'discover.person.born' => 'Born',
 			'discover.person.died' => 'Died',
 			'discover.person.birthplace' => 'Birthplace',
 			'discover.person.dateWithAge' => ({required Object date, required Object age}) => '${date} (age ${age})',
 			'discover.person.dateWithAgeAtDeath' => ({required Object date, required Object age}) => '${date} (aged ${age})',
+			'discover.moreLikeThisSimkl' => 'More Like This — Simkl',
+			'discover.needRequest' => 'Need request',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
@@ -9414,6 +9638,14 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
+			'logs.sharePlaybackDiagnostics' => 'Share playback diagnostics',
+			'logs.playbackDiagnosticsConsent' => 'Keep rotating playback timings and remote-button events on this Apple TV. Enable a private link for computers on your local network to read them. Sharing stays enabled across app launches and is available while Plezy is running. Media titles, server URLs and account tokens are excluded.',
+			'logs.enableSharing' => 'Enable sharing',
+			'logs.stopSharing' => 'Stop sharing',
+			'logs.copyLink' => 'Copy link',
+			'logs.playbackDiagnosticsLink' => 'Playback diagnostics link',
+			'logs.playbackDiagnosticsLinkDescription' => ({required Object urls}) => 'Share this private LAN link with your developer. Keep Plezy open while it is read.\n\n${urls}',
+			'logs.playbackDiagnosticsShareFailed' => 'Could not share playback diagnostics. Please try again.',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
@@ -9613,6 +9845,8 @@ extension on Translations {
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.premiereBadge' => 'NEW',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
@@ -9675,8 +9909,6 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10127,6 +10359,8 @@ extension on Translations {
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
 			'videoSettings.zoom' => 'Zoom',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
@@ -10189,8 +10423,6 @@ extension on Translations {
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

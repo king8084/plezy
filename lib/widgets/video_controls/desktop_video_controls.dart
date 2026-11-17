@@ -38,13 +38,23 @@ class DesktopVideoControls extends StatefulWidget {
   final Player player;
   final VideoVolumeController volumeController;
   final MediaItem metadata;
+  final VoidCallback? onTogglePerformanceOverlay;
+  final bool showPerformanceOverlay;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+
+  /// Mark the current item played (and, for an episode, play the next one).
+  /// Null hides the button.
+  final VoidCallback? onMarkPlayed;
+
+  /// Whether [onMarkPlayed] also starts the next episode (labels the button).
+  final bool markPlayedPlaysNext;
   final VoidCallback onPlayPause;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
   final int seekTimeSmall;
+  final int? seekTimeBackward;
   final VoidCallback onSeekToPreviousChapter;
   final VoidCallback onSeekToNextChapter;
   final VoidCallback? onSeekBackward;
@@ -117,13 +127,18 @@ class DesktopVideoControls extends StatefulWidget {
     required this.player,
     required this.volumeController,
     required this.metadata,
+    this.onTogglePerformanceOverlay,
+    this.showPerformanceOverlay = false,
     this.onNext,
     this.onPrevious,
+    this.onMarkPlayed,
+    this.markPlayedPlaysNext = false,
     required this.onPlayPause,
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
     required this.seekTimeSmall,
+    this.seekTimeBackward,
     required this.onSeekToPreviousChapter,
     required this.onSeekToNextChapter,
     this.onSeekBackward,
@@ -165,6 +180,7 @@ class DesktopVideoControls extends StatefulWidget {
 }
 
 class DesktopVideoControlsState extends State<DesktopVideoControls> {
+  int get _rewindSeconds => widget.seekTimeBackward ?? widget.seekTimeSmall;
   TrackControlsState get _trackControlsState => widget.trackControlsState;
   bool get _canControl => _trackControlsState.canControl;
   bool get _isLive => _trackControlsState.isLive;
@@ -176,6 +192,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   late final FocusNode _skipForwardFocusNode;
   late final FocusNode _nextChapterFocusNode;
   late final FocusNode _nextItemFocusNode;
+  late final FocusNode _markPlayedFocusNode;
   late final FocusNode _goToLiveFocusNode;
   late final FocusNode _timelineFocusNode;
 
@@ -214,6 +231,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _skipForwardFocusNode = FocusNode(debugLabel: 'SkipForward');
     _nextChapterFocusNode = FocusNode(debugLabel: 'NextChapter');
     _nextItemFocusNode = FocusNode(debugLabel: 'NextItem');
+    _markPlayedFocusNode = FocusNode(debugLabel: 'MarkPlayed');
     _goToLiveFocusNode = FocusNode(debugLabel: 'GoToLive');
     _timelineFocusNode = FocusNode(debugLabel: 'Timeline');
     _volumeFocusNode = FocusNode(debugLabel: 'Volume');
@@ -229,6 +247,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       _skipForwardFocusNode,
       _nextChapterFocusNode,
       _nextItemFocusNode,
+      _markPlayedFocusNode,
       _goToLiveFocusNode,
     ];
     _bindChapterLabelStreams();
@@ -286,6 +305,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _skipForwardFocusNode.dispose();
     _nextChapterFocusNode.dispose();
     _nextItemFocusNode.dispose();
+    _markPlayedFocusNode.dispose();
     _goToLiveFocusNode.dispose();
     _timelineFocusNode.dispose();
     _volumeFocusNode.dispose();
@@ -489,7 +509,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   KeyEventResult _handleVolumeKeyEvent(FocusNode _, KeyEvent event) {
     return _handleDirectionalNavigation(
       event,
-      leftTarget: _nextItemFocusNode,
+      leftTarget: _markPlayedFocusNode.context != null ? _markPlayedFocusNode : _nextItemFocusNode,
       rightTarget: _trackControlFocusNodes.isNotEmpty ? _trackControlFocusNodes.first : null,
     );
   }
@@ -571,6 +591,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       }
 
       final isForward = key == LogicalKeyboardKey.arrowRight;
+      final seekSeconds = isForward ? widget.seekTimeSmall : _rewindSeconds;
       final effectiveMultiplier = event is KeyRepeatEvent ? steppedSeekMultiplier(_seekRepeatCount) : 1.0;
 
       // Live TV: relative epoch-based seeking via the parent accumulator, which
@@ -578,7 +599,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       // acceleration multiplier still grows the per-press step; the accumulator
       // sums them.
       if (_isLive && widget.onLiveSeekBy != null) {
-        final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
+        final stepSeconds = (seekSeconds * effectiveMultiplier).clamp(1, 300).round();
         widget.onLiveSeekBy!(isForward ? stepSeconds : -stepSeconds);
         widget.onFocusActivity?.call();
         return KeyEventResult.handled;
@@ -586,7 +607,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
-      final baseStepMs = widget.seekTimeSmall * 1000;
+      final baseStepMs = seekSeconds * 1000;
       final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
@@ -697,6 +718,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
           Expanded(
             child: VideoControlsHeader(
               metadata: widget.metadata,
+              useTvArtwork: PlatformDetector.isAppleTV(),
               style: Platform.isMacOS ? VideoHeaderStyle.singleLine : VideoHeaderStyle.multiLine,
               onBack: widget.onBack,
               onCancelAutoHide: widget.onCancelAutoHide,
@@ -804,9 +826,12 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     child: _buildFocusableButton(
                       focusNode: _skipBackFocusNode,
                       index: 2,
-                      icon: widget.getReplayIcon(widget.seekTimeSmall),
+                      icon: widget.getReplayIcon(_rewindSeconds),
+                      iconText: PlatformDetector.isAppleTV() && ![5, 10, 30].contains(_rewindSeconds)
+                          ? '$_rewindSeconds'
+                          : null,
                       onPressed: _canControl ? widget.onSeekBackward : null,
-                      semanticLabel: t.videoControls.seekBackwardButton(seconds: widget.seekTimeSmall),
+                      semanticLabel: t.videoControls.seekBackwardButton(seconds: _rewindSeconds),
                     ),
                   ),
                 ],
@@ -835,6 +860,9 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       focusNode: _skipForwardFocusNode,
                       index: 4,
                       icon: widget.getForwardIcon(widget.seekTimeSmall),
+                      iconText: PlatformDetector.isAppleTV() && ![5, 10, 30].contains(widget.seekTimeSmall)
+                          ? '${widget.seekTimeSmall}'
+                          : null,
                       onPressed: _canControl ? widget.onSeekForward : null,
                       semanticLabel: t.videoControls.seekForwardButton(seconds: widget.seekTimeSmall),
                     ),
@@ -872,6 +900,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       semanticLabel: t.videoControls.nextButton,
                     ),
                   ),
+                  // Mark played (and play the next episode)
+                  if (widget.onMarkPlayed != null)
+                    Opacity(
+                      opacity: _canControl ? 1.0 : 0.5,
+                      child: _buildFocusableButton(
+                        focusNode: _markPlayedFocusNode,
+                        index: 7,
+                        icon: Symbols.task_alt_rounded,
+                        onPressed: _canControl ? widget.onMarkPlayed : null,
+                        semanticLabel: widget.markPlayedPlaysNext
+                            ? t.videoControls.markPlayedAndNextButton
+                            : t.videoControls.markPlayedButton,
+                        tooltip: widget.markPlayedPlaysNext
+                            ? t.videoControls.markPlayedAndNextButton
+                            : t.videoControls.markPlayedButton,
+                      ),
+                    ),
                 ],
                 // Live TV: Go to Live, only while time-shifted behind the live
                 // edge. A labelled pill, since no glyph names this action and
@@ -886,7 +931,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                             alignment: AlignmentDirectional.centerStart,
                             child: _buildFocusableButton(
                               focusNode: _goToLiveFocusNode,
-                              index: 7,
+                              index: 8,
                               icon: Symbols.fiber_manual_record_rounded,
                               iconSize: 12,
                               label: t.liveTv.goToLive,
@@ -929,6 +974,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Audio track, subtitle, and chapter controls
                 TrackChapterControls(
                   player: widget.player,
+                  onTogglePerformanceOverlay: widget.onTogglePerformanceOverlay,
+                  showPerformanceOverlay: widget.showPerformanceOverlay,
                   chapters: widget.chapters,
                   chaptersLoaded: widget.chaptersLoaded,
                   trackControlsState: _trackControlsState,
@@ -978,6 +1025,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     double iconSize = 24,
     String? tooltip,
     String? label,
+    String? iconText,
   }) {
     return VideoControlButton(
       icon: icon,
@@ -985,6 +1033,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       color: color,
       tooltip: tooltip,
       label: label,
+      iconText: iconText,
       semanticLabel: semanticLabel,
       focusNode: focusNode,
       onKeyEvent: (node, event) => _handleButtonKeyEvent(node, event, index),

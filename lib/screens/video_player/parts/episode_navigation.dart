@@ -71,6 +71,40 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     }
   }
 
+  /// The controls' "mark played" command. An episode with a next one: play
+  /// the next episode, then mark the one just left as played. A movie or the
+  /// last episode: mark it played and close the player.
+  ///
+  /// The stop report always goes first ([_playNext] awaits it; the exit path
+  /// sends it explicitly). Marking afterwards also clears the resume point, so
+  /// a late stop report cannot leave a played item in Continue Watching.
+  Future<void> _markPlayedAndContinue() async {
+    if (widget.isLive || _isMarkingPlayed || _episode.isLoadingNext || !_canNavigateMediaItems() || !mounted) return;
+    final item = _currentMetadata;
+    final playsNext = _episode.next != null;
+    _setPlayerState(() => _isMarkingPlayed = true);
+    try {
+      if (playsNext) {
+        await _playNext();
+      } else {
+        try {
+          await player?.pause();
+        } catch (e) {
+          appLogger.d('Pause before mark-played failed', error: e);
+        }
+        await _sendStoppedProgressOnce();
+      }
+      if (!mounted) return;
+      await WatchActions.setWatched(context, item, watched: true, offline: _offlineLibraryMode);
+      if (!playsNext && mounted) await _exitPlayerRoute(navigateHome: false);
+    } catch (e, stackTrace) {
+      appLogger.w('Mark played from the player failed', error: e, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoControls.markPlayedFailed);
+    } finally {
+      if (mounted) _setPlayerState(() => _isMarkingPlayed = false);
+    }
+  }
+
   Future<void> _playPrevious() async {
     if (!_canNavigateMediaItems()) return;
     if (_episode.previous == null || _episode.isLoadingPrevious) return;

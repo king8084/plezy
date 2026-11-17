@@ -11,6 +11,46 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AppleTvRemoteTouchService', () {
+    test('system media commands reach playback and deduplicate against the native bridge', () async {
+      final harness = _Harness();
+      final actions = <AppleTvRemotePlayPauseAction>[];
+      final subscription = harness.service.playPauseActions.listen(actions.add);
+      addTearDown(subscription.cancel);
+
+      harness.service.handleMediaControlPlayback('mediaPause');
+      await harness.service.handleMessage({'type': 'play_pause', 'source': 'presses', 'detail': 'playPause'});
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.map((action) => action.detail), ['mediaPause']);
+
+      harness.advance(const Duration(milliseconds: 300));
+      await harness.service.handleMessage({'type': 'play_pause', 'source': 'presses', 'detail': 'playPause'});
+      harness.service.handleMediaControlPlayback('mediaPlay');
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.map((action) => action.detail), ['mediaPause', 'playPause']);
+
+      harness.advance(const Duration(milliseconds: 300));
+      harness.service.handleMediaControlPlayback('mediaPlay');
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.map((action) => action.detail), ['mediaPause', 'playPause', 'mediaPlay']);
+    });
+
+    test('media keys emit a playback action and ignore the duplicate native bridge event', () async {
+      final harness = _Harness();
+      final actions = <AppleTvRemotePlayPauseAction>[];
+      final subscription = harness.service.playPauseActions.listen(actions.add);
+      addTearDown(subscription.cancel);
+
+      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.mediaPlayPause)), isTrue);
+      await harness.service.handleMessage({'type': 'play_pause', 'source': 'presses', 'detail': 'playPause'});
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.map((action) => action.detail), ['mediaPlayPause']);
+
+      harness.advance(const Duration(milliseconds: 300));
+      await harness.service.handleMessage({'type': 'play_pause', 'source': 'presses', 'detail': 'playPause'});
+      await Future<void>.delayed(Duration.zero);
+      expect(actions.length, 2);
+    });
+
     test('a single fast flick emits exactly one swipe', () async {
       final harness = _Harness();
 

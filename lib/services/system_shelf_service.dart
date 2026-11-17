@@ -52,6 +52,7 @@ class SystemShelfService {
   String? _activeOwner;
   int _generation = 0;
   Future<void> _mutationTail = Future<void>.value();
+  bool _reportedUnavailableTvosShelf = false;
 
   @visibleForTesting
   String? get debugActiveOwner => _activeOwner;
@@ -176,13 +177,19 @@ class SystemShelfService {
     if (override != null) return override();
     final channel = _channel;
     if (channel == null) return false;
-    return await _invokeGuarded<bool>(
+    final supported =
+        await _invokeGuarded<bool>(
           channel,
           'isSupported',
           label: 'System shelf unsupported',
           failureLabel: 'System shelf unsupported: native support check failed',
         ) ??
         false;
+    if (_isTvosTarget && !supported && !_reportedUnavailableTvosShelf) {
+      _reportedUnavailableTvosShelf = true;
+      appLogger.w('Apple TV Top Shelf is unavailable. Check the shared app-group container and signing entitlements.');
+    }
+    return supported;
   }
 
   /// Sync Continue Watching items for the currently active [profileId].

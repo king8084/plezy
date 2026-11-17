@@ -17,6 +17,7 @@ import '../providers/companion_remote_provider.dart';
 import '../providers/discover_provider.dart';
 import '../providers/explore_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
+import '../providers/removed_continue_watching_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -217,6 +218,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 dispose: (_, matcher) => matcher.dispose(),
                 lazy: true,
               ),
+              ChangeNotifierProvider(create: (_) => RemovedContinueWatchingProvider(profileId: activeId ?? '')),
               ChangeNotifierProvider(
                 create: (context) =>
                     HiddenLibrariesProvider(storageService: context.read<StorageService>(), profileId: activeId),
@@ -243,11 +245,15 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     // matches; the proxy reuses `previous`, so the reference
                     // stays valid for as long as this provider does.
                     watchStateStore: context.read<WatchStateStore>(),
+                    removedContinueWatching: context.read<RemovedContinueWatchingProvider>(),
                     isProfileBinding: () => activeProfile.isBinding,
                     // Defers push-triggered hub refetches while the player is
                     // up — same playback-quiet policy as the resume gate.
                     isRefreshBlocked: () => VideoPlayerScreenState.activeGlobalKey != null,
                     profileId: activeId,
+                    // Simkl/Trakt suggestions for "Because you watched"; the
+                    // proxy keeps one CatalogSourcesProvider for this scope.
+                    externalRecommendations: context.read<CatalogSourcesProvider>().titleRecommendations,
                   );
                 },
               ),

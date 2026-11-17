@@ -222,6 +222,9 @@
     "gridView": "網格檢視",
     "listView": "清單檢視",
     "showHeroSection": "顯示精選內容區",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "繼續觀看操作",
     "continueWatchingPlay": "播放影片",
     "continueWatchingDetails": "開啟詳情頁",
@@ -278,6 +281,8 @@
     "subtitleStyling": "字幕樣式",
     "subtitleStylingDescription": "調整字幕外觀",
     "smallSkipDuration": "短跳過時間",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "長跳過時間",
     "rewindOnResume": "繼續播放時稍微倒轉",
     "secondsUnit": "${seconds} 秒",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "同步動態範圍",
     "matchDynamicRangeDescription": "HDR 內容切換至 HDR，播放結束切回 SDR",
     "displaySwitchDelay": "顯示器切換延遲時間",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "通道化播放（Tunneled Playback）",
     "tunneledPlaybackDescription": "使用影片通道模式。若 HDR 播放出現黑畫面或動態卡頓，請停用此項。",
     "audioPassthrough": "音訊直通",
@@ -484,6 +491,7 @@
     "display": "顯示器",
     "libraryAndCards": "媒體庫與卡片",
     "homeScreen": "主畫面",
+    "homeTextSize": "",
     "navigation": "導覽",
     "window": "視窗",
     "liveTv": "直播電視",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "全部",
     "playerScopeLibrary": "依媒體庫",
     "playerScopeTitle": "依影集或電影",
-    "exportDialogTitle": "匯出 Plezy 設定"
+    "exportDialogTitle": "匯出 Plezy 設定",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "內建",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "嘗試不同的關鍵字",
     "searchYourMedia": "搜尋媒體庫",
     "enterTitleActorOrKeyword": "輸入標題、演員或關鍵字",
-    "people": "人物"
+    "people": "人物",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "為 ${actionName} 設定快速鍵",
@@ -727,6 +760,10 @@
     "viewDetails": "查看詳情",
     "goToSeries": "前往影集",
     "shufflePlay": "隨機播放",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "離線時無法隨機播放",
     "fileInfo": "檔案資訊",
     "deleteEpisodeFromServer": "從伺服器刪除單集",
@@ -758,6 +795,8 @@
     "mediaDeletedSuccessfully": "媒體已成功刪除",
     "mediaFailedToDelete": "刪除媒體失敗",
     "rate": "評分",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "從頭播放",
     "playVersion": "播放版本…"
   },
@@ -904,7 +943,10 @@
     "forcedTrack": "${label}（強制）",
     "osdSubtitlesOff": "字幕：關閉",
     "osdSubtitles": "字幕：${track}",
-    "osdAudio": "音訊：${track}"
+    "osdAudio": "音訊：${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1181,6 +1223,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "發現",
     "noContentAvailable": "沒有可用內容",
     "addMediaToLibraries": "請向您的媒體庫新增一些媒體內容",
@@ -1205,7 +1254,10 @@
     "movie": "電影",
     "tvShow": "影集",
     "minutesLeft": "剩餘 ${minutes} 分鐘",
+    "durationLeft": "",
     "moreLikeThis": "更多類似內容",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n} 部作品"
     },
@@ -1215,7 +1267,9 @@
       "birthplace": "出生地",
       "dateWithAge": "${date}（${age} 歲）",
       "dateWithAgeAtDeath": "${date}（享年 ${age} 歲）"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "搜尋失敗：${error}",
@@ -1387,7 +1441,15 @@
   "logs": {
     "clearLogs": "清除日誌",
     "copyLogs": "複製日誌",
-    "uploadLogs": "上傳日誌"
+    "uploadLogs": "上傳日誌",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy 無法啟動",

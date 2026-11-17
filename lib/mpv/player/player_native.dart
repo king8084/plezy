@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show mapEquals, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../models/audio_channel_limit.dart';
+import '../../media/media_display_criteria.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../models.dart';
@@ -26,6 +27,8 @@ typedef _AudioStateGenerations = ({int passthrough, int normalization, int downm
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
+  bool appleTvQmsFastStart = false;
+
   /// Video player on the default mpv channels/core.
   ///
   /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
@@ -999,7 +1002,26 @@ class PlayerNative extends PlayerBase {
   Future<void> awaitDisplayModeSwitch({int extraDelayMs = 0}) async {
     if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs});
+    await invoke('awaitDisplayModeSwitch', {'extraDelayMs': extraDelayMs, 'allowSdrFastStart': appleTvQmsFastStart});
+  }
+
+  /// Start the tvOS display handshake from reliable source metadata while
+  /// subtitle selection and media opening continue. The decoded stream will
+  /// subsequently correct the hint if the server's metadata was inaccurate.
+  Future<void> preflightAppleTvDisplay(MediaDisplayCriteria criteria) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS || !criteria.canPreflightAppleTv) return;
+    await _ensureInitialized();
+    await invoke('preflightDisplayCriteria', {
+      'fps': criteria.fps,
+      'width': criteria.width,
+      'height': criteria.height,
+      'doviProfile': criteria.doviProfile ?? 0,
+      'doviLevel': criteria.doviLevel ?? 0,
+      'doviCompatibilityId': criteria.doviCompatibilityId,
+      'transfer': criteria.transfer,
+      'primaries': criteria.primaries,
+      'matrix': criteria.matrix,
+    });
   }
 
   /// Tells this player's holds apart, so a superseded open's late release

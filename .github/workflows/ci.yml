@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codex/first-tvos-test-build
   # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
   pull_request:
     branches:
@@ -21,6 +22,10 @@ on:
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
   FLUTTER_VERSION: "3.47.1"
+
+concurrency:
+  group: sanity-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
@@ -66,6 +71,11 @@ jobs:
 
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh
+
+      - name: Verify translated UI and user-facing errors
+        run: |
+          python3 scripts/checks/check_hardcoded_strings.py
+          python3 scripts/checks/check_user_facing_errors.py
 
       - name: Verify formatting
         run: |

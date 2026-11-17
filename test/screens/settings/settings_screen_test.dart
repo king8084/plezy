@@ -101,6 +101,9 @@ void main() {
     );
     addTearDown(() => harness.dispose(tester));
 
+    // Libraries now live under Settings → Home & Sidebar.
+    await tester.tap(find.text(t.settings.homeAndSidebar));
+    await _pumpUi(tester);
     await tester.tap(find.text(t.libraries.manageLibraries));
     await _pumpUi(tester);
     expect(find.text('Maestro Movies'), findsOneWidget);
@@ -115,7 +118,7 @@ void main() {
     await _pumpUi(tester);
 
     expect(find.text('Maestro Movies'), findsNothing, reason: 'system back dismisses the sheet');
-    expect(find.text(t.settings.services), findsOneWidget, reason: 'the settings route remains current');
+    expect(find.text(t.settings.homeRows), findsOneWidget, reason: 'the Home & Sidebar page remains current');
     expect(find.text('Settings launcher'), findsNothing, reason: 'system back must not pop the settings route');
   });
 

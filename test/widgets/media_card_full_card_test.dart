@@ -148,14 +148,17 @@ void main() {
     await tester.pumpWidget(_catalogGridHarness(item));
 
     final metadata = tester.widget<Text>(
-      find.byWidgetPredicate((widget) => widget is Text && (widget.data?.contains('8.6★') ?? false)),
+      find.byWidgetPredicate(
+        (widget) => widget is Text && ((widget.data ?? widget.textSpan?.toPlainText())?.contains('8.6★') ?? false),
+      ),
     );
+    final metadataText = metadata.data ?? metadata.textSpan!.toPlainText();
     expect(metadata.maxLines, 1);
     expect(metadata.overflow, TextOverflow.ellipsis);
-    expect(metadata.data, '8.6★ • 2024 • 2h 5min');
-    expect(metadata.data, isNot(contains('PG-13')), reason: 'certification is detail/search only');
-    expect(metadata.data, isNot(contains('Drama')), reason: 'genres do not fit a shelf caption');
-    expect(metadata.data, isNot(contains('(')), reason: 'vote counts do not fit a shelf caption');
+    expect(metadataText, '8.6★ • 2024 • 2h 5min');
+    expect(metadataText, isNot(contains('PG-13')), reason: 'certification is detail/search only');
+    expect(metadataText, isNot(contains('Drama')), reason: 'genres do not fit a shelf caption');
+    expect(metadataText, isNot(contains('(')), reason: 'vote counts do not fit a shelf caption');
   });
 
   testWidgets('plain library grid metadata remains year only', (tester) async {
@@ -413,11 +416,14 @@ void main() {
     );
 
     final metadata = tester.widget<Text>(
-      find.byWidgetPredicate((widget) => widget is Text && (widget.data?.contains('8.6★') ?? false)),
+      find.byWidgetPredicate(
+        (widget) => widget is Text && ((widget.data ?? widget.textSpan?.toPlainText())?.contains('8.6★') ?? false),
+      ),
     );
-    expect(metadata.data, startsWith('PG-13 • 2024 • 2h 5m'));
-    expect(metadata.data, contains('8.6★ (12.3K)'));
-    expect(metadata.data, contains('Drama, Mystery'));
+    final metadataText = metadata.data ?? metadata.textSpan!.toPlainText();
+    expect(metadataText, startsWith('PG-13 • 2024 • 2h 5m'));
+    expect(metadataText, contains('8.6★ (12.3K)'));
+    expect(metadataText, contains('Drama, Mystery'));
   });
 
   testWidgets('full bleed focusable media card lifts the glow into an overlay above siblings', (tester) async {

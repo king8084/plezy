@@ -87,6 +87,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleCommand(call: call, result: result)
     case "awaitDisplayModeSwitch":
       handleAwaitDisplayModeSwitch(call: call, result: result)
+    case "preflightDisplayCriteria":
+      handlePreflightDisplayCriteria(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
     case "setVideoZoom":
@@ -404,11 +406,38 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     let args = call.arguments as? [String: Any]
     let extraDelayMs = int64Value(args?["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
+    let allowSdrFastStart = args?["allowSdrFastStart"] as? Bool ?? false
     DispatchQueue.main.async {
-      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs) {
+      core.awaitDisplayModeSwitch(extraDelayMs: extraDelayMs, allowSdrFastStart: allowSdrFastStart) {
         result(nil)
       }
     }
+  }
+
+  private func handlePreflightDisplayCriteria(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    #if os(tvOS)
+      guard let core = playerCore, let args = call.arguments as? [String: Any],
+        let fps = (args["fps"] as? NSNumber)?.doubleValue,
+        let width = int64Value(args["width"]).flatMap({ Int32(exactly: $0) }),
+        let height = int64Value(args["height"]).flatMap({ Int32(exactly: $0) }),
+        fps.isFinite, fps > 0, fps <= 120, width > 0, height > 0
+      else { result(false); return }
+      DispatchQueue.main.async {
+        guard core.isInitialized else { result(false); return }
+        let applied = core.updateDisplayCriteria(
+          doviProfile: self.int64Value(args["doviProfile"]) ?? 0,
+          doviLevel: self.int64Value(args["doviLevel"]) ?? 0,
+          doviCompatibilityId: self.int64Value(args["doviCompatibilityId"]),
+          fps: MpvPlayerCoreBase.nominalRefreshRate(fps), width: width, height: height, sigPeak: 0,
+          gamma: args["transfer"] as? String,
+          primaries: args["primaries"] as? String,
+          colorMatrix: args["matrix"] as? String
+        )
+        result(applied)
+      }
+    #else
+      result(false)
+    #endif
   }
 
   private func int64Value(_ value: Any?) -> Int64? {

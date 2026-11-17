@@ -677,7 +677,7 @@ void main() {
       await settleFeedback(tester);
     });
 
-    testWidgets('select raises the chrome before toggling so no badge flashes under it', (tester) async {
+    testWidgets('Apple TV select raises the chrome without transport feedback or pausing', (tester) async {
       await pumpControls(tester, wireTransportCallback: true);
 
       await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
@@ -686,7 +686,7 @@ void main() {
       await tester.pump();
 
       expect(chrome.controlsVisible, isTrue);
-      expect(transportCommands, [TransportCommand.toggle]);
+      expect(transportCommands, isEmpty);
 
       await settleFeedback(tester);
     });

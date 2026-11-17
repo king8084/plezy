@@ -66,15 +66,18 @@ enum ThemeMode {
   };
 }
 
-/// Library density is now an int 1–5 (1 = most compact, 5 = most comfortable).
+/// Card size is an int 1–7; levels 6 and 7 extend the existing larger sizes.
 /// Default is 3.
 class LibraryDensity {
   static const int min = 1;
-  static const int max = 5;
+  static const int max = 7;
   static const int defaultValue = 3;
 
   /// Returns a 0.0–1.0 factor for interpolation (0 = most compact, 1 = most comfortable).
-  static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
+  static double factor(int density) => (density.clamp(min, 5) - min) / 4;
+
+  /// Extra-large options leave the existing 1–5 sizes unchanged.
+  static double extraLargeScale(int density) => 1 + (density.clamp(5, max) - 5) * 0.2;
 }
 
 /// Gap between cards in media grids (#2083, #1597). Touch, pointer and car
@@ -248,7 +251,7 @@ const String _legacyAudioDownmixKey = 'audio_downmix';
 const String _legacyDeinterlaceKey = 'deinterlace';
 const String _playerScopeGlobalsResetKey = 'player_scope_globals_reset';
 
-/// Migrates from the legacy enum-string format and clamps to 1..5.
+/// Migrates from the legacy enum-string format and clamps to 1..7.
 class _LibraryDensityPref extends Pref<int> {
   const _LibraryDensityPref() : super('library_density');
   @override
@@ -426,6 +429,22 @@ class _SkipMarkerModePref extends LegacyBoolEnumPref<SkipMarkerMode> {
         legacyTrue: SkipMarkerMode.auto,
         legacyFalse: SkipMarkerMode.button,
       );
+}
+
+// Split rewind from the former shared interval without changing an existing
+// install's rewind amount. Once initialized, the two settings are independent.
+class _BackwardSeekPref extends IntPref {
+  const _BackwardSeekPref() : super('seek_time_backward', defaultValue: 10);
+
+  @override
+  int readFrom(BaseSharedPreferencesService svc) {
+    if (!svc.prefs.containsKey(key)) {
+      final value = svc.read(SettingsService.seekTimeSmall);
+      svc.prefs.setInt(key, value);
+      return value;
+    }
+    return super.readFrom(svc);
+  }
 }
 
 /// Stored as the locale enum name; null/empty falls back to the device locale.
@@ -651,10 +670,13 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
   static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
+  static const seekTimeBackward = _BackwardSeekPref();
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static int _clampHomeTextSize(int value) => value.clamp(85, 150);
+  static const homeTextSize = IntPref('home_text_size', defaultValue: 100, transform: _clampHomeTextSize);
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
@@ -813,6 +835,14 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Only consulted while [autoPlayNextEpisode] is on.
   static final playNextCountdown = IntPref('play_next_countdown', defaultValue: 5, transform: (v) => v.clamp(0, 30));
 
+  /// Ask "Still watching?" after this many episodes started automatically in a
+  /// row with no remote press in between. 0 (the default) never asks.
+  static final stillWatchingAfterEpisodes = IntPref(
+    'still_watching_after_episodes',
+    defaultValue: 0,
+    transform: (v) => v.clamp(0, 10),
+  );
+
   /// Touch gestures on the player surface (#1810). Each defaults on; the
   /// edge swipes gate [MobileEdgeAdjustmentTracker] tracking and the zoom
   /// pref gates the pinch recognizer in the player screen.
@@ -875,6 +905,11 @@ class SettingsService extends BaseSharedPreferencesService {
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+  static const pinFavoritesToSidebar = BoolPref('pin_favorites_to_sidebar');
+  static const pinCollectionsToSidebar = BoolPref('pin_collections_to_sidebar');
+  static const sidebarOrder = StringListPref('sidebar_order');
+  static const sidebarPinnedLibraries = StringListPref('sidebar_pinned_libraries');
+  static const sidebarLibrariesConfigured = BoolPref('sidebar_libraries_configured');
 
   /// Sidebar Libraries section expansion. Persisted so a collapsed section
   /// stays collapsed across launches instead of springing back open (#1896).
@@ -981,6 +1016,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// wants per-title subtitle offsets wants per-title audio offsets too.
   static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
+  // Personal fork targets the owner's QMS-capable LG setup. HDR/DV still
+  // negotiate normally; this only releases the manual SDR startup pause.
+  static const appleTvQmsFastStart = BoolPref('apple_tv_qms_fast_start', defaultValue: true);
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
   static const themeMode = EnumPref<ThemeMode>(
@@ -1016,6 +1054,11 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const libraryDensity = _LibraryDensityPref();
   static const homePinnedCollections = StringListPref('home_pinned_collections');
+  static const homePinnedCollectionMetadata = StringListPref('home_pinned_collection_metadata');
+  static const homeRowOrder = StringListPref('home_row_order');
+
+  /// Home rows the user hid in Settings → Home & Sidebar (see homeRowKey).
+  static const homeRowHidden = StringListPref('home_row_hidden');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1493,6 +1536,7 @@ class SettingsService extends BaseSharedPreferencesService {
     hdrToneMapping,
     viewMode,
     seekTimeSmall,
+    seekTimeBackward,
     seekTimeLarge,
     showHeroSection,
     sleepTimerDuration,
@@ -1528,6 +1572,7 @@ class SettingsService extends BaseSharedPreferencesService {
     resumeMusicOnLaunch,
     autoPlayNextEpisode,
     playNextCountdown,
+    stillWatchingAfterEpisodes,
     shuffleStartsFromBeginning,
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
@@ -1541,6 +1586,11 @@ class SettingsService extends BaseSharedPreferencesService {
     startupSection,
     showExploreTab,
     alwaysKeepSidebarOpen,
+    pinFavoritesToSidebar,
+    pinCollectionsToSidebar,
+    sidebarOrder,
+    sidebarPinnedLibraries,
+    sidebarLibrariesConfigured,
     librariesSectionExpanded,
     showUnwatchedCount,
     showWatchedIndicators,
@@ -1581,6 +1631,7 @@ class SettingsService extends BaseSharedPreferencesService {
     libraryDensity,
     gridSpacing,
     automotiveUiScale,
+    homeTextSize,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,
@@ -1621,6 +1672,7 @@ class SettingsService extends BaseSharedPreferencesService {
     matchRefreshRate,
     matchDynamicRange,
     displaySwitchDelay,
+    appleTvQmsFastStart,
     enableCompanionRemoteServer,
     startInFullscreen,
     exitFullscreenOnPlayerClose,
@@ -1632,6 +1684,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static final List<Pref<Object?>> _resetOnlyPrefs = [
     customDownloadPathType,
     homePinnedCollections,
+    homePinnedCollectionMetadata,
+    homeRowOrder,
+    homeRowHidden,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,
@@ -1670,7 +1725,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Numeric constraints used by both the settings tiles and typed callers.
   static (num, num)? numericBounds(Pref<Object?> pref) => switch (pref.key) {
-    'seek_time_small' || 'seek_time_large' => (1, 120),
+    'seek_time_small' || 'seek_time_backward' || 'seek_time_large' => (1, 120),
     'rewind_on_resume' || 'display_switch_delay' => (0, 10),
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),
@@ -1686,6 +1741,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'default_box_fit_mode' => (0, 2),
     'default_video_zoom' => (minimumVideoZoom, maximumVideoZoom),
     'library_density' => (LibraryDensity.min, LibraryDensity.max),
+    'home_text_size' => (85, 150),
     'automotive_ui_scale' => (AutomotiveUiScale.min, AutomotiveUiScale.max),
     'remembered_brightness_level' => (-1, 1),
     _ => null,

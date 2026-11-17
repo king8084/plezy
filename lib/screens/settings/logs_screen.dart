@@ -21,6 +21,7 @@ import '../../main.dart' show gitCommit;
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
 import '../../services/log_upload_service.dart';
+import '../../services/tv_playback_diagnostics.dart';
 import '../../services/startup_diagnostics.dart';
 import '../../services/video_decode_capabilities.dart';
 import '../../utils/app_logger.dart';
@@ -187,6 +188,58 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     setState(() {
       _logs = MemoryLogOutput.getLogs();
     });
+  }
+
+  Future<void> _sharePlaybackDiagnostics() async {
+    final diagnostics = TvPlaybackDiagnostics.instance;
+    try {
+      if (!diagnostics.sharing) {
+        final enable = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            scrollable: true,
+            title: Text(t.logs.sharePlaybackDiagnostics),
+            content: Text(t.logs.playbackDiagnosticsConsent),
+            actions: [
+              DialogActionButton(onPressed: () => Navigator.pop(ctx, false), label: t.common.cancel),
+              DialogActionButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(ctx, true),
+                label: t.logs.enableSharing,
+              ),
+            ],
+          ),
+        );
+        if (enable != true) return;
+        await diagnostics.enableSharing();
+      }
+      final urls = await diagnostics.sharingUrls();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          scrollable: true,
+          title: Text(t.logs.playbackDiagnosticsLink),
+          content: SelectableText(t.logs.playbackDiagnosticsLinkDescription(urls: urls.join('\n\n'))),
+          actions: [
+            DialogActionButton(
+              onPressed: () async {
+                await diagnostics.disableSharing();
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              label: t.logs.stopSharing,
+            ),
+            DialogActionButton(
+              onPressed: () => Clipboard.setData(ClipboardData(text: urls.join('\n'))),
+              label: t.logs.copyLink,
+            ),
+            DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(ctx), label: t.common.close),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (mounted) showErrorSnackBar(context, t.logs.playbackDiagnosticsShareFailed);
+    }
   }
 
   String _formatTime(DateTime time) {
@@ -478,6 +531,12 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                         actions: [
                           FocusableActionBar(
                             actions: [
+                              if (PlatformDetector.isAppleTV())
+                                FocusableAction(
+                                  icon: Symbols.lan_rounded,
+                                  tooltip: t.logs.sharePlaybackDiagnostics,
+                                  onPressed: _sharePlaybackDiagnostics,
+                                ),
                               FocusableAction(
                                 icon: Symbols.refresh_rounded,
                                 tooltip: t.common.refresh,

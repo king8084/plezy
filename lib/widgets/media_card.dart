@@ -15,6 +15,9 @@ import '../media/catalog_item_ref.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
+import '../media/media_rating.dart';
+import '../providers/catalog_sources_provider.dart';
+import '../services/catalog/community_ratings.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/catalog/catalog_item.dart';
@@ -40,6 +43,9 @@ import 'media_context_menu.dart';
 import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
 import 'optimized_media_image.dart';
+import 'favorite_poster_border.dart';
+import '../services/catalog/detail_recommendations.dart';
+import 'recommendation_card_caption.dart';
 
 const _failedPosterUrlCacheLimit = 512;
 final _failedPosterUrls = <String>{};
@@ -87,7 +93,12 @@ TextSpan _metadataTextSpan(String text, TextStyle? style) {
   for (var i = 0; i < pieces.length; i++) {
     if (pieces[i].isNotEmpty) spans.add(TextSpan(text: pieces[i]));
     if (i < pieces.length - 1) {
-      spans.add(const TextSpan(text: '★', style: TextStyle(color: Color(0xFFB8860B))));
+      spans.add(
+        const TextSpan(
+          text: '★',
+          style: TextStyle(color: Color(0xFFB8860B)),
+        ),
+      );
     }
   }
   return TextSpan(style: style, children: spans);
@@ -101,7 +112,12 @@ TextSpan _metadataTextSpan(String text, TextStyle? style) {
 /// the one value this line exists to show. The compact form therefore leads
 /// with the rating and drops certification, edition, genres and studio, all
 /// of which the detail screen and the search list still render in full.
-String _buildMediaMetadataLine(MediaItem item, {CatalogItem? catalogItem, bool compact = false}) {
+String _buildMediaMetadataLine(
+  MediaItem item, {
+  CatalogItem? catalogItem,
+  bool compact = false,
+  MediaRatingSource? seerrRating,
+}) {
   final parts = <String>[];
 
   if (item.kind == MediaKind.collection) {
@@ -113,10 +129,16 @@ String _buildMediaMetadataLine(MediaItem item, {CatalogItem? catalogItem, bool c
   }
 
   String? ratingPart() {
-    if (item.rating case final rating?) {
-      final votes = compact ? null : catalogItem?.votes;
+    final isSeerr = catalogItem?.source == CatalogSourceId.seerr;
+    final imdb = isSeerr ? seerrRating ?? catalogImdbRating(catalogItem!, const []) : null;
+    if ((isSeerr ? imdb?.value : item.rating) case final rating?) {
+      final votes = isSeerr
+          ? imdb?.votes
+          : compact
+          ? null
+          : catalogItem?.votes;
       final voteSuffix = votes != null && votes > 0 ? ' (${_formatCompactCatalogNumber(votes)})' : '';
-      return '${formatRating(rating)}★$voteSuffix';
+      return isSeerr ? '★ ${formatRating(rating)}$voteSuffix' : '${formatRating(rating)}★$voteSuffix';
     }
     return null;
   }
@@ -659,17 +681,74 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       knownHeight: knownHeight,
       artworkDim: widget.artworkDim,
     );
+    final recommendation = item is MediaItem ? RecommendationCardData.fromItem(item) : null;
+    final banner = switch (recommendation?.availability) {
+      RecommendationAvailability.missing => t.discover.needRequest,
+      RecommendationAvailability.requested => t.explore.badge.requested,
+      _ => null,
+    };
     final overlays = <Widget>[
+      if (banner != null)
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: DecoratedBox(
+            key: const ValueKey('recommendation_request_banner'),
+            decoration: const BoxDecoration(color: Color(0xE6232934)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+              child: Text(
+                banner,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFFE6B95B), fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
       if (item is MediaItem && _showsWatchedIndicator(item)) WatchedIndicator(item: item),
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
+      if (item is MediaItem && item.isEpisode && item.index != null)
+        Positioned(
+          top: item.isWatched ? 36 : 6,
+          right: 6,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              child: Text(
+                'E${item.index}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+            ),
+          ),
+        ),
     ];
+    final poster = fullBleed
+        ? _clipPosterImage(context, item, Stack(fit: StackFit.expand, children: [image, ...overlays]))
+        : Stack(children: [_clipPosterImage(context, item, image), ...overlays]);
     return ExcludeSemantics(
       child: _CatalogFocusBorder(
         accentColor: _catalogAccent,
         borderRadius: _posterFocusRadius(context, item),
-        child: fullBleed
-            ? _clipPosterImage(context, item, Stack(fit: StackFit.expand, children: [image, ...overlays]))
-            : Stack(children: [_clipPosterImage(context, item, image), ...overlays]),
+        child: item is MediaItem
+            ? FavoritePosterBorder(
+                item: item,
+                borderRadius: tokens(context).radiusSm,
+                representsShow: _representsShowPoster(
+                  item,
+                  widget.episodePosterModeOverride,
+                  widget.cardShapeOverride,
+                  widget.mixedHubContext,
+                ),
+                child: poster,
+              )
+            : poster,
       ),
     );
   }
@@ -708,7 +787,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             crossAxisAlignment: .start,
             children: [
               if (posterHeight != null)
-                SizedBox(width: double.infinity, height: posterHeight, child: poster)
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: SizedBox(width: double.infinity, height: posterHeight, child: poster),
+                )
               else
                 Expanded(child: poster),
               // Grid cells (no fixed height) grow the poster→title gap with
@@ -830,6 +912,19 @@ class _MediaCardList extends StatelessWidget {
     return (showServerName && it.serverName != null) || libraryName != null;
   }
 
+  Widget _metadataLabel(BuildContext context, String line) => Text.rich(
+    _metadataTextSpan(
+      line,
+      Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: tokens(context).textMuted.withValues(alpha: 0.9),
+        fontSize: _metadataFontSize,
+        fontWeight: .w500,
+      ),
+    ),
+    maxLines: 1,
+    overflow: .ellipsis,
+  );
+
   String _buildMetadataLine() {
     final current = item;
     if (current is MediaPlaylist) {
@@ -894,6 +989,34 @@ class _MediaCardList extends StatelessWidget {
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
     final subtitle = _buildSubtitleText();
+    final image = _clipPosterImage(
+      context,
+      item,
+      _buildPosterImage(
+        context,
+        item,
+        isOffline: isOffline,
+        localPosterPath: localPosterPath,
+        episodePosterModeOverride: episodePosterModeOverride,
+        cardShapeOverride: cardShapeOverride,
+        catalogItem: catalogItem,
+        knownWidth: catalogItem == null ? null : _posterWidth(),
+        knownHeight: catalogItem == null ? null : _posterHeight(),
+      ),
+    );
+    final poster = item is MediaItem
+        ? FavoritePosterBorder(
+            item: item as MediaItem,
+            borderRadius: tokens(context).radiusSm,
+            representsShow: _representsShowPoster(
+              item as MediaItem,
+              episodePosterModeOverride,
+              cardShapeOverride,
+              false,
+            ),
+            child: image,
+          )
+        : image;
 
     // List rows keep the whole-row border; inside stroke so adjacent rows
     // don't overlap.
@@ -918,21 +1041,7 @@ class _MediaCardList extends StatelessWidget {
                   height: _posterHeight(),
                   child: Stack(
                     children: [
-                      _clipPosterImage(
-                        context,
-                        item,
-                        _buildPosterImage(
-                          context,
-                          item,
-                          isOffline: isOffline,
-                          localPosterPath: localPosterPath,
-                          episodePosterModeOverride: episodePosterModeOverride,
-                          cardShapeOverride: cardShapeOverride,
-                          catalogItem: catalogItem,
-                          knownWidth: catalogItem == null ? null : _posterWidth(),
-                          knownHeight: catalogItem == null ? null : _posterHeight(),
-                        ),
-                      ),
+                      poster,
                       if (item is MediaItem && _showsWatchedIndicator(item as MediaItem))
                         WatchedIndicator(item: item as MediaItem),
                     ],
@@ -961,17 +1070,15 @@ class _MediaCardList extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(height: 4),
-                    if (metadataLine.isNotEmpty) ...[
+                    if (metadataLine.isNotEmpty || catalogItem?.source == CatalogSourceId.seerr) ...[
                       ExcludeSemantics(
-                        child: Text.rich(
-                          _metadataTextSpan(metadataLine, Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: tokens(context).textMuted.withValues(alpha: 0.9),
-                            fontSize: _metadataFontSize,
-                            fontWeight: .w500,
-                          )),
-                          maxLines: 1,
-                          overflow: .ellipsis,
-                        ),
+                        child: catalogItem?.source == CatalogSourceId.seerr
+                            ? _SeerrCardMetadata(
+                                item: item as MediaItem,
+                                catalogItem: catalogItem!,
+                                builder: (line) => _metadataLabel(context, line),
+                              )
+                            : _metadataLabel(context, metadataLine),
                       ),
                       const SizedBox(height: 2),
                     ],
@@ -1084,6 +1191,15 @@ IconData _mediaPosterFallbackIcon(MediaItem item) {
 const double _circularFocusRadius = 9999;
 
 bool _isArtist(Object item) => item is MediaItem && item.kind == MediaKind.artist;
+
+bool _representsShowPoster(MediaItem item, EpisodePosterMode? mode, CardShape? shape, bool mixed) =>
+    (item.isShow || item.isEpisode) &&
+    (shape ??
+            item.cardShape(
+              mode ?? SettingsService.instance.read(SettingsService.episodePosterMode),
+              mixedHubContext: mixed,
+            )) ==
+        CardShape.poster;
 
 /// Artist artwork clips to a circle; everything else keeps the standard
 /// rounded rect.
@@ -1234,7 +1350,7 @@ class _MediaCardHelpers {
   /// A card without a caption still occupies the caption line. Grid cells
   /// reserve it ([MediaCard.gridCaptionBandHeight]); dropping it would hand
   /// the line to the Expanded artwork and crop it.
-  static Widget _emptyCaption(BuildContext context) => _caption(context, '');
+  static Widget _emptyCaption(BuildContext context) => _caption(context, '\u00a0');
 
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {
@@ -1252,6 +1368,16 @@ class _MediaCardHelpers {
     bool showTitleImplied = false,
     CatalogItem? catalogItem,
   }) {
+    final recommendation = RecommendationCardData.fromItem(mi);
+    if (recommendation != null) return RecommendationCardCaption(item: recommendation.ratingItem);
+    if (catalogItem?.source == CatalogSourceId.seerr) {
+      return _SeerrCardMetadata(
+        item: mi,
+        catalogItem: catalogItem!,
+        compact: true,
+        builder: (text) => _caption(context, text),
+      );
+    }
     final catalogMetadata = catalogItem == null
         ? ''
         : _buildMediaMetadataLine(mi, catalogItem: catalogItem, compact: true);
@@ -1693,4 +1819,66 @@ class _CardTapRegion extends StatelessWidget {
       child: child,
     );
   }
+}
+
+/// Hydrates only realized Seerr card captions, using the same profile cache
+/// and in-flight coalescer as the detail screen. Never walks the whole shelf.
+class _SeerrCardMetadata extends StatefulWidget {
+  const _SeerrCardMetadata({
+    required this.item,
+    required this.catalogItem,
+    required this.builder,
+    this.compact = false,
+  });
+  final MediaItem item;
+  final CatalogItem catalogItem;
+  final bool compact;
+  final Widget Function(String) builder;
+  @override
+  State<_SeerrCardMetadata> createState() => _SeerrCardMetadataState();
+}
+
+class _SeerrCardMetadataState extends State<_SeerrCardMetadata> {
+  CatalogSourcesProvider? _provider;
+  String? _identity;
+  List<Object> _sources = const [];
+  Stream<List<MediaRatingSource>>? _ratings;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bind(context.watch<CatalogSourcesProvider?>());
+  }
+
+  @override
+  void didUpdateWidget(covariant _SeerrCardMetadata oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bind(_provider);
+  }
+
+  void _bind(CatalogSourcesProvider? provider) {
+    final identity = widget.catalogItem.identityKey;
+    final sources = provider?.connectedSources ?? const [];
+    final sameSources =
+        sources.length == _sources.length && sources.indexed.every((entry) => identical(entry.$2, _sources[entry.$1]));
+    if (identical(provider, _provider) && identity == _identity && sameSources) return;
+    _provider = provider;
+    _sources = sources;
+    _identity = identity;
+    _ratings = provider?.communityRatingsForCatalogItem(widget.catalogItem);
+  }
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<List<MediaRatingSource>>(
+    key: ValueKey(_identity),
+    stream: _ratings,
+    builder: (context, snapshot) => widget.builder(
+      _buildMediaMetadataLine(
+        widget.item,
+        catalogItem: widget.catalogItem,
+        compact: widget.compact,
+        seerrRating: catalogImdbRating(widget.catalogItem, snapshot.data ?? const []),
+      ),
+    ),
+  );
 }

@@ -33,7 +33,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _seekToNextChapter() => unawaited(_seekToChapter(forward: true));
 
   Future<void> _seekByTime({required bool forward}) async {
-    final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
+    final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeBackward);
     await _seekByOffset(delta);
   }
 
@@ -90,7 +90,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (isRepeat) _hiddenSeekRepeatCount++;
     final multiplier = isRepeat ? steppedSeekMultiplier(_hiddenSeekRepeatCount) : 1.0;
 
-    final stepMs = (_seekTimeSmall * 1000 * multiplier).clamp(500, 120_000).toInt();
+    final seconds = forward ? _seekTimeSmall : _seekTimeBackward;
+    final stepMs = (seconds * 1000 * multiplier).clamp(500, 120_000).toInt();
     _seekByWithFeedback(Duration(milliseconds: forward ? stepMs : -stepMs));
   }
 
@@ -138,7 +139,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }) async {
     if (!resolved.usedChapters) {
       // No chapters - seek by configured amount
-      await _seekByOffset(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall));
+      await _seekByOffset(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeBackward));
       return;
     }
     final target = resolved.target;
@@ -154,7 +155,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       // Going through _applyChapterSeek here would rebase each press off
       // player.state.position, so a burst would report a total it never
       // commits.
-      _seekByWithFeedback(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall));
+      _seekByWithFeedback(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeBackward));
       return;
     }
     if (resolved.target != null) {
@@ -791,7 +792,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // is about to put up.
     _hiddenSeek.cancel();
 
-    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeBackward);
     if (widget.isLive) {
       // Without a capture buffer there is no window to move within: the
       // stream is pinned to the live edge, and a raw player seek would only

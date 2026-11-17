@@ -1,0 +1,42 @@
+workflows:
+  tvos-sideload:
+    name: Build unsigned Apple TV IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      flutter: 3.47.1
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install locked Dart dependencies
+        script: flutter pub get --enforce-lockfile --no-example
+      - name: Validate source and run the complete Flutter suite
+        script: bash scripts/check_tvos_release.sh
+      - name: Prepare pinned tvOS Flutter engine
+        script: tvos/scripts/fetch_engine.sh
+      - name: Install CocoaPods dependencies
+        script: tvos/scripts/pod_install.sh
+      - name: Archive for Apple TV without signing
+        script: |
+          xcodebuild archive \
+            -workspace tvos/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -destination 'generic/platform=tvOS' \
+            -archivePath "$CM_BUILD_DIR/build/Plezy.xcarchive" \
+            -derivedDataPath "$CM_BUILD_DIR/build/DerivedData" \
+            -disableAutomaticPackageResolution \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+      - name: Package IPA for tvsign
+        script: |
+          app_path="$CM_BUILD_DIR/build/Plezy.xcarchive/Products/Applications/Runner.app"
+          test -d "$app_path"
+          bash tvos/scripts/prepare_sideload_entitlements.sh "$app_path"
+          mkdir -p "$CM_BUILD_DIR/build/ipa/Payload"
+          ditto "$app_path" "$CM_BUILD_DIR/build/ipa/Payload/Plezy.app"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$CM_BUILD_DIR/build/ipa/Payload" \
+            "$CM_BUILD_DIR/build/Plezy-tvOS.ipa"
+    artifacts:
+      - build/Plezy-tvOS.ipa

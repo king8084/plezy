@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
+import '../../providers/removed_continue_watching_provider.dart';
+import 'removed_continue_watching_screen.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -108,6 +110,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
         SettingsGroup(
           title: t.settings.homeScreen,
           children: [
+            if (PlatformDetector.isTV())
+              SettingSelectionTile<int>(
+                pref: SettingsService.homeTextSize,
+                icon: Symbols.format_size_rounded,
+                title: t.settings.homeTextSize,
+                subtitleBuilder: (value) => '$value%',
+                options: [
+                  for (final value in [85, 100, 115, 130, 150]) DialogOption(value: value, title: '$value%'),
+                ],
+              ),
             if (!PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.showHeroSection,
@@ -116,6 +128,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 subtitle: t.settings.showHeroSectionDescription,
               ),
             _continueWatchingActionSelector(),
+            if (context.watch<RemovedContinueWatchingProvider?>() != null)
+              SettingNavigationTile(
+                icon: Symbols.restore_rounded,
+                title: t.settings.removedContinueWatching,
+                subtitle: t.settings.removedContinueWatchingDescription,
+                destinationBuilder: (_) => const RemovedContinueWatchingScreen(),
+              ),
             _episodeActionSelector(),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
@@ -149,7 +168,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.alwaysKeepSidebarOpen,
                 subtitle: t.settings.alwaysKeepSidebarOpenDescription,
               ),
-            if (PlatformDetector.shouldUseSideNavigation(context))
+            // Sidebar items, pins and their order live in Settings → Home & Sidebar.
+            if (PlatformDetector.shouldUseSideNavigation(context) && !PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.groupLibrariesByServer,
                 icon: Symbols.dns_rounded,
@@ -226,9 +246,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               FocusableSlider(
                 value: density.toDouble(),
-                min: 1,
-                max: 5,
-                divisions: 4,
+                min: LibraryDensity.min.toDouble(),
+                max: LibraryDensity.max.toDouble(),
+                divisions: LibraryDensity.max - LibraryDensity.min,
                 onChanged: (v) => SettingsService.instance.write(SettingsService.libraryDensity, v.round()),
               ),
               Row(

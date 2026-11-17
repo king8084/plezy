@@ -222,6 +222,9 @@
     "gridView": "그리드 보기",
     "listView": "목록 보기",
     "showHeroSection": "주요 추천 영역 표시",
+    "removedContinueWatching": "",
+    "removedContinueWatchingDescription": "",
+    "restoreContinueWatching": "",
     "continueWatchingAction": "계속 보기 동작",
     "continueWatchingPlay": "재생",
     "continueWatchingDetails": "상세 정보 열기",
@@ -278,6 +281,8 @@
     "subtitleStyling": "자막 스타일",
     "subtitleStylingDescription": "자막 모양을 사용자 지정합니다",
     "smallSkipDuration": "짧은 건너뛰기 시간",
+    "forwardSkipDuration": "",
+    "backwardSkipDuration": "",
     "largeSkipDuration": "긴 건너뛰기 시간",
     "rewindOnResume": "재개 시 되감기",
     "secondsUnit": "${seconds}초",
@@ -411,6 +416,8 @@
     "matchDynamicRange": "다이나믹 레인지 맞춤",
     "matchDynamicRangeDescription": "HDR 콘텐츠에서는 HDR로 전환한 뒤 SDR로 되돌림",
     "displaySwitchDelay": "디스플레이 전환 지연",
+    "qmsFastStart": "",
+    "qmsFastStartDescription": "",
     "tunneledPlayback": "터널 재생",
     "tunneledPlaybackDescription": "비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이거나 움직임이 끊기면 비활성화하세요.",
     "audioPassthrough": "오디오 패스스루",
@@ -484,6 +491,7 @@
     "display": "디스플레이",
     "libraryAndCards": "라이브러리 및 카드",
     "homeScreen": "홈 화면",
+    "homeTextSize": "",
     "navigation": "탐색",
     "window": "창",
     "liveTv": "라이브 TV",
@@ -515,7 +523,28 @@
     "playerScopeGlobal": "모든 곳",
     "playerScopeLibrary": "라이브러리별",
     "playerScopeTitle": "시리즈 또는 영화별",
-    "exportDialogTitle": "Plezy 설정 내보내기"
+    "exportDialogTitle": "Plezy 설정 내보내기",
+    "pinnedHomeCollections": "",
+    "pinnedHomeCollectionsDescription": "",
+    "pinnedCollectionUnavailable": "",
+    "customizeSidebar": "",
+    "customizeSidebarDescription": "",
+    "pinToSidebar": "",
+    "unpinFromSidebar": "",
+    "sidebarMoveUp": "",
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": "",
+    "stillWatchingAfterEpisodes": "",
+    "stillWatchingAfterEpisodesOff": "",
+    "stillWatchingAfterEpisodesCount": "",
+    "episodesInARow": ""
   },
   "themeEditor": {
     "builtIn": "기본 제공",
@@ -566,7 +595,11 @@
     "tryDifferentTerm": "다른 검색어를 시도해 보세요",
     "searchYourMedia": "미디어 검색",
     "enterTitleActorOrKeyword": "제목, 배우 또는 키워드를 입력하세요",
-    "people": "인물"
+    "people": "인물",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}에 대한 단축키 설정",
@@ -727,6 +760,10 @@
     "viewDetails": "상세 정보 보기",
     "goToSeries": "시리즈로 이동",
     "shufflePlay": "무작위 재생",
+    "pinToHome": "",
+    "removeFromHome": "",
+    "pinnedToHome": "",
+    "removedFromHome": "",
     "shuffleNotAvailableOffline": "오프라인에서는 무작위 재생을 사용할 수 없습니다",
     "fileInfo": "파일 정보",
     "deleteEpisodeFromServer": "서버에서 에피소드 삭제",
@@ -758,6 +795,8 @@
     "mediaDeletedSuccessfully": "미디어 항목이 성공적으로 삭제되었습니다",
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
     "rate": "평가",
+    "addToFavorites": "",
+    "unfavorite": "",
     "playFromBeginning": "처음부터 재생",
     "playVersion": "버전 재생..."
   },
@@ -904,7 +943,10 @@
     "forcedTrack": "${label} (강제)",
     "osdSubtitlesOff": "자막: 꺼짐",
     "osdSubtitles": "자막: ${track}",
-    "osdAudio": "오디오: ${track}"
+    "osdAudio": "오디오: ${track}",
+    "markPlayedButton": "",
+    "markPlayedAndNextButton": "",
+    "markPlayedFailed": ""
   },
   "userStatus": {},
   "messages": {
@@ -1181,6 +1223,13 @@
     }
   },
   "discover": {
+    "topRatedUnwatched": "",
+    "becauseYouWatched": "",
+    "moveRowUp": "",
+    "moveRowDown": "",
+    "readFullDescription": "",
+    "readMore": "",
+    "noDescription": "",
     "title": "둘러보기",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",
     "addMediaToLibraries": "미디어 라이브러리에 미디어를 추가해 주세요",
@@ -1205,7 +1254,10 @@
     "movie": "영화",
     "tvShow": "TV 시리즈",
     "minutesLeft": "${minutes}분 남음",
+    "durationLeft": "",
     "moreLikeThis": "비슷한 콘텐츠",
+    "moreLikeThisOwned": "",
+    "moreLikeThisRequest": "",
     "titleCount": {
       "other": "${n}개 타이틀"
     },
@@ -1215,7 +1267,9 @@
       "birthplace": "출생지",
       "dateWithAge": "${date} (${age}세)",
       "dateWithAgeAtDeath": "${date} (향년 ${age}세)"
-    }
+    },
+    "moreLikeThisSimkl": "",
+    "needRequest": ""
   },
   "errors": {
     "searchFailed": "검색 실패: ${error}",
@@ -1387,7 +1441,15 @@
   "logs": {
     "clearLogs": "로그 지우기",
     "copyLogs": "로그 복사",
-    "uploadLogs": "로그 업로드"
+    "uploadLogs": "로그 업로드",
+    "sharePlaybackDiagnostics": "",
+    "playbackDiagnosticsConsent": "",
+    "enableSharing": "",
+    "stopSharing": "",
+    "copyLink": "",
+    "playbackDiagnosticsLink": "",
+    "playbackDiagnosticsLinkDescription": "",
+    "playbackDiagnosticsShareFailed": ""
   },
   "startup": {
     "failedTitle": "Plezy를 시작하지 못했습니다",

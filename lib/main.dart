@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
+import 'services/tv_playback_diagnostics.dart';
 import 'package:flutter/foundation.dart';
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
@@ -34,6 +35,7 @@ import 'profiles/plex_home_service.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
+import 'services/smart_search/smart_search_client.dart';
 import 'services/storage_service.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
@@ -981,6 +983,11 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
       ).wait;
     });
 
+    if (PlatformDetector.isAppleTV()) {
+      MemoryLogOutput.playbackDiagnosticSink = TvPlaybackDiagnostics.instance.record;
+      unawaited(TvPlaybackDiagnostics.instance.initialize().catchError((Object _) {}));
+    }
+
     if (userAuthorities != null) {
       await _optionalGatePhase(StartupPhase.certificateTrust, () => userAuthorities);
     }
@@ -1398,7 +1405,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     });
 
     _serverManager = MultiServerManager();
-    _aggregationService = DataAggregationService(_serverManager);
+    _aggregationService = DataAggregationService(_serverManager, smartSearch: SmartSearchClient());
     _libraryEventService = LibraryEventService(_serverManager);
     _appDatabase = widget.appDatabase;
 
