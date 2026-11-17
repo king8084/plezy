@@ -598,7 +598,8 @@
     "people": "Persone",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Imposta una scorciatoia per ${actionName}",

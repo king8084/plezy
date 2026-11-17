@@ -33,6 +33,10 @@ class SearchInputField extends StatefulWidget {
   final VoidCallback? onEditingComplete;
   final VoidCallback? onBack;
 
+  /// Shows a microphone button that starts dictation (system keyboard).
+  final VoidCallback? onVoiceInput;
+  final String? voiceInputTooltip;
+
   const SearchInputField({
     super.key,
     required this.controller,
@@ -46,6 +50,8 @@ class SearchInputField extends StatefulWidget {
     this.onNavigateDown,
     this.onEditingComplete,
     this.onBack,
+    this.onVoiceInput,
+    this.voiceInputTooltip,
   });
 
   @override
@@ -54,10 +60,12 @@ class SearchInputField extends StatefulWidget {
 
 class _SearchInputFieldState extends State<SearchInputField> {
   late final FocusNode _clearFocusNode = FocusNode(debugLabel: '${widget.debugLabel}.clear');
+  late final FocusNode _voiceFocusNode = FocusNode(debugLabel: '${widget.debugLabel}.voice');
 
   @override
   void dispose() {
     _clearFocusNode.dispose();
+    _voiceFocusNode.dispose();
     super.dispose();
   }
 
@@ -69,6 +77,8 @@ class _SearchInputFieldState extends State<SearchInputField> {
   @override
   Widget build(BuildContext context) {
     final hasText = widget.controller.text.isNotEmpty;
+    final hasVoice = widget.onVoiceInput != null;
+    final buttons = (hasText ? 1 : 0) + (hasVoice ? 1 : 0);
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: Stack(
@@ -82,7 +92,11 @@ class _SearchInputFieldState extends State<SearchInputField> {
             tvTextInputAutoOpenBehavior: widget.tvTextInputAutoOpenBehavior,
             textInputAction: TextInputAction.search,
             onNavigateLeft: widget.onNavigateLeft,
-            onNavigateRight: hasText ? _clearFocusNode.requestFocus : null,
+            onNavigateRight: hasVoice
+                ? _voiceFocusNode.requestFocus
+                : hasText
+                ? _clearFocusNode.requestFocus
+                : null,
             onNavigateDown: widget.onNavigateDown,
             onEditingComplete: widget.onEditingComplete,
             onBack: widget.onBack,
@@ -90,18 +104,37 @@ class _SearchInputFieldState extends State<SearchInputField> {
               context,
               hintText: widget.hintText,
               prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-              suffixIcon: hasText ? const SizedBox(width: 48) : null,
+              suffixIcon: buttons > 0 ? SizedBox(width: 48.0 * buttons) : null,
             ),
           ),
-          if (hasText)
-            FocusableButton(
-              focusNode: _clearFocusNode,
-              onPressed: _clearSearch,
-              onNavigateLeft: widget.focusNode.requestFocus,
-              onNavigateDown: widget.onNavigateDown,
-              autoScroll: false,
-              child: IconButton(icon: const AppIcon(Symbols.clear_rounded, fill: 1), onPressed: _clearSearch),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasVoice)
+                FocusableButton(
+                  focusNode: _voiceFocusNode,
+                  onPressed: widget.onVoiceInput!,
+                  onNavigateLeft: widget.focusNode.requestFocus,
+                  onNavigateRight: hasText ? _clearFocusNode.requestFocus : null,
+                  onNavigateDown: widget.onNavigateDown,
+                  autoScroll: false,
+                  child: IconButton(
+                    icon: const AppIcon(Symbols.mic_rounded, fill: 1),
+                    tooltip: widget.voiceInputTooltip,
+                    onPressed: widget.onVoiceInput,
+                  ),
+                ),
+              if (hasText)
+                FocusableButton(
+                  focusNode: _clearFocusNode,
+                  onPressed: _clearSearch,
+                  onNavigateLeft: hasVoice ? _voiceFocusNode.requestFocus : widget.focusNode.requestFocus,
+                  onNavigateDown: widget.onNavigateDown,
+                  autoScroll: false,
+                  child: IconButton(icon: const AppIcon(Symbols.clear_rounded, fill: 1), onPressed: _clearSearch),
+                ),
+            ],
+          ),
         ],
       ),
     );

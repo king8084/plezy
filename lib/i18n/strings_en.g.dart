@@ -1703,6 +1703,9 @@ class Translations$search$en {
 
 	/// en: 'Possible matches'
 	String get possibleMatches => 'Possible matches';
+
+	/// en: 'Voice search (dictation)'
+	String get voiceSearch => 'Voice search (dictation)';
 }
 
 // Path: hotkeys
@@ -8867,6 +8870,7 @@ extension on Translations {
 			'search.findingSmartMatches' => 'Finding smart matches…',
 			'search.smartMatches' => 'Smart matches',
 			'search.possibleMatches' => 'Possible matches',
+			'search.voiceSearch' => 'Voice search (dictation)',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -9321,9 +9325,9 @@ extension on Translations {
 			'profiles.removeConnectionTitle' => 'Remove connection?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
-			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
 			'profiles.pinProtectionLabel' => 'PIN protection',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
@@ -9835,9 +9839,9 @@ extension on Translations {
 			'liveTv.premiereBadge' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
-			'liveTv.searchHint' => 'Search channels & programs',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.searchHint' => 'Search channels & programs',
 			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.channelsSection' => 'Channels',
 			'liveTv.programsSection' => 'Programs',
@@ -10349,9 +10353,9 @@ extension on Translations {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
-			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
 			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',

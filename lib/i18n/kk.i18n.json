@@ -598,7 +598,8 @@
     "people": "Адамдар",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} үшін пернелер тіркесін орнату",

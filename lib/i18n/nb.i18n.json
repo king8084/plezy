@@ -598,7 +598,8 @@
     "people": "Personer",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Angi snarvei for ${actionName}",

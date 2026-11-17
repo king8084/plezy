@@ -598,7 +598,8 @@
     "people": "Személyek",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Billentyűparancs beállítása ehhez: ${actionName}",

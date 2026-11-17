@@ -598,7 +598,8 @@
     "people": "Pessoas",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Definir Atalho para ${actionName}",

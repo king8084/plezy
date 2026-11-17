@@ -598,7 +598,8 @@
     "people": "People",
     "findingSmartMatches": "Finding smart matches…",
     "smartMatches": "Smart matches",
-    "possibleMatches": "Possible matches"
+    "possibleMatches": "Possible matches",
+    "voiceSearch": "Voice search (dictation)"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",

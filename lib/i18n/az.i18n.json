@@ -598,7 +598,8 @@
     "people": "Şəxslər",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",

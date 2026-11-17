@@ -598,7 +598,8 @@
     "people": "人物",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",

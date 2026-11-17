@@ -598,7 +598,8 @@
     "people": "Хора",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Задай клавишна комбинация за ${actionName}",

@@ -598,7 +598,8 @@
     "people": "Люди",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",

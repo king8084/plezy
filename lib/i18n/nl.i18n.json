@@ -598,7 +598,8 @@
     "people": "Personen",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",

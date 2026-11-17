@@ -598,7 +598,8 @@
     "people": "Personas",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Establecer atajo para ${actionName}",

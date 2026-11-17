@@ -598,7 +598,8 @@
     "people": "Odamlar",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} uchun tugmalar birlashmasini oʻrnatish",

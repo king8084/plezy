@@ -84,6 +84,11 @@ class _SearchScreenState extends State<SearchScreen>
   /// Meaning-based suggestions from the household smart-search index, shown
   /// as a section *after* the instant results so focus and the visible list
   /// never move when they arrive. Only for descriptive (3+ word) requests.
+  /// Dictation: the 🎤 button switches this one session to the system
+  /// keyboard (its remote microphone dictates); leaving the field switches
+  /// back to the docked keyboard.
+  bool _voiceInputActive = false;
+
   List<SmartSuggestion> _smartSuggestions = const [];
   bool _smartLoading = false;
   AbortController? _smartAbort;
@@ -92,12 +97,14 @@ class _SearchScreenState extends State<SearchScreen>
   void initState() {
     super.initState();
     FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
+    searchFocusNode.addListener(_onSearchFocusChanged);
     unawaited(_bindHiddenLibraries());
   }
 
   @override
   void dispose() {
     _smartAbort?.abort();
+    searchFocusNode.removeListener(_onSearchFocusChanged);
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
@@ -303,7 +310,19 @@ class _SearchScreenState extends State<SearchScreen>
     FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
   }
 
-  bool get _usesDockedKeyboard => SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
+  bool get _usesDockedKeyboard =>
+      !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
+
+  void _onSearchFocusChanged() {
+    if (!searchFocusNode.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
+  }
+
+  void _startVoiceInput() {
+    setState(() => _voiceInputActive = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _tvTextInputController.focusAndOpenTextInput();
+    });
+  }
 
   /// OSK "Search" / hardware Enter on TV additionally focuses the results
   /// when the forced search lands.
@@ -686,12 +705,22 @@ class _SearchScreenState extends State<SearchScreen>
                 debugLabel: searchDebugLabel,
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
-                tvTextInputPresentation: SearchScreen.keyboardPresentation,
+                tvTextInputPresentation: _voiceInputActive
+                    ? TvTextInputPresentation.platform
+                    : SearchScreen.keyboardPresentation,
                 // The docked keyboard opens on Select, not merely on arriving at
                 // the tab, so landing on Search never hides the screen.
                 tvTextInputAutoOpenBehavior: _usesDockedKeyboard
                     ? TvTextInputAutoOpenBehavior.never
                     : TvTextInputAutoOpenBehavior.automatic,
+                // Dictation needs the system keyboard; only offered where the
+                // docked keyboard replaced it (Apple TV).
+                onVoiceInput:
+                    PlatformDetector.isAppleTV() &&
+                        SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
+                    ? _startVoiceInput
+                    : null,
+                voiceInputTooltip: t.search.voiceSearch,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: searchResults.isNotEmpty && !isSearching
                     ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)

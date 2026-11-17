@@ -259,6 +259,27 @@ void main() {
       expect(client.queries, ['movie']);
     });
 
+    testWidgets('the microphone button switches this session to the system keyboard for dictation', (tester) async {
+      await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      TvTextInputPresentation presentation() =>
+          tester.widget<FocusableTextField>(find.byType(FocusableTextField)).tvTextInputPresentation;
+      expect(presentation(), TvTextInputPresentation.flutterOverlay);
+
+      await tester.tap(find.byTooltip(t.search.voiceSearch));
+      await tester.pumpAndSettle();
+      expect(presentation(), TvTextInputPresentation.platform);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      expect(
+        presentation(),
+        TvTextInputPresentation.flutterOverlay,
+        reason: 'leaving the field restores the docked keyboard',
+      );
+    });
+
     testWidgets('a search sent from the phone closes the keyboard and focuses results', (tester) async {
       final (client, key) = await openKeyboard(tester);
       (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');

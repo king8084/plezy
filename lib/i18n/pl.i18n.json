@@ -598,7 +598,8 @@
     "people": "Osoby",
     "findingSmartMatches": "",
     "smartMatches": "",
-    "possibleMatches": ""
+    "possibleMatches": "",
+    "voiceSearch": ""
   },
   "hotkeys": {
     "setShortcutFor": "Ustaw skrót dla ${actionName}",
