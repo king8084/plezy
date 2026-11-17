@@ -8,7 +8,6 @@ import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/removed_continue_watching_provider.dart';
 import 'removed_continue_watching_screen.dart';
-import 'pinned_home_collections_screen.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -23,7 +22,6 @@ import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
 import 'settings_utils.dart';
 import 'theme_settings_screen.dart';
-import 'sidebar_order_sheet.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
   const AppearanceSettingsScreen({super.key});
@@ -138,12 +136,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 destinationBuilder: (_) => const RemovedContinueWatchingScreen(),
               ),
             _episodeActionSelector(),
-            SettingNavigationTile(
-              icon: Symbols.push_pin_rounded,
-              title: t.settings.pinnedHomeCollections,
-              subtitle: t.settings.pinnedHomeCollectionsDescription,
-              destinationBuilder: (_) => const PinnedHomeCollectionsScreen(),
-            ),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,
@@ -176,26 +168,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.alwaysKeepSidebarOpen,
                 subtitle: t.settings.alwaysKeepSidebarOpenDescription,
               ),
-            if (PlatformDetector.shouldUseSideNavigation(context)) ...[
-              if (!PlatformDetector.isTV()) ...[
-                SettingSwitchTile(
-                  pref: SettingsService.pinFavoritesToSidebar,
-                  icon: Symbols.favorite_rounded,
-                  title: t.settings.pinFavoritesToSidebar,
-                ),
-                SettingSwitchTile(
-                  pref: SettingsService.pinCollectionsToSidebar,
-                  icon: Symbols.collections_rounded,
-                  title: t.settings.pinCollectionsToSidebar,
-                ),
-              ],
-              SettingNavigationTile(
-                icon: Symbols.tune_rounded,
-                title: t.settings.customizeSidebar,
-                subtitle: t.settings.customizeSidebarDescription,
-                onTap: () => OverlaySheetController.showAdaptive(context, builder: (_) => const SidebarOrderSheet()),
-              ),
-            ],
+            // Sidebar items, pins and their order live in Settings → Home & Sidebar.
             if (PlatformDetector.shouldUseSideNavigation(context) && !PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.groupLibrariesByServer,

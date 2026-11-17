@@ -5,8 +5,13 @@ import 'dart:math';
 
 import 'package:path_provider/path_provider.dart';
 
+import '../utils/app_logger.dart';
+
 /// Bounded, app-private playback traces. LAN sharing is explicitly enabled in
-/// View Logs and serves only these traces, never the full application log.
+/// View Logs. `/diagnostics` serves these traces; `/applog` serves the recent
+/// in-memory application log, which is redacted as it is written (tokens,
+/// server URLs and registered secrets never appear). The owner asked for the
+/// application log so problems beyond playback start can be debugged.
 class TvPlaybackDiagnostics {
   TvPlaybackDiagnostics({this.directory, this.fileBytes = 256 * 1024, this.fileCount = 4})
     : assert(fileBytes >= 256),
@@ -166,18 +171,39 @@ class TvPlaybackDiagnostics {
     return difference == 0;
   }
 
+  /// The newest [lines] application log entries, oldest first. Entries are
+  /// already redacted by [MemoryAwareLogPrinter] when they are recorded.
+  static String applicationLog(int lines) {
+    final entries = MemoryLogOutput.getLogs().take(lines.clamp(1, 5000)).toList().reversed;
+    final out = StringBuffer();
+    for (final entry in entries) {
+      out
+        ..write(entry.timestamp.toUtc().toIso8601String())
+        ..write(' [')
+        ..write(entry.level.name.toUpperCase())
+        ..write('] ')
+        ..writeln(entry.message);
+      if (entry.error != null) out.writeln('  error: ${entry.error}');
+    }
+    return out.toString();
+  }
+
   Future<void> _handle(HttpRequest request) async {
     try {
       request.response.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
       if (!_authorized(request.uri.queryParameters['key'])) {
         request.response.statusCode = HttpStatus.forbidden;
-      } else if (request.uri.path != '/diagnostics') {
+      } else if (request.uri.path != '/diagnostics' && request.uri.path != '/applog') {
         request.response.statusCode = HttpStatus.notFound;
       } else if (request.method != 'GET') {
         request.response.statusCode = HttpStatus.methodNotAllowed;
       } else {
         request.response.headers.contentType = ContentType.text;
-        request.response.write(await read());
+        request.response.write(
+          request.uri.path == '/applog'
+              ? applicationLog(int.tryParse(request.uri.queryParameters['lines'] ?? '') ?? 1500)
+              : await read(),
+        );
       }
       await request.response.close();
     } catch (_) {

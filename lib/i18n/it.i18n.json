@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Mostra sempre i nomi dei server nei titoli delle sezioni.",
     "groupLibrariesByServer": "Raggruppa le librerie per server",
     "groupLibrariesByServerDescription": "Raggruppa le librerie della barra laterale sotto ciascun server multimediale.",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Mantieni sempre aperta la barra laterale",
     "alwaysKeepSidebarOpenDescription": "La barra laterale rimane espansa e l'area del contenuto si adatta",
     "showUnwatchedCount": "Mostra il numero di episodi non visti",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "Integrati",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",

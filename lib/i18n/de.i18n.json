@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Servernamen immer in Hub-Titeln anzeigen.",
     "groupLibrariesByServer": "Mediatheken nach Server gruppieren",
     "groupLibrariesByServerDescription": "Sidebar-Bibliotheken nach Medienserver gruppieren.",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Seitenleiste immer geöffnet halten",
     "alwaysKeepSidebarOpenDescription": "Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an",
     "showUnwatchedCount": "Anzahl nicht gesehener Folgen anzeigen",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "Integriert",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",

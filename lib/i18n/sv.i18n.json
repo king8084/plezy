@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Visa alltid servernamnet i innehållssektionernas rubriker.",
     "groupLibrariesByServer": "Gruppera bibliotek efter server",
     "groupLibrariesByServerDescription": "Gruppera biblioteken i sidofältet under respektive medieserver.",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Håll alltid sidofältet öppet",
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir utfällt och innehållsytan anpassas efter det",
     "showUnwatchedCount": "Visa antal osedda",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "Inbyggda",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",

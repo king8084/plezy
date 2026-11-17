@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/tv_playback_diagnostics.dart';
+import 'package:plezy/utils/app_logger.dart';
+import 'package:plezy/utils/log_redaction_manager.dart';
 
 void main() {
   late Directory directory;
@@ -84,5 +86,24 @@ void main() {
     await stopped.enableSharing();
     expect(stopped.urlFor('127.0.0.1'), privateUrl, reason: 'stopping sharing must not invalidate the saved link');
     await stopped.close();
+  });
+
+  test('application log is served with the private key only, already redacted', () async {
+    await diagnostics.initialize();
+    await diagnostics.enableSharing();
+    LogRedactionManager.registerToken('super-secret-token-123');
+    appLogger.i('Search completed with token super-secret-token-123 in 42ms');
+    final base = 'http://127.0.0.1:${diagnostics.port}/applog';
+    final key = Uri.parse(diagnostics.urlFor('127.0.0.1')).queryParameters['key']!;
+    final client = HttpClient();
+    addTearDown(client.close);
+    final denied = await (await client.getUrl(Uri.parse(base))).close();
+    expect(denied.statusCode, HttpStatus.forbidden);
+    await denied.drain<void>();
+    final allowed = await (await client.getUrl(Uri.parse('$base?key=$key&lines=50'))).close();
+    expect(allowed.statusCode, HttpStatus.ok);
+    final body = await allowed.transform(const SystemEncoding().decoder).join();
+    expect(body, contains('Search completed with token'));
+    expect(body, isNot(contains('super-secret-token-123')));
   });
 }

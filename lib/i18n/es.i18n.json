@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Mostrar siempre el nombre del servidor en los títulos de las secciones.",
     "groupLibrariesByServer": "Agrupar bibliotecas por servidor",
     "groupLibrariesByServerDescription": "Agrupar bibliotecas de la barra lateral por servidor multimedia.",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Mantener siempre la barra lateral abierta",
     "alwaysKeepSidebarOpenDescription": "La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse",
     "showUnwatchedCount": "Mostrar el número de elementos no vistos",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",

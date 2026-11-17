@@ -1048,6 +1048,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const homePinnedCollections = StringListPref('home_pinned_collections');
   static const homePinnedCollectionMetadata = StringListPref('home_pinned_collection_metadata');
   static const homeRowOrder = StringListPref('home_row_order');
+
+  /// Home rows the user hid in Settings → Home & Sidebar (see homeRowKey).
+  static const homeRowHidden = StringListPref('home_row_hidden');
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1674,6 +1677,7 @@ class SettingsService extends BaseSharedPreferencesService {
     homePinnedCollections,
     homePinnedCollectionMetadata,
     homeRowOrder,
+    homeRowHidden,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

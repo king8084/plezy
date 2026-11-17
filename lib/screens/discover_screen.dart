@@ -18,6 +18,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
+import '../utils/home_rows.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
@@ -207,88 +208,30 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
   // fast path — and the cached rail widget below — kick in.
   List<MediaHub>? _tvBrowseHubsCache;
-  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+  (List<MediaItem>, List<MediaHub>, bool, String, String, String)? _tvBrowseHubsCacheKey;
 
   List<MediaHub> get _tvBrowseHubs {
-    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
+    // The saved order and hidden rows (Settings → Home & Sidebar) are part of
+    // the key, so a change made in Settings shows on the next build.
+    final order = SettingsService.instance.read(SettingsService.homeRowOrder);
+    final hidden = SettingsService.instance.read(SettingsService.homeRowHidden);
+    final key = (
+      _onDeck,
+      _hubs,
+      _hasMoreContinueWatching,
+      t.discover.continueWatching,
+      order.join('\u001e'),
+      hidden.join('\u001e'),
+    );
     if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
     final hubs = <MediaHub>[];
     if (_onDeck.isNotEmpty) {
       hubs.add(_continueWatchingHub);
     }
     hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
-    final saved = SettingsService.instance.read(SettingsService.homeRowOrder);
-    final positions = {for (var i = 0; i < saved.length; i++) saved[i]: i};
-    final indexed = [for (var i = 0; i < hubs.length; i++) (index: i, hub: hubs[i])];
-    indexed.sort((a, b) {
-      final aPos = positions[_homeRowKey(a.hub)] ?? saved.length + a.index;
-      final bPos = positions[_homeRowKey(b.hub)] ?? saved.length + b.index;
-      return aPos.compareTo(bPos);
-    });
-    _tvBrowseHubsCache = [for (final entry in indexed) entry.hub];
+    _tvBrowseHubsCache = orderHomeRows(hubs, order: order, hidden: hidden.toSet());
     _tvBrowseHubsCacheKey = key;
     return _tvBrowseHubsCache!;
-  }
-
-  String _homeRowKey(MediaHub hub) => '${hub.serverId ?? ''}\u001f${hub.id}\u001f${hub.libraryId ?? ''}';
-
-  Future<void> _reorderHomeRows() async {
-    final rows = List<MediaHub>.of(_tvBrowseHubs);
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, updateDialog) => AlertDialog(
-          title: Text(t.discover.reorderHomeRows),
-          content: SizedBox(
-            width: 580,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: rows.length,
-              findChildIndexCallback: (key) {
-                final index = rows.indexWhere((row) => ValueKey(_homeRowKey(row)) == key);
-                return index < 0 ? null : index;
-              },
-              itemBuilder: (context, index) => ListTile(
-                key: ValueKey(_homeRowKey(rows[index])),
-                title: Text(rows[index].title),
-                subtitle: rows[index].serverName == null ? null : Text(rows[index].serverName!),
-                trailing: FocusableActionBar(
-                  actions: [
-                    FocusableAction(
-                      icon: Symbols.arrow_upward_rounded,
-                      tooltip: t.discover.moveRowUp,
-                      onPressed: index == 0
-                          ? null
-                          : () => updateDialog(() {
-                              final row = rows.removeAt(index);
-                              rows.insert(index - 1, row);
-                            }),
-                    ),
-                    FocusableAction(
-                      icon: Symbols.arrow_downward_rounded,
-                      tooltip: t.discover.moveRowDown,
-                      onPressed: index == rows.length - 1
-                          ? null
-                          : () => updateDialog(() {
-                              final row = rows.removeAt(index);
-                              rows.insert(index + 1, row);
-                            }),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.save))],
-        ),
-      ),
-    );
-    final order = rows.map(_homeRowKey).toList();
-    final previous = SettingsService.instance.read(SettingsService.homeRowOrder);
-    order.addAll(previous.where((key) => !order.contains(key)));
-    await SettingsService.instance.write(SettingsService.homeRowOrder, order);
-    if (!mounted) return;
-    setState(() => _tvBrowseHubsCache = null);
   }
 
   /// The synthesized Continue Watching row, rendered ahead of the backend hubs
@@ -967,16 +910,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   if (PlatformDetector.isTV())
                     FocusableAction(
-                      tooltip: t.discover.reorderHomeRows,
-                      onPressed: () => unawaited(_reorderHomeRows()),
+                      tooltip: t.common.search,
+                      onPressed: () => MainScreenFocusScope.openSearchOf(context),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            AppIcon(Symbols.swap_vert_rounded, color: foregroundColor),
+                            AppIcon(Symbols.search_rounded, color: foregroundColor),
                             const SizedBox(width: 4),
-                            Text(t.discover.reorderRows, style: TextStyle(color: foregroundColor)),
+                            Text(t.common.search, style: TextStyle(color: foregroundColor)),
                           ],
                         ),
                       ),
@@ -1093,7 +1036,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showHeroSection = svc.read(SettingsService.showHeroSection);
 
     if (PlatformDetector.isTV()) {
-      return _buildTvContent(context);
+      // Row order / hidden rows edited in Settings → Home & Sidebar.
+      return SettingsBuilder(
+        prefs: const [SettingsService.homeRowOrder, SettingsService.homeRowHidden],
+        builder: _buildTvContent,
+      );
     }
 
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);

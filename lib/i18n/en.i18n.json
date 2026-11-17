@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Always show server names in hub titles.",
     "groupLibrariesByServer": "Group Libraries by Server",
     "groupLibrariesByServerDescription": "Group sidebar libraries under each media server.",
-    "pinFavoritesToSidebar": "Pin Favorites to Sidebar",
-    "pinCollectionsToSidebar": "Pin Collections to Sidebar",
     "alwaysKeepSidebarOpen": "Always Keep Sidebar Open",
     "alwaysKeepSidebarOpenDescription": "Sidebar stays expanded and content area adjusts to fit",
     "showUnwatchedCount": "Show Unwatched Count",
@@ -534,7 +532,15 @@
     "pinToSidebar": "Pin to sidebar",
     "unpinFromSidebar": "Unpin from sidebar",
     "sidebarMoveUp": "Move up",
-    "sidebarMoveDown": "Move down"
+    "sidebarMoveDown": "Move down",
+    "homeAndSidebar": "Home & Sidebar",
+    "homeAndSidebarDescription": "Home rows, sidebar, pinned collections and libraries",
+    "homeRows": "Home rows",
+    "homeRowsEmpty": "Open Home once to load its rows, then come back here.",
+    "sidebarAndLibraries": "Sidebar and libraries",
+    "hiddenFromHome": "Hidden from Home",
+    "showRowOnHome": "Show on Home",
+    "hideRowFromHome": "Hide from Home"
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "Reorder Home rows",
-    "reorderRows": "Reorder rows",
     "moveRowUp": "Move up",
     "moveRowDown": "Move down",
     "readFullDescription": "Read full description",

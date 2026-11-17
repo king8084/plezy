@@ -659,12 +659,6 @@ class Translations$settings$en {
 	/// en: 'Group sidebar libraries under each media server.'
 	String get groupLibrariesByServerDescription => 'Group sidebar libraries under each media server.';
 
-	/// en: 'Pin Favorites to Sidebar'
-	String get pinFavoritesToSidebar => 'Pin Favorites to Sidebar';
-
-	/// en: 'Pin Collections to Sidebar'
-	String get pinCollectionsToSidebar => 'Pin Collections to Sidebar';
-
 	/// en: 'Always Keep Sidebar Open'
 	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
 
@@ -1552,6 +1546,30 @@ class Translations$settings$en {
 
 	/// en: 'Move down'
 	String get sidebarMoveDown => 'Move down';
+
+	/// en: 'Home & Sidebar'
+	String get homeAndSidebar => 'Home & Sidebar';
+
+	/// en: 'Home rows, sidebar, pinned collections and libraries'
+	String get homeAndSidebarDescription => 'Home rows, sidebar, pinned collections and libraries';
+
+	/// en: 'Home rows'
+	String get homeRows => 'Home rows';
+
+	/// en: 'Open Home once to load its rows, then come back here.'
+	String get homeRowsEmpty => 'Open Home once to load its rows, then come back here.';
+
+	/// en: 'Sidebar and libraries'
+	String get sidebarAndLibraries => 'Sidebar and libraries';
+
+	/// en: 'Hidden from Home'
+	String get hiddenFromHome => 'Hidden from Home';
+
+	/// en: 'Show on Home'
+	String get showRowOnHome => 'Show on Home';
+
+	/// en: 'Hide from Home'
+	String get hideRowFromHome => 'Hide from Home';
 }
 
 // Path: themeEditor
@@ -3357,12 +3375,6 @@ class Translations$discover$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
-
-	/// en: 'Reorder Home rows'
-	String get reorderHomeRows => 'Reorder Home rows';
-
-	/// en: 'Reorder rows'
-	String get reorderRows => 'Reorder rows';
 
 	/// en: 'Move up'
 	String get moveRowUp => 'Move up';
@@ -8487,8 +8499,6 @@ extension on Translations {
 			'settings.showServerNameOnHubsDescription' => 'Always show server names in hub titles.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
 			'settings.groupLibrariesByServerDescription' => 'Group sidebar libraries under each media server.',
-			'settings.pinFavoritesToSidebar' => 'Pin Favorites to Sidebar',
-			'settings.pinCollectionsToSidebar' => 'Pin Collections to Sidebar',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
@@ -8784,9 +8794,17 @@ extension on Translations {
 			'settings.pinToSidebar' => 'Pin to sidebar',
 			'settings.unpinFromSidebar' => 'Unpin from sidebar',
 			'settings.sidebarMoveUp' => 'Move up',
+			'settings.sidebarMoveDown' => 'Move down',
+			'settings.homeAndSidebar' => 'Home & Sidebar',
 			_ => null,
 		} ?? switch (path) {
-			'settings.sidebarMoveDown' => 'Move down',
+			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
+			'settings.homeRows' => 'Home rows',
+			'settings.homeRowsEmpty' => 'Open Home once to load its rows, then come back here.',
+			'settings.sidebarAndLibraries' => 'Sidebar and libraries',
+			'settings.hiddenFromHome' => 'Hidden from Home',
+			'settings.showRowOnHome' => 'Show on Home',
+			'settings.hideRowFromHome' => 'Hide from Home',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -9292,14 +9310,14 @@ extension on Translations {
 			'profiles.pinProtectionLabel' => 'PIN protection',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
 			'profiles.pinSet' => 'PIN set',
 			'profiles.changePin' => 'Change',
 			'profiles.removePin' => 'Remove',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
@@ -9401,8 +9419,6 @@ extension on Translations {
 			'accountPreferences.mediaReviewsOptions.usersOnly' => 'Users only',
 			'accountPreferences.mediaReviewsOptions.criticsOnly' => 'Critics only',
 			'accountPreferences.mediaReviewsOptions.nobody' => 'Hidden',
-			'discover.reorderHomeRows' => 'Reorder Home rows',
-			'discover.reorderRows' => 'Reorder rows',
 			'discover.moveRowUp' => 'Move up',
 			'discover.moveRowDown' => 'Move down',
 			'discover.readFullDescription' => 'Read full description',
@@ -9808,12 +9824,12 @@ extension on Translations {
 			'liveTv.channelsSection' => 'Channels',
 			'liveTv.programsSection' => 'Programs',
 			'liveTv.now' => 'Now',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.today' => 'Today',
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
@@ -10322,12 +10338,12 @@ extension on Translations {
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
 			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',
 			'videoSettings.hdrToneMappingCompositor' => 'Compositor',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.hdrToneMappingCompositorDescription' => 'Pass the source\'s HDR metadata through and let the desktop compositor map it.',
 			'videoSettings.hdrToneMappingPlayer' => 'Player',
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',

@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "Boʻlim sarlavhalarida har doim server nomini koʻrsatish.",
     "groupLibrariesByServer": "Kutubxonalarni server boʻyicha guruhlash",
     "groupLibrariesByServerDescription": "Yon menyudagi kutubxonalarni serverlar boʻyicha guruhlash.",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "Yon menyuni har doim ochiq saqlash",
     "alwaysKeepSidebarOpenDescription": "Yon menyu ochiq holatda qoladi, kontent maydoni unga moslashadi",
     "showUnwatchedCount": "Koʻrilmaganlar sonini koʻrsatish",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "Oʻrnatilgan",
@@ -1216,8 +1222,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",

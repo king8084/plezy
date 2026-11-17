@@ -237,8 +237,6 @@
     "showServerNameOnHubsDescription": "一律在推薦區標題中顯示伺服器名稱。",
     "groupLibrariesByServer": "依伺服器將媒體庫分組",
     "groupLibrariesByServerDescription": "將側邊欄中的媒體庫依伺服器進行分組。",
-    "pinFavoritesToSidebar": "",
-    "pinCollectionsToSidebar": "",
     "alwaysKeepSidebarOpen": "一律保持側邊欄展開",
     "alwaysKeepSidebarOpenDescription": "側邊欄保持展開狀態，內容區域自動調整",
     "showUnwatchedCount": "顯示未觀看數量",
@@ -534,7 +532,15 @@
     "pinToSidebar": "",
     "unpinFromSidebar": "",
     "sidebarMoveUp": "",
-    "sidebarMoveDown": ""
+    "sidebarMoveDown": "",
+    "homeAndSidebar": "",
+    "homeAndSidebarDescription": "",
+    "homeRows": "",
+    "homeRowsEmpty": "",
+    "sidebarAndLibraries": "",
+    "hiddenFromHome": "",
+    "showRowOnHome": "",
+    "hideRowFromHome": ""
   },
   "themeEditor": {
     "builtIn": "內建",
@@ -1212,8 +1218,6 @@
     }
   },
   "discover": {
-    "reorderHomeRows": "",
-    "reorderRows": "",
     "moveRowUp": "",
     "moveRowDown": "",
     "readFullDescription": "",
