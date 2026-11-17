@@ -59,11 +59,14 @@ a permanent background service or scheduler automatically.
 On November 16 the owner approved the full-library index and an always-on
 service in one dedicated Docker container (`plezy-smartsearch`) that the owner
 creates by pasting a reviewed command. It writes only to `smartsearch/live`;
-code, config and models are mounted read-only. Never delete any file on
-Unraid, ever, including SQLite side files: use PERSIST journals there (never
-WAL), write status files in place, and update code by reloading the mounted
-folder instead of replacing the container. Stage files locally and copy only
-finished files to the share; never leave probe files there.
+code, config and models are mounted read-only. Never delete anything on
+Unraid that the agent did not create itself: the owner's files, media,
+Jellyfin-managed files and earlier pilot folders are never deleted. The owner
+clarified (Nov 17) that the agent may remove things it created itself (its
+own probe files, its own containers). Keep SQLite side files intact anyway:
+use PERSIST journals there (never WAL), write status files in place, and
+update code by reloading the mounted folder. Stage files locally and copy only
+finished files to the share.
 Search evidence must preserve the query's characters, show, actor/patient roles
 and additional conditions. A matching quote, vector score or single model vote
 is not sufficient confirmation. Use the current verifier entry point; never
