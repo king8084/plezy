@@ -480,6 +480,49 @@ class Engine:
                 'results': self._with_libraries(self._dedupe(results)[:limit]),
                 'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
+    # -- Home rows ------------------------------------------------------------------
+    def top_rated(self, kinds=('Movie', 'Series'), min_rating=7.5, limit=80):
+        """Highest IMDb-rated movies/shows (the app removes ones the viewer watched)."""
+        p = Q.parse('', self.vocab)
+        scope_sql, scope_args = self._library_scope(p) or ('1', [])
+        rows = self.db.execute(
+            f"SELECT {self.COLUMNS} FROM items i WHERE i.active=1 AND i.kind IN ({','.join('?' * len(kinds))}) "
+            f"AND i.rating >= ? AND {scope_sql} ORDER BY i.rating DESC, i.year DESC LIMIT ?",
+            list(kinds) + [min_rating] + scope_args + [limit * 2]).fetchall()
+        results = self._dedupe([self._row(r, 'top rated') for r in rows])[:limit]
+        return {'results': self._with_libraries(results)}
+
+    def similar(self, item_id, limit=40):
+        """Titles closest in meaning to [item_id] (an episode counts as its show)."""
+        if self.vectors is None:
+            raise SearchError('index has no embeddings yet')
+        row = self.db.execute('SELECT item_id, kind, series_id FROM items WHERE item_id=?', (item_id,)).fetchone()
+        if not row:
+            return {'source': None, 'results': []}
+        source_id = row[2] if row[1] == 'Episode' and row[2] else row[0]
+        source = self.db.execute(f'SELECT {self.COLUMNS} FROM items i WHERE i.item_id=?', (source_id,)).fetchone()
+        matrix, ids, index = self.vectors
+        if source is None or source_id not in index:
+            return {'source': None, 'results': []}
+        kind = source[1]
+        scores = matrix @ matrix[index[source_id]]
+        p = Q.parse('', self.vocab)
+        scope_sql, scope_args = self._library_scope(p) or ('1', [])
+        allowed = {r[0] for r in self.db.execute(
+            f'SELECT i.item_id FROM items i WHERE i.active=1 AND i.kind=? AND {scope_sql}', [kind] + scope_args)}
+        picked = []
+        for n in np.argsort(-scores):
+            candidate = ids[n]
+            if candidate == source_id or candidate not in allowed:
+                continue
+            picked.append(candidate)
+            if len(picked) >= limit * 2:
+                break
+        rows = {r[0]: r for r in self.db.execute(
+            f"SELECT {self.COLUMNS} FROM items i WHERE i.item_id IN ({','.join('?' * len(picked))})", picked)}
+        results = self._dedupe([self._row(rows[i], 'similar') for i in picked if i in rows])[:limit]
+        return {'source': self._row(source, 'source'), 'results': self._with_libraries(results)}
+
     # -- smart --------------------------------------------------------------------
     def query_vector(self, text):
         key = sha(self.model['digest'] + QUERY_CACHE_FORMAT + text)

@@ -91,6 +91,12 @@ class Handler(BaseHTTPRequestHandler):
                 scoped = engine._series_in(engine_parse(q, engine))
                 return self._send(200, {'query': q, 'verdicts': engine.verifier.check(
                     q, ids, shows=[scoped[0]] if scoped else [])})
+            if url.path == '/v1/top':
+                kinds = tuple(k for k in (args.get('kinds') or 'Movie,Series').split(',') if k in ('Movie', 'Series'))
+                return self._send(200, engine.top_rated(kinds or ('Movie', 'Series'),
+                                                        float(args.get('min_rating', 7.5)), min(limit, 100)))
+            if url.path == '/v1/similar':
+                return self._send(200, engine.similar(args.get('id', ''), min(limit, 100)))
             if url.path == '/v1/health':
                 return self._send(200, self.server.health())
             if url.path == '/v1/status':

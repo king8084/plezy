@@ -160,3 +160,24 @@ class LibraryScopeTest(unittest.TestCase):
             self.assertEqual(titles('sci fi shows over 8'), ['Firefly'])
             self.assertIn('Galaxy Blades', titles('sci fi anime over 8'))
             self.assertEqual(titles('galaxy blades')[0], 'Galaxy Blades')   # titles are never hidden
+
+
+class HomeRowsTest(unittest.TestCase):
+    def test_top_rated_and_similar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Firefly', rating=9.0, overview='A crew of smugglers flies a spaceship.'),
+                     series(2, 'Space Crew', rating=8.0, overview='A crew of smugglers flies a spaceship too.'),
+                     series(3, 'Kitchen Show', genres=('Reality',), rating=8.5, overview='Chefs cook dinner.'),
+                     movie(4, 'Low Film', CommunityRating=5.0)]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            while w.embed_step():
+                pass
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            top = [r['title'] for r in engine.top_rated(min_rating=7.5)['results']]
+            self.assertEqual(top, ['Firefly', 'Kitchen Show', 'Space Crew'])
+            similar = engine.similar(f'{1:032x}')
+            self.assertEqual(similar['source']['title'], 'Firefly')
+            self.assertNotIn('Firefly', [r['title'] for r in similar['results']])
+            self.assertTrue(all(r['kind'] == 'Series' for r in similar['results']))
