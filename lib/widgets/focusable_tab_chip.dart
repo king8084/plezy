@@ -164,7 +164,9 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       widget.label,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
         color: foregroundColor,
-        fontWeight: pill ? (isHighlighted ? FontWeight.w700 : FontWeight.w500) : (isHighlighted ? FontWeight.w600 : FontWeight.normal),
+        fontWeight: pill
+            ? (isHighlighted ? FontWeight.w700 : FontWeight.w500)
+            : (isHighlighted ? FontWeight.w600 : FontWeight.normal),
         fontSize: pill ? 16 : null,
         letterSpacing: pill ? 0.2 : null,
       ),
