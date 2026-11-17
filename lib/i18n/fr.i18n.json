@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Essayez un autre terme de recherche",
     "searchYourMedia": "Rechercher dans vos médias",
     "enterTitleActorOrKeyword": "Entrez un titre, un acteur ou un mot-clé",
-    "people": "Personnes"
+    "people": "Personnes",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "Définir un raccourci pour ${actionName}",

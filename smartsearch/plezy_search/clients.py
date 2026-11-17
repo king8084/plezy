@@ -107,9 +107,9 @@ class Ollama:
                 return True
         raise SearchError('pinned embedding model is not installed')
 
-    def embed(self, texts, timeout=120):
+    def embed(self, texts, timeout=120, keep_alive='30m'):
         data, ms = api(self.base, '/api/embed', self.headers,
-                       {'model': self.model['name'], 'input': texts, 'truncate': False, 'keep_alive': '30m'},
+                       {'model': self.model['name'], 'input': texts, 'truncate': False, 'keep_alive': keep_alive},
                        timeout=timeout)
         vectors = data.get('embeddings', [])
         if len(vectors) != len(texts):

@@ -24,7 +24,9 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/smart_search/smart_search_client.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -218,6 +220,93 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  group('smart matches', () {
+    MediaItem episode(String id, String title) => testMediaItem(
+      id: id,
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: title,
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+
+    testWidgets('appear after the instant results without moving focus', (tester) async {
+      final pending = Completer<List<SmartSuggestion>>();
+      late _ScriptedSmartAggregation aggregation;
+      final (_, key) = await _pumpTvSearchScreen(
+        tester,
+        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(manager, (_) => pending.future),
+      );
+      await tester.pumpAndSettle();
+
+      (key.currentState! as SearchInputFocusable).submitSearchQuery('friends episode joey breaks the chair');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Movie 1'), findsOneWidget);
+      expect(find.text(t.search.findingSmartMatches), findsOneWidget);
+      final focusedBefore = FocusManager.instance.primaryFocus;
+      expect(aggregation.queries, ['friends episode joey breaks the chair']);
+
+      pending.complete([
+        SmartSuggestion(item: episode('ep_13', 'The One Where Rosita Dies'), match: SmartSearchMatch.possible),
+        SmartSuggestion(item: episode('ep_1', 'A Confirmed Episode'), match: SmartSearchMatch.confirmed),
+      ]);
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.search.findingSmartMatches), findsNothing);
+      expect(find.text(t.search.smartMatches), findsOneWidget);
+      expect(find.text(t.search.possibleMatches), findsOneWidget);
+      expect(find.text('The One Where Rosita Dies'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus, same(focusedBefore), reason: 'focus never jumps');
+      // Appended below the instant results, never inserted above them.
+      final instantY = tester.getTopLeft(find.text('Movie 1')).dy;
+      expect(tester.getTopLeft(find.text(t.search.smartMatches)).dy, greaterThan(instantY));
+      expect(
+        tester.getTopLeft(find.text(t.search.possibleMatches)).dy,
+        greaterThan(tester.getTopLeft(find.text('A Confirmed Episode')).dy),
+      );
+    });
+
+    testWidgets('short title searches do not ask for smart matches', (tester) async {
+      late _ScriptedSmartAggregation aggregation;
+      final (_, key) = await _pumpTvSearchScreen(
+        tester,
+        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(manager, (_) async => const []),
+      );
+      await tester.pumpAndSettle();
+
+      (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+      await tester.pumpAndSettle();
+
+      expect(aggregation.queries, isEmpty);
+      expect(find.text(t.search.findingSmartMatches), findsNothing);
+    });
+
+    testWidgets('an answer for an older query is ignored', (tester) async {
+      final first = Completer<List<SmartSuggestion>>();
+      final (_, key) = await _pumpTvSearchScreen(
+        tester,
+        aggregation: (manager) => _ScriptedSmartAggregation(
+          manager,
+          (query) => query.startsWith('old') ? first.future : Future.value(const []),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final screen = key.currentState! as SearchInputFocusable;
+
+      screen.submitSearchQuery('old request about something');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      screen.submitSearchQuery('new request about another thing');
+      await tester.pumpAndSettle();
+      first.complete([SmartSuggestion(item: episode('stale', 'Stale Answer'), match: SmartSearchMatch.confirmed)]);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stale Answer'), findsNothing);
+    });
   });
 
   testWidgets('partial server failure shows available results and a warning', (tester) async {
@@ -831,6 +920,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   List<_FakeMediaServerClient> additionalClients = const [],
   HiddenLibrariesProvider? hiddenLibraries,
   List<MediaLibrary> libraries = const [],
+  DataAggregationService Function(MultiServerManager manager)? aggregation,
 }) async {
   TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1.0;
@@ -861,7 +951,9 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   for (final additionalClient in additionalClients) {
     manager.debugRegisterClientForTesting(additionalClient);
   }
-  final provider = testMultiServerProvider(manager);
+  final provider = aggregation == null
+      ? testMultiServerProvider(manager)
+      : MultiServerProvider(manager, aggregation(manager));
   addTearDown(provider.dispose);
 
   final hidden = hiddenLibraries ?? HiddenLibrariesProvider();
@@ -1061,4 +1153,21 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ScriptedSmartAggregation extends DataAggregationService {
+  _ScriptedSmartAggregation(super.manager, this._answer);
+
+  final Future<List<SmartSuggestion>> Function(String query) _answer;
+  final List<String> queries = [];
+
+  @override
+  Future<List<SmartSuggestion>> smartSuggestions(
+    String query, {
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) {
+    queries.add(query);
+    return _answer(query);
+  }
 }

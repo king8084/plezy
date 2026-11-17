@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Попробуйте другой запрос",
     "searchYourMedia": "Поиск в вашей медиатеке",
     "enterTitleActorOrKeyword": "Введите название, актёра или ключевое слово",
-    "people": "Люди"
+    "people": "Люди",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",

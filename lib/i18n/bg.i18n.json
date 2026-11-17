@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Опитайте с различна дума за търсене",
     "searchYourMedia": "Търсете в медийното си съдържание",
     "enterTitleActorOrKeyword": "Въведете заглавие, актьор или ключова дума",
-    "people": "Хора"
+    "people": "Хора",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "Задай клавишна комбинация за ${actionName}",

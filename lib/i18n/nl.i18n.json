@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Probeer een andere zoekterm",
     "searchYourMedia": "Zoek in je media",
     "enterTitleActorOrKeyword": "Voer een titel, acteur of trefwoord in",
-    "people": "Personen"
+    "people": "Personen",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "Stel sneltoets in voor ${actionName}",

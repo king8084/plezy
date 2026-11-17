@@ -6,6 +6,7 @@ smart():   meaning-based matching with the query embedding, restricted by the
            same filters, fused with full-text ranks.
 """
 
+import collections
 import difflib
 import json
 import re
@@ -58,6 +59,7 @@ class Engine:
         self._vector_sig = None
         self._lock = threading.Lock()
         self.verifier = None
+        self._query_vectors = collections.OrderedDict()   # small in-memory LRU
         self.refresh()
 
     def source_key(self):
@@ -441,13 +443,25 @@ class Engine:
     # -- smart --------------------------------------------------------------------
     def query_vector(self, text):
         key = sha(self.model['digest'] + QUERY_CACHE_FORMAT + text)
+        with self._lock:
+            hit = self._query_vectors.get(key)
+            if hit is not None:
+                self._query_vectors.move_to_end(key)
+                return hit, True
         row = self.db.execute('SELECT vector FROM query_cache WHERE key=?', (key,)).fetchone()
         if row:
             return np.frombuffer(row[0], dtype='<f4'), True
         if not self.ollama:
             raise SearchError('AI search unavailable')
-        blobs, _ = self.ollama.embed([QUERY_PREFIX + text], timeout=10)
-        return np.frombuffer(blobs[0], dtype='<f4'), False
+        # Keep the small (~0.6 GB) embedding model loaded between searches so the
+        # AI row stays snappy; it unloads itself after 4 idle hours.
+        blobs, _ = self.ollama.embed([QUERY_PREFIX + text], timeout=10, keep_alive='4h')
+        vector = np.frombuffer(blobs[0], dtype='<f4')
+        with self._lock:
+            self._query_vectors[key] = vector
+            while len(self._query_vectors) > 2000:
+                self._query_vectors.popitem(last=False)
+        return vector, False
 
     def smart(self, raw, limit=20, verify=True, verify_top=8, confirm=False, recall=True):
         start = time.perf_counter()

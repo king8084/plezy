@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Басқа іздеу сөзін байқап көріңіз",
     "searchYourMedia": "Медиафайлдардан іздеу",
     "enterTitleActorOrKeyword": "Атауын, актерді немесе кілт сөзді енгізіңіз",
-    "people": "Адамдар"
+    "people": "Адамдар",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} үшін пернелер тіркесін орнату",

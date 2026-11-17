@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Boshqa qidiruv soʻzini kiriting",
     "searchYourMedia": "Medialaringizdan qidiring",
     "enterTitleActorOrKeyword": "Nomini, aktyorni yoki kalit soʻzni kiriting",
-    "people": "Odamlar"
+    "people": "Odamlar",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} uchun tugmalar birlashmasini oʻrnatish",

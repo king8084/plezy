@@ -585,7 +585,10 @@
     "tryDifferentTerm": "Fərqli axtarış sözü cəhd edin",
     "searchYourMedia": "Mediyanızda axtarın",
     "enterTitleActorOrKeyword": "Ad, aktyor və ya açar söz daxil edin",
-    "people": "Şəxslər"
+    "people": "Şəxslər",
+    "findingSmartMatches": "",
+    "smartMatches": "",
+    "possibleMatches": ""
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",

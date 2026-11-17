@@ -21,6 +21,7 @@ import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -74,6 +75,13 @@ class _SearchScreenState extends State<SearchScreen>
   HiddenLibrariesProvider? _hiddenLibraries;
   Set<String> _lastSeenHiddenKeys = const {};
 
+  /// Meaning-based suggestions from the household smart-search index, shown
+  /// as a section *after* the instant results so focus and the visible list
+  /// never move when they arrive. Only for descriptive (3+ word) requests.
+  List<SmartSuggestion> _smartSuggestions = const [];
+  bool _smartLoading = false;
+  AbortController? _smartAbort;
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +91,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void dispose() {
+    _smartAbort?.abort();
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
@@ -164,10 +173,55 @@ class _SearchScreenState extends State<SearchScreen>
     _activeSearchAbort?.abort();
     _activeSearchAbort = null;
     _pendingSearchOutcome = null;
+    _cancelSmartSuggestions();
+  }
+
+  static bool _wantsSmartSuggestions(String query) => query.trim().split(RegExp(r'\s+')).length >= 3;
+
+  void _cancelSmartSuggestions() {
+    _smartAbort?.abort();
+    _smartAbort = null;
+    _smartLoading = false;
+    _smartSuggestions = const [];
+  }
+
+  Future<void> _loadSmartSuggestions(String query) async {
+    _cancelSmartSuggestions();
+    if (!_wantsSmartSuggestions(query)) return;
+    final multiServer = context.read<MultiServerProvider>();
+    final hiddenKeys = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final abort = AbortController();
+    _smartAbort = abort;
+    setState(() => _smartLoading = true);
+    List<SmartSuggestion> suggestions;
+    try {
+      suggestions = await multiServer.aggregationService.smartSuggestions(
+        query,
+        hiddenLibraryKeys: hiddenKeys,
+        abort: abort,
+      );
+    } catch (e) {
+      appLogger.d('Smart suggestions skipped', error: e);
+      suggestions = const [];
+    }
+    // Ignore answers for a query the user has already moved on from.
+    if (!mounted || !identical(_smartAbort, abort)) return;
+    final alreadyShown = {
+      for (final hit in searchResults.take(5))
+        if (hit is MediaSearchHit) hit.item.globalKey,
+    };
+    setState(() {
+      _smartLoading = false;
+      _smartSuggestions = [
+        for (final suggestion in suggestions)
+          if (!alreadyShown.contains(suggestion.item.globalKey)) suggestion,
+      ];
+    });
   }
 
   @override
   void onSearchError(Object error) {
+    _cancelSmartSuggestions();
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
     _resetFilter();
@@ -179,6 +233,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void onSearchCleared() {
+    _cancelSmartSuggestions();
     _focusResultsForQuery = null;
     _pendingSearchOutcome = null;
     _resetFilter();
@@ -213,6 +268,11 @@ class _SearchScreenState extends State<SearchScreen>
     if (matched != null && matched.failedServerIds.isNotEmpty) {
       showAppSnackBar(context, t.messages.searchPartialResults);
     }
+
+    // After this frame's results render: the smart section only appends.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && searchController.text.trim() == query) unawaited(_loadSmartSuggestions(query));
+    });
 
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
@@ -539,6 +599,51 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  List<Widget> _buildSmartSuggestions(BuildContext context) {
+    if (_selectedFilter is! _AllResults) return const [];
+    if (!_smartLoading && _smartSuggestions.isEmpty) return const [];
+    final confirmed = [
+      for (final suggestion in _smartSuggestions)
+        if (suggestion.match == SmartSearchMatch.confirmed) suggestion.item,
+    ];
+    final possible = [
+      for (final suggestion in _smartSuggestions)
+        if (suggestion.match != SmartSearchMatch.confirmed) suggestion.item,
+    ];
+    return [
+      if (_smartLoading) _smartHeader(context, t.search.findingSmartMatches),
+      if (confirmed.isNotEmpty) ...[_smartHeader(context, t.search.smartMatches), _buildSmartList(context, confirmed)],
+      if (possible.isNotEmpty) ...[_smartHeader(context, t.search.possibleMatches), _buildSmartList(context, possible)],
+    ];
+  }
+
+  Widget _smartHeader(BuildContext context, String label) => SliverToBoxAdapter(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Text(label, style: Theme.of(context).textTheme.titleSmall),
+    ),
+  );
+
+  Widget _buildSmartList(BuildContext context, List<MediaItem> items) {
+    final multiServer = context.watch<MultiServerProvider>();
+    final libraries = context.watch<LibrariesProvider>();
+    final showServerName = multiServer.totalServerCount > 1;
+    return buildResultsSliver(
+      childCount: items.length,
+      (context, index) => FocusableMediaCard(
+        key: Key('smart-${items[index].globalKey}'),
+        item: items[index],
+        viewModeOverride: ViewMode.list,
+        disableScale: true,
+        onRefresh: updateItem,
+        onListRefresh: refresh,
+        onNavigateLeft: _navigateToSidebar,
+        showServerName: showServerName,
+        libraryName: libraries.libraryLabelFor(items[index]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -583,7 +688,7 @@ class _SearchScreenState extends State<SearchScreen>
               SliverFillRemaining(
                 child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
               )
-            else if (searchResults.isEmpty)
+            else if (searchResults.isEmpty && !_smartLoading && _smartSuggestions.isEmpty)
               SliverFillRemaining(
                 child: StateMessageWidget(
                   message: t.messages.noResultsFound,
@@ -595,6 +700,7 @@ class _SearchScreenState extends State<SearchScreen>
             else ...[
               if (_showFilterChips) _buildFilterChips(),
               _buildResultsList(context),
+              ..._buildSmartSuggestions(context),
             ],
           ],
         ),

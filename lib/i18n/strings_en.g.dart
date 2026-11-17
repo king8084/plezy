@@ -1664,6 +1664,15 @@ class Translations$search$en {
 
 	/// en: 'People'
 	String get people => 'People';
+
+	/// en: 'Finding smart matches…'
+	String get findingSmartMatches => 'Finding smart matches…';
+
+	/// en: 'Smart matches'
+	String get smartMatches => 'Smart matches';
+
+	/// en: 'Possible matches'
+	String get possibleMatches => 'Possible matches';
 }
 
 // Path: hotkeys
@@ -8812,6 +8821,9 @@ extension on Translations {
 			'search.searchYourMedia' => 'Search your media',
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
 			'search.people' => 'People',
+			'search.findingSmartMatches' => 'Finding smart matches…',
+			'search.smartMatches' => 'Smart matches',
+			'search.possibleMatches' => 'Possible matches',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
 			'hotkeys.noShortcutSet' => 'No shortcut set',
@@ -9277,11 +9289,11 @@ extension on Translations {
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
@@ -9791,11 +9803,11 @@ extension on Translations {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
 			'liveTv.watchChannel' => 'Watch Channel',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
 			'liveTv.noFavoriteChannels' => 'No favorite channels',
@@ -10305,11 +10317,11 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
