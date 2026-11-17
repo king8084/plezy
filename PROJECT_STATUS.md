@@ -259,6 +259,19 @@ Implemented and source/native CI validated:
   until the owner decides). No Apple TV build; the owner's magic words
   "build apple tv" are still required.
 
+## After build 24 (November 17)
+- Owner: search works; genre results included anime. Server-side fix live (no
+  TV build needed): anime/cartoon libraries (by library name) are left out of
+  genre, rating, description and AI results unless the request mentions anime
+  or cartoons; title matches and named-show requests are unaffected.
+  Open question: also hide animated shows in normal libraries (Gravity Falls,
+  Bluey)? This would also hide adult animation.
+- Search keyboard: the docked in-app keyboard opens on Select, results stay
+  visible and update while typing, and Search or a companion-remote query
+  closes it and focuses results. It replaces the full-screen system keyboard,
+  which loses Siri dictation and iPhone typing. Not built yet.
+- Diagnostics: the owner allows reading the LAN logs for any debugging they ask for.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid

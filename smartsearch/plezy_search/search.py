@@ -92,6 +92,17 @@ class Engine:
                 "SELECT item_id, kind, title, year FROM items WHERE active=1 AND kind IN ('Movie','Series')"):
             titles.setdefault(norm(title), []).append((item_id, kind, year))
         self.vocab = {'people': people, 'series': series, 'titles': titles}
+        groups = {'anime': set(), 'cartoon': set()}
+        try:
+            for library_id, name in db.execute('SELECT library_id, name FROM libraries'):
+                n = norm(name)
+                if re.search(r'\banim(e|es|ez)\b', n):
+                    groups['anime'].add(library_id)
+                elif re.search(r'\bcartoons?\b', n):
+                    groups['cartoon'].add(library_id)
+        except Exception:   # older index without library tagging
+            pass
+        self.library_groups = groups
         sig = db.execute('SELECT count(*), max(updated_utc) FROM items WHERE active=1 AND embedding_key IS NOT NULL').fetchone()
         if sig != self._vector_sig:
             rows = db.execute('SELECT i.item_id, e.vector FROM items i JOIN embedding_cache e ON e.key=i.embedding_key '
@@ -104,6 +115,30 @@ class Engine:
             self._vector_sig = sig
 
     # -- filters ----------------------------------------------------------------
+    ANIME_WORDS = {'anime', 'animes', 'manga', 'shounen', 'shonen', 'seinen', 'isekai', 'animated', 'animation'}
+    CARTOON_WORDS = {'cartoon', 'cartoons', 'kids', 'kid', 'children', 'childrens', 'animated', 'animation'}
+
+    def _library_scope(self, p):
+        """Owner rule: anime and cartoon libraries only answer when asked for.
+
+        Returns (sql, args) keeping items with at least one library outside the
+        excluded groups (or no recorded library), or None when nothing is excluded.
+        """
+        words = set(norm(p.original).split())
+        excluded = set()
+        groups = getattr(self, 'library_groups', {})
+        if not (words & self.ANIME_WORDS or 'anime' in p.genres):
+            excluded |= groups.get('anime', set())
+        if not (words & self.CARTOON_WORDS or 'kids' in p.genres or 'animation' in p.genres):
+            excluded |= groups.get('cartoon', set())
+        if not excluded:
+            return None
+        owner = "CASE WHEN i.kind='Episode' THEN i.series_id ELSE i.item_id END"
+        marks = ','.join('?' * len(excluded))
+        sql = (f"(NOT EXISTS (SELECT 1 FROM item_libraries l WHERE l.item_id={owner}) OR EXISTS "
+               f"(SELECT 1 FROM item_libraries l WHERE l.item_id={owner} AND l.library_id NOT IN ({marks})))")
+        return sql, sorted(excluded)
+
     def _filter_sql(self, p):
         """SQL WHERE for the parsed filters, applied to alias i (series via s)."""
         kinds = p.kinds or ({'Series', 'Movie'} if p.has_filters else set())
@@ -164,6 +199,10 @@ class Engine:
         for person in p.people:
             where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='person' AND norm=?)")
             args.append(person)
+        scope = self._library_scope(p)
+        if scope:
+            where.append(scope[0])
+            args += scope[1]
         return ' AND '.join(where), args
 
     def _order(self, p):
@@ -421,20 +460,21 @@ class Engine:
         add(titles)
         if len(results) < limit and (not p.has_filters or exact_title):
             tokens = _fts_tokens(raw, keep_stopwords=len(norm(raw).split()) <= 4)
+            scope_sql, scope_args = self._library_scope(p) or ('1', [])
             if tokens:
                 rows = self.db.execute(
                     f'SELECT {self.COLUMNS} FROM search_text JOIN items i ON i.rowid=search_text.rowid '
-                    f'WHERE search_text MATCH ? AND i.active=1 '
+                    f'WHERE search_text MATCH ? AND i.active=1 AND {scope_sql} '
                     f'ORDER BY bm25(search_text, 8.0, 4.0, 3.0, 2.0, 1.0) LIMIT ?',
-                    (_match_expr(tokens), limit)).fetchall()
+                    [_match_expr(tokens)] + scope_args + [limit]).fetchall()
                 add(self._row(r, 'text') for r in rows)
                 words = _fts_tokens(p.text, keep_stopwords=False)[:8]
                 if len(results) < 5 and len(words) > 1:
                     rows = self.db.execute(
                         f'SELECT {self.COLUMNS} FROM search_text JOIN items i ON i.rowid=search_text.rowid '
-                        f'WHERE search_text MATCH ? AND i.active=1 '
+                        f'WHERE search_text MATCH ? AND i.active=1 AND {scope_sql} '
                         f'ORDER BY bm25(search_text, 8.0, 4.0, 3.0, 2.0, 1.0) LIMIT ?',
-                        (_match_expr(words, prefix_last=False, op=' OR '), limit)).fetchall()
+                        [_match_expr(words, prefix_last=False, op=' OR ')] + scope_args + [limit]).fetchall()
                     add(self._row(r, 'some words') for r in rows)
         return {'query': raw, 'understood': p.understood, 'filters': p.has_filters,
                 'results': self._with_libraries(self._dedupe(results)[:limit]),
@@ -483,6 +523,10 @@ class Engine:
                         scoped[1])
         elif p.has_filters:
             restrict = self._filter_sql(p)
+        else:
+            scope = self._library_scope(p)
+            if scope:
+                restrict = ('i.active=1 AND ' + scope[0], scope[1])
         if restrict:
             where, args = restrict
             allowed = [index[r[0]] for r in self.db.execute(f'SELECT i.item_id FROM items i WHERE {where}', args)

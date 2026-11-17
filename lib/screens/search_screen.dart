@@ -40,6 +40,12 @@ import 'main_screen.dart';
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
+  /// TV keyboard for the search field: Plezy's docked overlay keeps results
+  /// visible and updating while typing (the Apple TV system keyboard covers
+  /// the whole screen). Tests of the platform-keyboard flow switch it back.
+  @visibleForTesting
+  static TvTextInputPresentation keyboardPresentation = TvTextInputPresentation.flutterOverlay;
+
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
@@ -297,12 +303,17 @@ class _SearchScreenState extends State<SearchScreen>
     FocusUtils.requestFocusAfterBuild(this, firstResultFocusNode);
   }
 
+  bool get _usesDockedKeyboard => SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
+
   /// OSK "Search" / hardware Enter on TV additionally focuses the results
   /// when the forced search lands.
   @override
   void handleSearchSubmit() {
     final query = searchController.text.trim();
     if (query.isEmpty) return;
+    // The docked keyboard stays up until asked: "Search" puts it away so the
+    // results can take focus.
+    if (_usesDockedKeyboard) _tvTextInputController.closeTextInput();
     if (searchResults.isEmpty || isSearching || query != lastSearchedQuery) {
       _focusResultsForQuery = query;
     }
@@ -675,6 +686,12 @@ class _SearchScreenState extends State<SearchScreen>
                 debugLabel: searchDebugLabel,
                 hintText: t.search.hint,
                 tvTextInputController: _tvTextInputController,
+                tvTextInputPresentation: SearchScreen.keyboardPresentation,
+                // The docked keyboard opens on Select, not merely on arriving at
+                // the tab, so landing on Search never hides the screen.
+                tvTextInputAutoOpenBehavior: _usesDockedKeyboard
+                    ? TvTextInputAutoOpenBehavior.never
+                    : TvTextInputAutoOpenBehavior.automatic,
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: searchResults.isNotEmpty && !isSearching
                     ? (_showFilterChips ? _focusFilterChips : firstResultFocusNode.requestFocus)

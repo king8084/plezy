@@ -222,6 +222,53 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  group('docked search keyboard', () {
+    const panel = Key('tv_virtual_keyboard_panel');
+    setUp(() => SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay);
+
+    Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> openKeyboard(WidgetTester tester) async {
+      final pumped = await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      expect(find.byKey(panel), findsNothing, reason: 'arriving on Search does not hide the screen');
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(find.byKey(panel), findsOneWidget, reason: 'Select opens the docked keyboard');
+      return pumped;
+    }
+
+    testWidgets('results update above the keyboard while typing', (tester) async {
+      final (client, _) = await openKeyboard(tester);
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      expect(client.queries, ['movie']);
+      expect(find.text('Movie 1'), findsOneWidget);
+      expect(find.byKey(panel), findsOneWidget, reason: 'the keyboard stays up while results change');
+    });
+
+    testWidgets('the Search key puts the keyboard away and focuses the first result', (tester) async {
+      final (client, key) = await openKeyboard(tester);
+      _searchController(tester).text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      (key.currentState! as dynamic).handleSearchSubmit();
+      await tester.pumpAndSettle();
+      expect(find.byKey(panel), findsNothing);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+      expect(client.queries, ['movie']);
+    });
+
+    testWidgets('a search sent from the phone closes the keyboard and focuses results', (tester) async {
+      final (client, key) = await openKeyboard(tester);
+      (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+      await tester.pumpAndSettle();
+      expect(find.byKey(panel), findsNothing);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+      expect(client.queries, ['movie']);
+    });
+  });
+
   group('smart matches', () {
     MediaItem episode(String id, String title) => testMediaItem(
       id: id,
@@ -1068,6 +1115,9 @@ void _resetGlobalTestState() {
   TvDetectionService.debugSetAppleTVOverride(null);
   TvDetectionService.setForceTVSync(false);
   SettingsService.resetForTesting();
+  // Most tests below exercise the Apple TV system keyboard flow; the docked
+  // keyboard group opts back into the production presentation.
+  SearchScreen.keyboardPresentation = TvTextInputPresentation.platform;
 }
 
 class _FakeMediaServerClient implements MediaServerClient {

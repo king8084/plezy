@@ -21,6 +21,13 @@ class SearchInputField extends StatefulWidget {
   final String debugLabel;
 
   final TvTextInputController? tvTextInputController;
+
+  /// Which TV keyboard opens: the platform's (full-screen on Apple TV) or
+  /// Plezy's docked overlay, which keeps results visible while typing.
+  final TvTextInputPresentation tvTextInputPresentation;
+
+  /// When focus alone opens the TV keyboard (Select always does).
+  final TvTextInputAutoOpenBehavior tvTextInputAutoOpenBehavior;
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onNavigateDown;
   final VoidCallback? onEditingComplete;
@@ -33,6 +40,8 @@ class SearchInputField extends StatefulWidget {
     required this.hintText,
     required this.debugLabel,
     this.tvTextInputController,
+    this.tvTextInputPresentation = TvTextInputPresentation.automatic,
+    this.tvTextInputAutoOpenBehavior = TvTextInputAutoOpenBehavior.automatic,
     this.onNavigateLeft,
     this.onNavigateDown,
     this.onEditingComplete,
@@ -69,6 +78,8 @@ class _SearchInputFieldState extends State<SearchInputField> {
             controller: widget.controller,
             focusNode: widget.focusNode,
             tvTextInputController: widget.tvTextInputController,
+            tvTextInputPresentation: widget.tvTextInputPresentation,
+            tvTextInputAutoOpenBehavior: widget.tvTextInputAutoOpenBehavior,
             textInputAction: TextInputAction.search,
             onNavigateLeft: widget.onNavigateLeft,
             onNavigateRight: hasText ? _clearFocusNode.requestFocus : null,

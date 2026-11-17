@@ -127,3 +127,28 @@ class EngineTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class LibraryScopeTest(unittest.TestCase):
+    """Owner rule: anime/cartoon libraries answer only when asked for (titles always)."""
+
+    def test_anime_library_needs_the_word_anime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Firefly', rating=9.0, Tags=['space']),
+                     series(2, 'Galaxy Blades', genres=('Sci-Fi & Fantasy', 'Animation'), rating=9.5, Tags=['space', 'anime'])]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.execute("INSERT INTO libraries VALUES('lib-tv','TV Shows','tvshows',NULL)")
+            w.db.execute("INSERT INTO libraries VALUES('lib-anime','Animez-TV Shows','tvshows',NULL)")
+            w.db.executemany('INSERT INTO item_libraries VALUES(?,?)',
+                             [(f'{1:032x}', 'lib-tv'), (f'{2:032x}', 'lib-anime')])
+            w.db.commit()
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+
+            def titles(q):
+                return [r['title'] for r in engine.instant(q)['results']]
+
+            self.assertEqual(titles('sci fi shows over 8'), ['Firefly'])
+            self.assertIn('Galaxy Blades', titles('sci fi anime over 8'))
+            self.assertEqual(titles('galaxy blades')[0], 'Galaxy Blades')   # titles are never hidden

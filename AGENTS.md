@@ -90,8 +90,8 @@ the app being closed, then completed when the owner entered Settings. Home /
 Top Shelf activity is the likely blocker; do not use deletion as a workaround.
 
 The private Apple TV diagnostics URL is saved locally in
-`.git/plezy-diagnostics.json` (0600). Read it only for authorized playback
-troubleshooting while Plezy is running; never copy its key into tracked files,
+`.git/plezy-diagnostics.json` (0600). The owner allows reading it whenever they
+ask for debugging of any kind (Nov 17), while Plezy is running; never copy its key into tracked files,
 commits, public links or build logs. No manual log upload is needed while
 that protected LAN endpoint is reachable.
 
