@@ -294,6 +294,10 @@ from the logs) is already fast enough, so it was left alone.
   anime/cartoon library keeps that group). Each source adds 1/(rank+5), so
   agreement ranks first. Both smart rows drop watched and partly watched
   titles (in progress, or any episode of a show played).
+- Smart rows refresh on every Home pass (start, 15-min stale return, new
+  media, manual refresh) and also ~5 s after any watch event (play progress,
+  watched/unwatched), waiting while the player is up; only the two rows are
+  refetched, and an unchanged answer does not touch Home.
 - Show page Find (owner request, Nov 17): a Find button next to Shuffle on
   shows whose server has the index opens a small search screen scoped to that
   show (`/v1/smart?series=<id>`; the request is read as "<show> episode ...").

@@ -146,6 +146,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       onEvent: _onDeletion,
     );
     _libraryEventSubscription = LibraryContentNotifier().stream.listen(_onLibraryContentChanged);
+    // Any play or watched mark (not only Continue Watching items) can change
+    // the smart rows' seed or remove a title from them.
+    _smartRowsWatchSubscription = WatchStateNotifier().stream.listen((_) => _scheduleSmartRowsRefresh());
   }
 
   final MultiServerProvider _multiServer;
@@ -176,6 +179,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   static bool _neverBlocked() => false;
   StreamSubscription<LibraryChangeEvent>? _libraryEventSubscription;
+  StreamSubscription<WatchStateEvent>? _smartRowsWatchSubscription;
+  Timer? _smartRowsTimer;
+
+  /// Quiet time after the last watch event before the smart rows refetch.
+  static const Duration smartRowsRefreshDelay = Duration(seconds: 5);
   late final RefreshPacer _libraryEventPacer;
 
   /// Authoritative fetches tell the store which items the server re-observed,
@@ -780,6 +788,54 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   static const Duration _smartHomeRowsCeiling = Duration(seconds: 4);
 
+  void _scheduleSmartRowsRefresh([Duration delay = smartRowsRefreshDelay]) {
+    if (isDisposed) return;
+    _smartRowsTimer?.cancel();
+    _smartRowsTimer = Timer(delay, () => unawaited(_refreshSmartRows()));
+  }
+
+  /// Refetch only the smart rows after watching something: a new "Because you
+  /// watched" seed, and just-watched titles leave both rows. Waits while the
+  /// player is up; a running Home pass already includes the rows.
+  Future<void> _refreshSmartRows() async {
+    if (isDisposed) return;
+    if (_isRefreshBlocked()) {
+      _scheduleSmartRowsRefresh(libraryEventBlockedRetry);
+      return;
+    }
+    if (_hubsState != DiscoverLoadState.loaded || _loadCoordinator.isBusy || _loadedHubServerIds.isEmpty) return;
+    final revision = _commitRevision;
+    final fresh = await _fetchSmartHomeHubs(
+      _multiServer.aggregationService,
+      serverIds: Set<String>.of(_loadedHubServerIds),
+    );
+    if (isDisposed || fresh == null || revision != _commitRevision) return;
+    final next = mergeSmartHomeRows(_hubs, fresh);
+    if (next == null) return;
+    _replaceHubs(next);
+    safeNotifyListeners();
+  }
+
+  /// [hubs] with its smart rows replaced by [fresh] ones, smart rows first. A
+  /// row missing from [fresh] (a source failed) keeps its current version.
+  /// Null when nothing changes.
+  @visibleForTesting
+  static List<MediaHub>? mergeSmartHomeRows(List<MediaHub> hubs, List<MediaHub> fresh) {
+    final freshById = {for (final hub in fresh) hub.id: hub};
+    final current = {for (final hub in hubs.where(_isSmartHomeHub)) hub.id: hub};
+    final smart = [
+      for (final id in const [smartTopRatedHubId, smartBecauseWatchedHubId]) ?(freshById[id] ?? current[id]),
+    ];
+    final previous = [
+      for (final id in const [smartTopRatedHubId, smartBecauseWatchedHubId]) ?current[id],
+    ];
+    List<String> signature(List<MediaHub> rows) => [
+      for (final row in rows) ...[row.id, row.title, for (final item in row.items) item.id, '\u0000'],
+    ];
+    if (listEquals(signature(smart), signature(previous))) return null;
+    return [...smart, ...hubs.where((hub) => !_isSmartHomeHub(hub))];
+  }
+
   static bool _isSmartHomeHub(MediaHub hub) => hub.id == smartTopRatedHubId || hub.id == smartBecauseWatchedHubId;
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
@@ -1280,6 +1336,10 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _deletionSubscription = null;
     _libraryEventSubscription?.cancel();
     _libraryEventSubscription = null;
+    _smartRowsWatchSubscription?.cancel();
+    _smartRowsWatchSubscription = null;
+    _smartRowsTimer?.cancel();
+    _smartRowsTimer = null;
     _libraryEventPacer.dispose();
     _loadCoordinator.dispose();
     _pendingSystemShelfItems = null;
