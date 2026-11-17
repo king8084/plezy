@@ -355,6 +355,26 @@ from the logs) is already fast enough, so it was left alone.
   files; generator output restored (identical to build 24). Never format them.
 - Not built, not installed. Fork Actions disabled, so fork CI did not run.
 
+## Build 25 owner feedback (Nov 17, evening): two regressions to fix
+- Search: the native keyboard was presented as a modal over Plezy's own search
+  field, so two "Search movies, shows, music..." lines stacked and the empty
+  state showed underneath. Owner wants Neptune's search (reference photo):
+  big query line, Apple's one-row keyboard under it, category tabs and results
+  directly below on one page, keyboard staying visible while browsing results,
+  hold-mic dictation. Plan: embed UISearchContainerViewController as a child
+  view of the Flutter view controller at the top of Search (not modal), hide
+  Plezy's field while docked, Flutter lays results below it; focus handoff:
+  Down from the keyboard -> native disables its focus and Flutter focuses the
+  first result; Up from the first result row -> channel asks native to take
+  focus back. Keep the docked Flutter keyboard as the fallback.
+- Show page (redesign): on the owner's TV the season tabs floated mid-screen,
+  episode cards were tiny and the synopsis/actions were clipped; owner switched
+  to Classic. Local renders (1080p, safe areas, 4K, all densities/text sizes)
+  do not reproduce it. Cause: the redesign positions tabs and the text block
+  from an estimated rail height. Plan: measurement-driven Column layout (tabs
+  attached to the rail, text block takes the remaining space, actions always
+  visible) plus app-log diagnostics of real sizes to confirm on the device.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
