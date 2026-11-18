@@ -849,11 +849,16 @@ class DataAggregationService {
   /// Each server's titles and people run under their own
   /// [MediaServerTimeouts.searchServerDeadline]: a server that stops
   /// answering fails on its own instead of holding back everyone's results.
+  ///
+  /// [onEarlyHits] receives the household index's titles as soon as they
+  /// arrive (tens of milliseconds), before the slower server and people legs
+  /// finish, so a screen can show them while the full answer is still coming.
   Future<SearchAggregationResult> searchAcrossServers(
     String query, {
     int? limit,
     Set<String>? hiddenLibraryKeys,
     AbortController? abort,
+    void Function(List<SearchHit> hits)? onEarlyHits,
   }) async {
     if (query.trim().isEmpty) return _emptySearchResult;
 
@@ -866,6 +871,7 @@ class DataAggregationService {
     // Titles ranked by the smart index keep its order (it already ranked by
     // meaning, filters and titles); identity, not equality, marks them.
     final smartRanked = Set<MediaItem>.identity();
+    final earlyItems = <MediaItem>[];
 
     final fetched = await _fanOut<SearchHit>(
       clients,
@@ -885,6 +891,13 @@ class DataAggregationService {
           excludedLibraryIds: excludedLibraryIds,
         );
         final smart = await _smartSearchTitles(serverId, client, query, excludedLibraryIds, abort);
+        if (smart != null && smart.items.isNotEmpty && onEarlyHits != null && !(abort?.isAborted ?? false)) {
+          earlyItems.addAll(smart.items);
+          onEarlyHits([
+            for (final item in _withoutHiddenLibraries(earlyItems, hiddenLibraryKeys).take(resultLimit))
+              MediaSearchHit(item),
+          ]);
+        }
         // With the index, the server's own search only covers what the index
         // does not (music and other libraries); without it, everything.
         final serverSearchExcluded = smart == null ? excludedLibraryIds : {...excludedLibraryIds, ...smart.indexed};

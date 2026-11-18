@@ -13,6 +13,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/background_download_warning_banner.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../widgets/recommendation_card_caption.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/rating_bottom_sheet.dart';
 
@@ -2404,7 +2405,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       },
       fetch: (client) => client.fetchRelatedHubs(_metadata.id),
       apply: (relatedHubs) {
-        _relatedHubs = relatedHubs;
+        _relatedHubs = [for (final hub in relatedHubs) _withLibraryRatingCaptions(hub)];
         _relatedHubKeys = List.generate(relatedHubs.length, (_) => GlobalKey<HubSectionState>());
         WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadBlendedSimilar()));
       },
@@ -2413,6 +2414,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   int _blendedSimilarGeneration = 0;
+
+  /// Library rows under the page caption their titles like the
+  /// recommendations row: star, the server's IMDb rating, and the year.
+  static MediaHub _withLibraryRatingCaptions(MediaHub hub) =>
+      hub.copyWith(items: [for (final item in hub.items) LibraryRatingCaption.mark(item)]);
 
   /// Replaces the server's "More Like This" row with the blended one Home's
   /// "Because you watched" uses (smart index + Jellyfin + Simkl + Trakt,
@@ -2437,7 +2443,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         id: 'detail_blended_similar',
         title: t.discover.moreLikeThis,
         type: 'mixed',
-        items: items,
+        items: [for (final item in items) LibraryRatingCaption.mark(item)],
         size: items.length,
         serverId: metadata.serverId,
         serverName: metadata.serverName,

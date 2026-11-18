@@ -1369,6 +1369,11 @@ class _MediaCardHelpers {
     CatalogItem? catalogItem,
   }) {
     final recommendation = RecommendationCardData.fromItem(mi);
+    // Library titles always show the server's own (IMDb) community rating;
+    // outside ratings are only for titles the library does not have.
+    if (recommendation?.availability == RecommendationAvailability.owned || LibraryRatingCaption.isMarked(mi)) {
+      return LibraryRatingCaption(item: mi);
+    }
     if (recommendation != null) return RecommendationCardCaption(item: recommendation.ratingItem);
     if (catalogItem?.source == CatalogSourceId.seerr) {
       return _SeerrCardMetadata(

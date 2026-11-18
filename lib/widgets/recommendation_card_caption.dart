@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import '../i18n/strings.g.dart';
 import '../i18n/app_locale_utils.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_rating.dart';
 import '../models/catalog/catalog_item.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -60,40 +62,80 @@ class _RecommendationCardCaptionState extends State<RecommendationCardCaption> {
     stream: _ratings,
     builder: (context, snapshot) {
       final imdb = catalogImdbRating(widget.item, snapshot.data ?? const []);
-      final style = Theme.of(
-        context,
-      ).textTheme.bodySmall?.copyWith(fontSize: 11, height: 1.1, color: tokens(context).textMuted);
-      if (imdb == null) return Text(widget.item.year?.toString() ?? ' ', maxLines: 1, style: style);
-      final votes = imdb.votes;
-      final number = votes != null && votes > 0
-          ? NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(votes)
-          : null;
-      return Row(
-        children: [
-          const AppIcon(Symbols.star_rounded, fill: 1, size: 13, color: Color(0xFFE6B95B)),
-          const SizedBox(width: 3),
-          Text(formatRating(imdb.value), style: style),
-          if (number != null) ...[
-            const SizedBox(width: 5),
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                decoration: BoxDecoration(
-                  color: tokens(context).text.withValues(alpha: 0.08),
-                  border: Border.all(color: tokens(context).text.withValues(alpha: 0.18)),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  number,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: style?.copyWith(fontSize: 10, height: 1),
-                ),
-              ),
-            ),
-          ],
-        ],
-      );
+      return RatingYearCaption(rating: imdb?.value, votes: imdb?.votes, year: widget.item.year);
     },
   );
+}
+
+/// The caption every "More like this" card shares: gold star, IMDb score,
+/// vote count in a small box when known, then the year.
+class RatingYearCaption extends StatelessWidget {
+  const RatingYearCaption({super.key, this.rating, this.votes, this.year});
+  final double? rating;
+  final int? votes;
+  final int? year;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontSize: 11, height: 1.1, color: tokens(context).textMuted);
+    final rating = this.rating;
+    if (rating == null || rating <= 0) return Text(year?.toString() ?? ' ', maxLines: 1, style: style);
+    final votes = this.votes;
+    final number = votes != null && votes > 0
+        ? NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(votes)
+        : null;
+    return Row(
+      children: [
+        const AppIcon(Symbols.star_rounded, fill: 1, size: 13, color: Color(0xFFE6B95B)),
+        const SizedBox(width: 3),
+        Text(formatRating(rating), style: style),
+        if (number != null) ...[
+          const SizedBox(width: 5),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: tokens(context).text.withValues(alpha: 0.08),
+                border: Border.all(color: tokens(context).text.withValues(alpha: 0.18)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                number,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style?.copyWith(fontSize: 10, height: 1),
+              ),
+            ),
+          ),
+        ],
+        if (year != null) ...[
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text('· $year', maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// A library title's caption: the server's own community rating (the
+/// household's IMDb score) and year. Never an outside service's score.
+class LibraryRatingCaption extends StatelessWidget {
+  const LibraryRatingCaption({super.key, required this.item});
+  final MediaItem item;
+
+  /// Marks a library row whose cards use this caption.
+  static const rawKey = 'plezyLibraryRatingCaption';
+
+  static MediaItem mark(MediaItem item) => item.kind == MediaKind.movie || item.kind == MediaKind.show
+      ? item.copyWith(raw: {...?item.raw, rawKey: true})
+      : item;
+
+  static bool isMarked(MediaItem item) => item.raw?[rawKey] == true;
+
+  @override
+  Widget build(BuildContext context) => RatingYearCaption(rating: item.rating, year: item.year);
 }

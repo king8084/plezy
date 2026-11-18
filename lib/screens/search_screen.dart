@@ -152,7 +152,7 @@ class _SearchScreenState extends State<SearchScreen>
     if (!mounted) return super.searchDebounce;
     try {
       return context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable
-          ? const Duration(milliseconds: 250)
+          ? const Duration(milliseconds: 150)
           : super.searchDebounce;
     } on ProviderNotFoundException {
       return super.searchDebounce;
@@ -180,6 +180,7 @@ class _SearchScreenState extends State<SearchScreen>
         query,
         hiddenLibraryKeys: hiddenLibraries.hiddenLibraryKeys,
         abort: abort,
+        onEarlyHits: (hits) => _showEarlyHits(query, hits),
       );
       abort.throwIfAborted();
       if (result.succeededServerIds.isEmpty && result.failedServerIds.isNotEmpty) {
@@ -196,6 +197,26 @@ class _SearchScreenState extends State<SearchScreen>
     } finally {
       if (identical(_activeSearchAbort, abort)) _activeSearchAbort = null;
     }
+  }
+
+  /// The household index's titles, shown while people and the server's own
+  /// search are still running; the full answer replaces them.
+  void _showEarlyHits(String query, List<SearchHit> hits) {
+    if (!mounted) return;
+    publishEarlyResults(
+      query,
+      hits,
+      alongside: () {
+        _searchCandidates = [
+          for (final hit in hits)
+            if (hit case MediaSearchHit(:final item)) item,
+        ];
+        _searchPeople = const [];
+        _candidateKinds = _kindsIn(_searchCandidates);
+        if (!_hasCandidatesFor(_selectedFilter)) _selectedFilter = const _AllResults();
+        _filteredResults = _rankFilteredResults(_selectedFilter, query);
+      },
+    );
   }
 
   @override
@@ -323,7 +344,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// Down from the keys: into the filters or the first result.
   void _focusResultsFromHeader() {
-    if (searchResults.isEmpty || isSearching) return;
+    if (searchResults.isEmpty) return;
     if (_showFilterChips) {
       _focusFilterChips();
     } else {
@@ -772,7 +793,10 @@ class _SearchScreenState extends State<SearchScreen>
               },
             ),
           ),
-        if (isSearching)
+        // Results already on screen stay while the next keystroke's search
+        // runs (and early index hits arrive); the spinner is only for a
+        // first search with nothing to show yet.
+        if (isSearching && searchResults.isEmpty)
           LoadingIndicatorBox.sliver
         else if (!hasSearched && nativeHeader)
           // Apple's keyboard above is the whole invitation; nothing else.

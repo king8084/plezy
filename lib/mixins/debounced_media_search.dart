@@ -144,6 +144,20 @@ mixin DebouncedMediaSearch<T extends StatefulWidget, R> on State<T> {
     return true;
   }
 
+  /// Shows a first answer for [query] while its full search is still running
+  /// (e.g. the fast index's titles before the slower server legs). Ignored
+  /// once the query is no longer the one in flight. [alongside] runs inside
+  /// the same setState. Returns whether the results were shown.
+  @protected
+  bool publishEarlyResults(String query, List<R> results, {VoidCallback? alongside}) {
+    if (!mounted || _inFlightQuery != query || results.isEmpty) return false;
+    setState(() {
+      alongside?.call();
+      searchResults = results;
+    });
+    return true;
+  }
+
   /// Run [query] now, bypassing the debounce (submit, external refresh).
   Future<void> runSearch(String query) async {
     if (!mounted || query.isEmpty) return;

@@ -168,6 +168,25 @@ void main() {
     expect(searchedLibraries, {'lib-music'}, reason: 'indexed libraries are not searched twice');
   });
 
+  test('index titles arrive early, before the server and people legs finish', () async {
+    final client = jellyfin();
+    manager.debugRegisterClientForTesting(client);
+    final service = DataAggregationService(manager, smartSearch: smart());
+    final early = <List<String>>[];
+
+    final result = await service.searchAcrossServers(
+      'sci fi shows over 8',
+      onEarlyHits: (hits) => early.add([
+        for (final hit in hits)
+          if (hit is MediaSearchHit) hit.item.id,
+      ]),
+    );
+
+    expect(early, hasLength(1));
+    expect(early.single, ['firefly', 'dark', 'kids-movie'], reason: 'the index titles, without the music search');
+    expect(titleIds(result), ['firefly', 'dark', 'kids-movie', 'album']);
+  });
+
   test('a hidden library drops its smart results', () async {
     final client = jellyfin();
     manager.debugRegisterClientForTesting(client);
