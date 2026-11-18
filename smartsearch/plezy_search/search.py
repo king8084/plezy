@@ -41,14 +41,32 @@ def _fts_tokens(text, keep_stopwords=True):
     return content or tokens
 
 
+# "gear 4" must find "Fourth Gear" / "Gear Four": a number and its words are
+# one word to the search. One/first are left alone ("One Piece", "first time").
+_NUMBER_WORDS = [('2', 'two', 'second', '2nd'), ('3', 'three', 'third', '3rd'), ('4', 'four', 'fourth', '4th'),
+                 ('5', 'five', 'fifth', '5th'), ('6', 'six', 'sixth', '6th'), ('7', 'seven', 'seventh', '7th'),
+                 ('8', 'eight', 'eighth', '8th'), ('9', 'nine', 'ninth', '9th'), ('10', 'ten', 'tenth', '10th')]
+NUMBER_FORMS = {form: group for group in _NUMBER_WORDS for form in group}
+
+
 def _match_expr(tokens, prefix_last=True, op=' '):
     parts = []
     for i, t in enumerate(tokens):
+        forms = NUMBER_FORMS.get(t)
+        if forms:
+            parts.append('(' + ' OR '.join(f'"{f}"' for f in forms) + ')')
+            continue
         quoted = '"' + t.replace('"', '""') + '"'
         if prefix_last and i == len(tokens) - 1 and len(t) >= 2:
             quoted += '*'
         parts.append(quoted)
-    return op.join(parts)
+    # FTS5 joins bare phrases with an implicit AND, but not bracketed groups.
+    return (' AND ' if op == ' ' else op).join(parts)
+
+
+FIRST_TIME = re.compile(r'\b(for the first time|first time|first use|first appearance|debuts?|debut of|origin of)\b')
+_FIRST_TIME_WORDS = {'first', 'time', 'times', 'debut', 'debuts', 'appearance', 'origin', 'use', 'uses', 'used',
+                     'using', 'for'}
 
 
 class Engine:
@@ -232,6 +250,36 @@ class Engine:
         if not parts:
             return '0', []
         return '(' + ' OR '.join(parts) + ')', args
+
+    def _first_time_order(self, raw, results):
+        """"luffy uses gear 4 for the first time": of the episodes that match the
+        request best (title + description), the earliest comes first."""
+        if not results or not FIRST_TIME.search(norm(raw)):
+            return results
+        episodes = [r for r in results if r.get('kind') == 'Episode']
+        if len(episodes) < 2:
+            return results
+        ids = [r['id'] for r in episodes]
+        text = {row[0]: (norm(row[1] or ''), set(norm(row[2] or '').split())) for row in self.db.execute(
+            f"SELECT item_id, title || ' ' || overview, series FROM items WHERE item_id IN "
+            f"({','.join('?' * len(ids))})", ids)}
+        wanted = [t for t in _fts_tokens(raw, keep_stopwords=False)
+                  if t not in _FIRST_TIME_WORDS and t not in self.ANIME_LIBRARY_WORDS | self.CARTOON_LIBRARY_WORDS]
+
+        def score(r):
+            body, series_words = text.get(r['id'], ('', set()))
+            words = set(re.findall(r'\w+', body))
+            keys = [t for t in wanted if t not in series_words]
+            return sum(1 for t in keys if (NUMBER_FORMS.get(t) and words & set(NUMBER_FORMS[t])) or t in words)
+
+        scores = {r['id']: score(r) for r in episodes}
+        best = max(scores.values())
+        if best < 2:
+            return results
+        first = sorted((r for r in episodes if scores[r['id']] == best),
+                       key=lambda r: (r.get('season') or 0, r.get('episode') or 0))
+        lead = {r['id'] for r in first}
+        return first + [r for r in results if r['id'] not in lead]
 
     def _keep_requested(self, results, groups):
         """Drop results outside the requested libraries (title/show paths)."""
@@ -631,7 +679,8 @@ class Engine:
                         [_match_expr(words, prefix_last=False, op=' OR ')] + scope_args + [limit]).fetchall()
                     add(self._row(r, 'some words') for r in rows)
         return {'query': raw, 'understood': p.understood, 'filters': p.has_filters, 'unwatched': p.unwatched,
-                'results': self._with_libraries(self._dedupe(self._keep_requested(results, p.library_groups))[:limit]),
+                'results': self._with_libraries(self._dedupe(self._first_time_order(
+                    raw, self._keep_requested(results, p.library_groups)))[:limit]),
                 'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
     # -- Home rows ------------------------------------------------------------------

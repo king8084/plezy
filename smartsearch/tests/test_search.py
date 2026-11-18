@@ -334,3 +334,28 @@ class UnlockedEpisodesTest(unittest.TestCase):
         got = self.kinds_titles('anime comedies')
         self.assertIn(('Series', 'Galaxy Blades'), got)
         self.assertNotIn(('Series', 'Firefly'), got)
+
+
+class NumbersAndFirstTimeTest(unittest.TestCase):
+    """"gear 4 for the first time" finds "Fourth Gear!" and prefers the earliest match."""
+
+    def test_number_words_and_first_time(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Pirate Saga', rating=9.0),
+                     episode(10, f'{1:032x}', 'Pirate Saga', 11, 47, 'Second Gear Activated!',
+                             'Kenji fights with second gear.'),
+                     episode(11, f'{1:032x}', 'Pirate Saga', 17, 98, 'Fourth Gear! The Bounce Man!',
+                             'Kenji unleashes a new form to fight.'),
+                     episode(12, f'{1:032x}', 'Pirate Saga', 19, 79, 'Gear Four vs. Donuts!',
+                             'Kenji uses gear four again against a new foe.'),
+                     episode(13, f'{1:032x}', 'Pirate Saga', 21, 180, 'Gear Five!', 'Kenji reaches gear five.')]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            got = [r['title'] for r in engine.instant('pirate saga kenji uses gear 4 for first time')['results']]
+            self.assertEqual(got[0], 'Fourth Gear! The Bounce Man!')
+            self.assertIn('Gear Four vs. Donuts!', got)
+            plain = [r['title'] for r in engine.instant('pirate saga gear 4')['results']]
+            self.assertIn('Fourth Gear! The Bounce Man!', plain)
+            self.assertNotIn('Gear Five!', plain[:2])
