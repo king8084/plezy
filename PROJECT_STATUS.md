@@ -510,6 +510,22 @@ from the logs) is already fast enough, so it was left alone.
   Falls) still appear for "funny shows"/"mystery shows"; awaiting owner's
   choice (treat kids animation as cartoons; adult animation stays).
 
+## Search housekeeping and library words (Nov 18)
+- App (`14eaa5b03`, not built): leaving the Search tab clears it; Back from
+  any result/chip returns to the keys on "a" (query kept, list at top); an
+  always-visible scrollbar; "N results" under the filter row.
+- Server (`f0dfa5924`, deployed): owner flipped the library rule for
+  searches. anime/animes -> anime library (+ anime movies, all movies live in
+  Movies); cartoon(s) -> Cartoons (+ animated non-anime movies);
+  show(s)/series/tv -> TV Shows; no library word -> every library. Home rows
+  keep the earlier scope. "show me ..." no longer parses as "shows". Live:
+  "anime conan hits the ball" -> only Conan episodes. Service tests 39 OK.
+- Show page "More like this stops loading when scrolling fast": not
+  reproduced (4 rows, rapid Down presses: every card built); regression test
+  added. Need the owner's description (blank posters, grey cards, or missing
+  rows; does it recover).
+- Gate GATE_EXIT=0 (8,711 tests). Not built yet.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
