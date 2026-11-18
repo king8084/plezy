@@ -125,14 +125,16 @@ class Engine:
                         people.setdefault(n, name)
         self.crew = crew
         self.votes = votes
-        groups = {'anime': set(), 'cartoon': set()}
+        groups = {'anime': set(), 'cartoon': set(), 'tv': set()}
         try:
-            for library_id, name in db.execute('SELECT library_id, name FROM libraries'):
+            for library_id, name, collection in db.execute('SELECT library_id, name, collection_type FROM libraries'):
                 n = norm(name)
                 if re.search(r'\banim(e|es|ez)\b', n):
                     groups['anime'].add(library_id)
                 elif re.search(r'\bcartoons?\b', n):
                     groups['cartoon'].add(library_id)
+                elif collection == 'tvshows':
+                    groups['tv'].add(library_id)
         except Exception:   # older index without library tagging
             pass
         self.library_groups = groups
@@ -181,6 +183,67 @@ class Engine:
                f"(SELECT 1 FROM item_libraries l WHERE l.item_id={owner} AND l.library_id NOT IN ({marks})))")
         return sql, sorted(excluded)
 
+    # Searches (owner rule, Nov 18): a library word picks the libraries;
+    # without one, every library answers. Home rows keep [_library_scope].
+    ANIME_LIBRARY_WORDS = {'anime', 'animes'}
+    CARTOON_LIBRARY_WORDS = {'cartoon', 'cartoons'}
+    SHOW_LIBRARY_WORDS = {'show', 'shows', 'series', 'tv'}
+    ANIME_MOVIE_SQL = ("({o} IN (SELECT item_id FROM item_terms WHERE field='genre' AND value='Animation') AND "
+                       "({o} IN (SELECT item_id FROM item_terms WHERE field='tag' AND norm IN "
+                       "('anime','based on manga','based on light novel','shounen','seinen','shoujo','isekai')) "
+                       "OR (SELECT language FROM items o WHERE o.item_id={o})='ja'))")
+
+    def _requested_groups(self, raw):
+        """Library words in a request: anime -> the anime library, cartoon(s) ->
+        Cartoons, show(s)/series/tv -> TV Shows (only without anime/cartoon)."""
+        text = re.sub(r'\bshow me\b', ' ', norm(raw))
+        words = set(text.split())
+        groups = set()
+        if words & self.ANIME_LIBRARY_WORDS:
+            groups.add('anime')
+        if words & self.CARTOON_LIBRARY_WORDS:
+            groups.add('cartoon')
+        if not groups and words & self.SHOW_LIBRARY_WORDS:
+            groups.add('tv')
+        return groups
+
+    def _search_scope(self, groups):
+        """(sql, args) keeping only the requested libraries, or None for all.
+        Movies all live in the Movies library, so "anime"/"cartoons" keep the
+        movies that are anime / animated."""
+        if not groups:
+            return None
+        owner = "CASE WHEN i.kind='Episode' THEN i.series_id ELSE i.item_id END"
+        library_groups = getattr(self, 'library_groups', {})
+        libraries = sorted(set().union(*(library_groups.get(g, set()) for g in groups)))
+        if not libraries:
+            return None     # an index without library tagging cannot tell
+        parts, args = [], []
+        if libraries:
+            parts.append(f"EXISTS (SELECT 1 FROM item_libraries l WHERE l.item_id={owner} AND l.library_id IN "
+                         f"({','.join('?' * len(libraries))}))")
+            args += libraries
+        anime_movie = self.ANIME_MOVIE_SQL.format(o='i.item_id')
+        if 'anime' in groups:
+            parts.append(f"(i.kind='Movie' AND {anime_movie})")
+        if 'cartoon' in groups:
+            parts.append("(i.kind='Movie' AND i.item_id IN (SELECT item_id FROM item_terms WHERE field='genre' "
+                         f"AND value='Animation') AND NOT {anime_movie})")
+        if not parts:
+            return '0', []
+        return '(' + ' OR '.join(parts) + ')', args
+
+    def _keep_requested(self, results, groups):
+        """Drop results outside the requested libraries (title/show paths)."""
+        scope = self._search_scope(groups)
+        if not scope or not results:
+            return results
+        ids = [r['id'] for r in results]
+        keep = {row[0] for row in self.db.execute(
+            f"SELECT i.item_id FROM items i WHERE i.item_id IN ({','.join('?' * len(ids))}) AND {scope[0]}",
+            ids + scope[1])}
+        return [r for r in results if r['id'] in keep]
+
     def _filter_sql(self, p):
         """SQL WHERE for the parsed filters, applied to alias i (series via s)."""
         kinds = p.kinds or ({'Series', 'Movie'} if p.has_filters else set())
@@ -190,7 +253,12 @@ class Engine:
             args += sorted(kinds)
         # Episodes inherit genres/people/studios/language/status from their show.
         owner = "CASE WHEN i.kind='Episode' THEN i.series_id ELSE i.item_id END"
+        requested = getattr(p, 'library_groups', set())
         for concept in p.genres:
+            # The library already says what "anime"/"cartoons" means.
+            if (concept == 'anime' and 'anime' in requested) or \
+                    (concept in ('animation', 'kids') and 'cartoon' in requested):
+                continue
             if concept == 'anime':
                 where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='genre' AND value='Animation')")
                 where.append(f"({owner} IN (SELECT item_id FROM item_terms WHERE field='tag' AND norm IN "
@@ -247,7 +315,7 @@ class Engine:
             else:
                 where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='person' AND norm=?)")
                 args.append(person)
-        scope = self._library_scope(p)
+        scope = self._search_scope(getattr(p, 'library_groups', set()))
         if scope:
             where.append(scope[0])
             args += scope[1]
@@ -472,10 +540,10 @@ class Engine:
         unlocked, rest = set(), []
         for w in words:
             hit = False
-            if w in self.ANIME_WORDS:
+            if w in self.ANIME_LIBRARY_WORDS:
                 unlocked.add('anime')
                 hit = True
-            if w in self.CARTOON_WORDS:
+            if w in self.CARTOON_LIBRARY_WORDS:
                 unlocked.add('cartoon')
                 hit = True
             if not hit:
@@ -490,16 +558,18 @@ class Engine:
         library open. A request that is only a category ("anime comedies", "90s
         cartoons") keeps the category listing."""
         unlocked, rest = self._unlock(raw)
+        groups = self._requested_groups(raw)
         if unlocked and rest and not Q.parse(rest, self.vocab).has_filters:
-            out = self._instant(rest, limit, unlocked=unlocked)
+            out = self._instant(rest, limit, groups=groups)
             labels = [self.UNLOCK_LABELS[u] for u in sorted(unlocked)]
             out.update(query=raw, understood=labels + [u for u in out['understood'] if u not in labels])
             return out
-        return self._instant(raw, limit)
+        return self._instant(raw, limit, groups=groups)
 
-    def _instant(self, raw, limit=40, unlocked=()):
+    def _instant(self, raw, limit=40, groups=None):
         start = time.perf_counter()
         p = Q.parse(raw, self.vocab)
+        p.library_groups = self._requested_groups(raw) if groups is None else groups
         results, seen = [], set()
 
         def add(rows):
@@ -544,7 +614,7 @@ class Engine:
         add(titles)
         if len(results) < limit and (not p.has_filters or exact_title):
             tokens = _fts_tokens(raw, keep_stopwords=len(norm(raw).split()) <= 4)
-            scope_sql, scope_args = self._library_scope(p, allow=unlocked) or ('1', [])
+            scope_sql, scope_args = self._search_scope(p.library_groups) or ('1', [])
             if tokens:
                 rows = self.db.execute(
                     f'SELECT {self.COLUMNS} FROM search_text JOIN items i ON i.rowid=search_text.rowid '
@@ -561,7 +631,7 @@ class Engine:
                         [_match_expr(words, prefix_last=False, op=' OR ')] + scope_args + [limit]).fetchall()
                     add(self._row(r, 'some words') for r in rows)
         return {'query': raw, 'understood': p.understood, 'filters': p.has_filters, 'unwatched': p.unwatched,
-                'results': self._with_libraries(self._dedupe(results)[:limit]),
+                'results': self._with_libraries(self._dedupe(self._keep_requested(results, p.library_groups))[:limit]),
                 'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
     # -- Home rows ------------------------------------------------------------------
@@ -680,6 +750,7 @@ class Engine:
             # model know which show the characters belong to.
             raw = f'{row[0]} episode {raw}'
         p = Q.parse(raw, self.vocab)
+        p.library_groups = set() if forced else self._requested_groups(raw)
         # Embed the whole request: words the parser turns into filters ("tv show",
         # "anime") still carry meaning. Filters are applied separately below.
         scoped = self._series_in(p)
@@ -698,7 +769,7 @@ class Engine:
         elif p.has_filters:
             restrict = self._filter_sql(p)
         else:
-            scope = self._library_scope(p)
+            scope = self._search_scope(p.library_groups)
             if scope:
                 restrict = ('i.active=1 AND ' + scope[0], scope[1])
         if restrict:
@@ -752,6 +823,9 @@ class Engine:
                 f"SELECT item_id FROM items WHERE kind='Episode' AND series_id IN "
                 f"({','.join('?' * len(forced[1]))})", forced[1])}
             order = [x for x in order if x in in_show]
+        if p.library_groups:
+            kept = {r['id'] for r in self._keep_requested([{'id': x} for x in order], p.library_groups)}
+            order = [x for x in order if x in kept]
         order = order[:limit]
         sim = dict(semantic)
         rows = {r[0]: r for r in self.db.execute(

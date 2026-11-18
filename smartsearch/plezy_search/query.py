@@ -277,6 +277,8 @@ def parse(query, vocab=None, today=None):
     text = _rating(text, p)
     text = _years(text, p, today)
     text = ' ' + norm(text) + ' '
+    # "show me funny movies": "show me" is a request, not the word "show".
+    text = re.sub(r' show me ', ' ', text)
 
     for phrase, kind in _KIND_PHRASES:
         found, text = _take(text, phrase)

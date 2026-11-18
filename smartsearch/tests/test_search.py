@@ -57,6 +57,11 @@ class ParserTest(unittest.TestCase):
             self.assertEqual((p.kinds, p.genres), ({'Series'}, ['scifi']), q)
         self.assertFalse(parse('watched it twice', today=TODAY).unwatched)
 
+    def test_show_me_is_not_the_word_show(self):
+        p = parse('show me funny movies', today=TODAY)
+        self.assertEqual((p.kinds, p.genres), ({'Movie'}, ['comedy']))
+        self.assertEqual(parse('funny shows', today=TODAY).kinds, {'Series'})
+
     def test_list_style_requests_keep_filters(self):
         p = parse('best korean thriller movies', today=TODAY)
         self.assertEqual((p.languages, p.genres, p.sort), ({'ko'}, ['thriller'], 'rating'))
@@ -309,8 +314,17 @@ class UnlockedEpisodesTest(unittest.TestCase):
             self.assertIn(('Episode', 'Episode 5'), self.kinds_titles(q), q)
         self.assertIn('Anime', self.engine.instant('anime galaxy forest')['understood'])
 
-    def test_without_the_word_the_library_stays_closed(self):
-        self.assertNotIn(('Episode', 'Episode 5'), self.kinds_titles('galaxy forest'))
+    def test_without_a_library_word_every_library_answers(self):
+        self.assertIn(('Episode', 'Episode 5'), self.kinds_titles('galaxy forest'))
+        self.assertIn(('Episode', 'Jelly Day'), self.kinds_titles('sponge jellyfishing'))
+
+    def test_a_library_word_returns_only_that_library(self):
+        anime = self.kinds_titles('anime forest')
+        self.assertIn(('Episode', 'Episode 5'), anime)
+        self.assertNotIn(('Episode', 'Jelly Day'), self.kinds_titles('anime jellyfishing'))
+        self.assertNotIn(('Episode', 'Episode 5'), self.kinds_titles('cartoon forest'))
+        self.assertNotIn(('Series', 'Galaxy Blades'), self.kinds_titles('shows galaxy'))
+        self.assertIn(('Series', 'Firefly'), self.kinds_titles('shows firefly'))
 
     def test_cartoon_word_returns_cartoon_episodes(self):
         for q in ('cartoon sponge jellyfishing', 'cartoons sponge jellyfishing'):
