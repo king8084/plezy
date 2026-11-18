@@ -149,6 +149,18 @@ class SmartSearchClient {
     instantTimeout,
   );
 
+  /// IMDb vote counts for library items (Jellyfin ids), from the index's
+  /// copy of IMDb's public ratings. Items it does not know are left out.
+  Future<Map<String, int>> votes(JellyfinConnection connection, List<String> itemIds) async {
+    final json = await _getJson(connection, '/v1/votes', {'ids': itemIds.take(200).join(',')}, instantTimeout);
+    final votes = json is Map ? json['votes'] : null;
+    if (votes is! Map) return const {};
+    return {
+      for (final MapEntry(:key, :value) in votes.entries)
+        if (key is String && value is num) key: value.toInt(),
+    };
+  }
+
   Future<SmartSearchResponse> _get(
     JellyfinConnection connection,
     String path,

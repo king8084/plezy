@@ -2425,6 +2425,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// library titles only, watched and started titles left out). Supplemental:
   /// the page never waits for it, and any failure keeps the server's row.
   Future<void> _loadBlendedSimilar() async {
+    try {
+      await _loadBlendedSimilarRow();
+    } finally {
+      if (mounted) unawaited(_loadLibraryVotes());
+    }
+  }
+
+  Future<void> _loadBlendedSimilarRow() async {
     final metadata = _metadata;
     if (!mounted || widget.isOffline || !(metadata.isShow || metadata.isMovie)) return;
     final generation = ++_blendedSimilarGeneration;
@@ -2459,6 +2467,40 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
     } catch (error) {
       appLogger.d('Blended "More like this" unavailable', error: error);
+    }
+  }
+
+  /// Real IMDb vote counts for the library cards in the rows above (Jellyfin
+  /// has none), from the household index. Supplemental: absent counts leave
+  /// the captions as they are.
+  Future<void> _loadLibraryVotes() async {
+    final serverId = _metadata.serverId;
+    final ids = {
+      for (final hub in _relatedHubs)
+        for (final item in hub.items)
+          if (LibraryRatingCaption.isMarked(item) && item.raw?[LibraryRatingCaption.votesKey] == null) item.id,
+    };
+    if (serverId == null || ids.isEmpty) return;
+    final metadata = _metadata;
+    try {
+      final votes = await context.read<MultiServerProvider>().aggregationService.imdbVotes(serverId, ids.toList());
+      if (!mounted || votes.isEmpty || !identical(_metadata, metadata)) return;
+      setState(() {
+        _relatedHubs = [
+          for (final hub in _relatedHubs)
+            hub.copyWith(
+              items: [
+                for (final item in hub.items)
+                  if (votes[item.id] case final count? when LibraryRatingCaption.isMarked(item))
+                    LibraryRatingCaption.mark(item, votes: count)
+                  else
+                    item,
+              ],
+            ),
+        ];
+      });
+    } catch (error) {
+      appLogger.d('IMDb vote counts unavailable', error: error);
     }
   }
 

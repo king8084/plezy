@@ -15,6 +15,9 @@ import time
 
 import numpy as np
 
+from pathlib import Path
+
+from . import imdb_extras
 from . import query as Q
 from . import store
 from .common import DIMENSIONS, SearchError, norm, sha, utc
@@ -104,6 +107,24 @@ class Engine:
                 if provider in ('imdb', 'tmdb', 'tvdb') and value:
                     external.setdefault((kind, provider, str(value).strip().lower()), []).append(item_id)
         self.external = external
+        # Directors/writers and vote counts from IMDb's datasets (Jellyfin's
+        # metadata has cast only and no votes). Joined by IMDb id.
+        crew, votes = {}, {}
+        extras = imdb_extras.load(Path(self.db_path).parent / imdb_extras.FILE_NAME)
+        for (kind, provider, value), item_ids in external.items():
+            entry = extras.get(value) if provider == 'imdb' else None
+            if not entry:
+                continue
+            for item_id in item_ids:
+                if entry.get('v'):
+                    votes[item_id] = entry['v']
+                for name in entry.get('d', []) + entry.get('w', []):
+                    n = norm(name)
+                    if ' ' in n:
+                        crew.setdefault(n, set()).add(item_id)
+                        people.setdefault(n, name)
+        self.crew = crew
+        self.votes = votes
         groups = {'anime': set(), 'cartoon': set()}
         try:
             for library_id, name in db.execute('SELECT library_id, name FROM libraries'):
@@ -218,8 +239,14 @@ class Engine:
                          f"({','.join('?' * len(studios))}))")
             args += studios
         for person in p.people:
-            where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='person' AND norm=?)")
-            args.append(person)
+            crew = sorted(getattr(self, 'crew', {}).get(person, ()))
+            if crew:
+                where.append(f"({owner} IN (SELECT item_id FROM item_terms WHERE field='person' AND norm=?) "
+                             f"OR {owner} IN ({','.join('?' * len(crew))}))")
+                args += [person, *crew]
+            else:
+                where.append(f"{owner} IN (SELECT item_id FROM item_terms WHERE field='person' AND norm=?)")
+                args.append(person)
         scope = self._library_scope(p)
         if scope:
             where.append(scope[0])
@@ -236,9 +263,11 @@ class Engine:
     # -- result shaping ---------------------------------------------------------
     COLUMNS = 'i.item_id, i.kind, i.title, i.year, i.rating, i.series, i.series_id, i.season, i.episode, i.runtime_min, i.critic'
 
-    @staticmethod
-    def _row(r, reason, score=None):
+    def _row(self, r, reason, score=None):
         out = {'id': r[0], 'kind': r[1], 'title': r[2], 'year': r[3], 'rating': r[4], 'reason': reason}
+        votes = getattr(self, 'votes', {}).get(r[0])
+        if votes:
+            out['votes'] = votes
         if r[1] == 'Episode':
             out.update(series=r[5], series_id=r[6], season=r[7], episode=r[8])
         if r[9]:

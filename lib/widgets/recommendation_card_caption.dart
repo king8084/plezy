@@ -130,12 +130,22 @@ class LibraryRatingCaption extends StatelessWidget {
   /// Marks a library row whose cards use this caption.
   static const rawKey = 'plezyLibraryRatingCaption';
 
-  static MediaItem mark(MediaItem item) => item.kind == MediaKind.movie || item.kind == MediaKind.show
-      ? item.copyWith(raw: {...?item.raw, rawKey: true})
+  /// IMDb vote count (from the household index's copy of IMDb's ratings).
+  static const votesKey = 'plezyImdbVotes';
+
+  static MediaItem mark(MediaItem item, {int? votes}) => item.kind == MediaKind.movie || item.kind == MediaKind.show
+      ? item.copyWith(raw: {...?item.raw, rawKey: true, votesKey: ?votes})
       : item;
 
   static bool isMarked(MediaItem item) => item.raw?[rawKey] == true;
 
   @override
-  Widget build(BuildContext context) => RatingYearCaption(rating: item.rating, year: item.year);
+  Widget build(BuildContext context) => RatingYearCaption(
+    rating: item.rating,
+    votes: switch (item.raw?[votesKey]) {
+      final int votes => votes,
+      _ => null,
+    },
+    year: item.year,
+  );
 }

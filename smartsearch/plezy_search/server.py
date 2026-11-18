@@ -99,6 +99,11 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/v1/resolve':
                 refs = [x for x in (args.get('refs') or '').split(',') if x][:200]
                 return self._send(200, engine.resolve(refs, args.get('seed') or None, min(limit, 100)))
+            if url.path == '/v1/votes':
+                # IMDb vote counts for library items (Jellyfin ids), for card captions.
+                ids = [x for x in (args.get('ids') or '').split(',') if x][:200]
+                votes = getattr(engine, 'votes', {})
+                return self._send(200, {'votes': {i: votes[i] for i in ids if i in votes}})
             if url.path == '/v1/similar':
                 return self._send(200, engine.similar(args.get('id', ''), min(limit, 100)))
             if url.path == '/v1/health':

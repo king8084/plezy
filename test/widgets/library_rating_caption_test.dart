@@ -22,6 +22,23 @@ void main() {
     expect(find.text('· 2010'), findsOneWidget);
   });
 
+  testWidgets('a known IMDb vote count shows beside the rating', (tester) async {
+    final movie = LibraryRatingCaption.mark(
+      testMediaItem(id: 'm1', kind: MediaKind.movie, rating: 8.8, year: 2010),
+      votes: 2890807,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: monoTheme(MonoPalette.dark),
+        home: Scaffold(body: LibraryRatingCaption(item: movie)),
+      ),
+    );
+
+    expect(find.text('8.8'), findsOneWidget);
+    expect(find.text('2.89M'), findsOneWidget);
+  });
+
   testWidgets('no rating falls back to the year alone', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

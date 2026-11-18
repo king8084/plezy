@@ -1038,6 +1038,19 @@ class DataAggregationService {
     }
   }
 
+  /// IMDb vote counts for library [items] on one server, keyed by item id
+  /// (for card captions). Empty when the index is unavailable.
+  Future<Map<String, int>> imdbVotes(String? serverId, List<String> itemIds) async {
+    final smart = _smartSearch;
+    final client = serverId == null ? null : _serverManager.onlineClients[serverId];
+    if (smart == null || client is! JellyfinClient || itemIds.isEmpty) return const {};
+    try {
+      return await smart.votes(client.connection, itemIds);
+    } on SmartSearchUnavailable {
+      return const {};
+    }
+  }
+
   /// Episodes of [show] matching a description ("phil basketball"), best
   /// first, loaded for this viewer. [recall] also asks the language model
   /// (slower; for a submitted request rather than every keystroke).

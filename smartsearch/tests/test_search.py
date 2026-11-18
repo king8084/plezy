@@ -239,3 +239,37 @@ class FindInShowTest(unittest.TestCase):
             self.assertEqual(got[0]['title'], 'Party Crasher')
             self.assertEqual(engine.smart('phil', series='missing', verify=False, recall=False)['results'], [])
 
+
+
+class ImdbExtrasTest(unittest.TestCase):
+    """Directors and vote counts come from IMDb's datasets, joined by IMDb id."""
+
+    def test_director_search_and_votes(self):
+        import gzip
+        from plezy_search import imdb_extras
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / 'imdb'
+            data.mkdir()
+
+            def tsv(name, rows):
+                with gzip.open(data / name, 'wt', encoding='utf-8') as f:
+                    f.write('\n'.join('\t'.join(r) for r in rows) + '\n')
+            tsv('title.crew.tsv.gz', [('tconst', 'directors', 'writers'),
+                                      ('tt1375666', 'nm0634240', 'nm0634240'), ('tt0000001', 'nm1', '\\N')])
+            tsv('name.basics.tsv.gz', [('nconst', 'primaryName'), ('nm0634240', 'Christopher Nolan'), ('nm1', 'X Y')])
+            tsv('title.ratings.tsv.gz', [('tconst', 'averageRating', 'numVotes'), ('tt1375666', '8.8', '2890807')])
+            items = [movie(1, 'Inception', ProviderIds={'Imdb': 'tt1375666'}, CommunityRating=8.8),
+                     movie(2, 'Other Film', ProviderIds={'Imdb': 'tt7777777'}, CommunityRating=7.0)]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.close()
+            count = imdb_extras.build(data, ['tt1375666', 'tt7777777'], Path(tmp) / imdb_extras.FILE_NAME)
+            self.assertEqual(count, 1)
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            got = engine.instant('christopher nolan')['results']
+            self.assertEqual([r['title'] for r in got], ['Inception'])
+            self.assertEqual(got[0]['votes'], 2890807)
+
+    def test_missing_file_changes_nothing(self):
+        from plezy_search import imdb_extras
+        self.assertEqual(imdb_extras.load('/nonexistent/imdb_extras.json'), {})
