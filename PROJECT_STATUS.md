@@ -2,7 +2,14 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `b84551ee1` (Codemagic build 30, Nov 18, in place via
+- Installed app source: `5c9ac435f` (Codemagic build 31, Nov 18, in place via
+  tvsign Renew; signing and upload OK; ~35 min Codemagic queue). Search
+  housekeeping (clear on leave, Back to "a", scrollbar, result count),
+  instant-only search, "Ask AI" chip. Local gate GATE_EXIT=0 (8,711 tests),
+  Codemagic gate passed; fork Actions disabled. Backups
+  `*-before-5c9ac43.ipa`; private receipt in `.git/plezy-private/`. Owner
+  device check pending.
+- Previous install: `b84551ee1` (Codemagic build 30, Nov 18, in place via
   tvsign Renew; signing and upload OK). Simkl row votes, dictation
   auto-return, mic key beside "a", Seerr row boxed vote tag. Build 29 failed
   at clone (Codemagic could not reach github.com); one justified retry.
