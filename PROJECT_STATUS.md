@@ -530,6 +530,19 @@ from the logs) is already fast enough, so it was left alone.
   tarballs (fd07ddd53 confirmed-working, f0dfa5924 live) and the
   imdb_extras.json snapshot, in `.git/plezy-private/release-2026-11-18/build30-backup/`.
 
+## Instant-only search + Ask AI (Nov 18)
+- Tested "anime one piece luffy uses gear 4 for first time": instant had
+  the right episode (726, library S17E98 "Fourth Gear! The Phenomenal
+  Bounce-man!") at #5 in 0.03 s; /v1/smart (Ollama) had it #3 "possible" in
+  8 s. Cause: "4" vs "Fourth".
+- Server `92493f825` (deployed): numbers 2-10 match their words/ordinals;
+  "first time"/"debut"/"first appearance" puts the earliest best-matching
+  episode first. Live: that query -> #1 the right episode. Tests 40 OK.
+  Not addressed: "season N" is not a filter yet ("friends season 3").
+- App (not built): no automatic smart search; "✨ Ask AI" chip at the end of
+  the filter row asks /v1/smart for the current query and lists its picks.
+  Gate GATE_EXIT=0 (8,711 tests).
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
