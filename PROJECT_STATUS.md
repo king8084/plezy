@@ -2,7 +2,13 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `e28336a70bf8b00634455fc1a6471c0408a908bb` (Codemagic build 26,
+- Installed app source: `9044a33d836b1be76b2cce6d362f3d765ceabf68` (Codemagic build 27,
+  Nov 18, in place via tvsign Renew; signing and upload OK). Flutter-drawn
+  static search header (Search + Find, Rivulet-style full-width keys) and the
+  short audio badge. Local gate GATE_EXIT=0 (8,700 tests), Codemagic gate
+  passed; fork Actions disabled. Backups `*-before-9044a33.ipa`; private
+  receipt in `.git/plezy-private/`. Owner device check of search pending.
+- Previous install: `e28336a70bf8b00634455fc1a6471c0408a908bb` (Codemagic build 26,
   Nov 18 04:24 local, in place via tvsign Renew; OK, no errors). Contains the
   docked Apple search keyboard (Search + Find), classic show page with Season
   pills and labeled actions, blended More Like This. Local gate GATE_EXIT=0
