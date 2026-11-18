@@ -2,7 +2,14 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `a85be64aa0fe01b36ebc3fd537a05d54774f3b9e` (Codemagic build 25,
+- Installed app source: `e28336a70bf8b00634455fc1a6471c0408a908bb` (Codemagic build 26,
+  Nov 18 04:24 local, in place via tvsign Renew; OK, no errors). Contains the
+  docked Apple search keyboard (Search + Find), classic show page with Season
+  pills and labeled actions, blended More Like This. Local gate GATE_EXIT=0
+  (8,701 tests), Codemagic gate passed; fork Actions disabled. Backups
+  `*-before-e28336a.ipa`; private receipt in `.git/plezy-private/`. Owner
+  device checks of the docked keyboard (first device run) are pending.
+- Previous install: `a85be64aa0fe01b36ebc3fd537a05d54774f3b9e` (Codemagic build 25,
   Nov 17 18:05 local, in place via tvsign Renew; signing and upload OK). Local
   gate GATE_EXIT=0 (8,702 tests) and the Codemagic gate passed; fork Actions
   disabled, so fork CI did not run. Build 25 sat ~30 min in Codemagic's
