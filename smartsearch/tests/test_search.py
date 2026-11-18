@@ -273,3 +273,50 @@ class ImdbExtrasTest(unittest.TestCase):
     def test_missing_file_changes_nothing(self):
         from plezy_search import imdb_extras
         self.assertEqual(imdb_extras.load('/nonexistent/imdb_extras.json'), {})
+
+
+class UnlockedEpisodesTest(unittest.TestCase):
+    """"anime"/"cartoon" open their library; named requests then return episodes too."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        items = [series(1, 'Firefly', rating=9.0, Tags=['space']),
+                 series(2, 'Galaxy Blades', genres=('Animation', 'Comedy'), rating=8.5, Tags=['anime']),
+                 episode(10, f'{2:032x}', 'Galaxy Blades', 1, 5, 'Episode 5',
+                         'Kenji and the crew get lost deep in a haunted forest.'),
+                 series(3, 'Sea Sponge', genres=('Animation', 'Comedy'), rating=8.0),
+                 episode(11, f'{3:032x}', 'Sea Sponge', 1, 2, 'Jelly Day', 'The sponge goes jellyfishing all day.')]
+        w = make_indexer(self.tmp.name, items)
+        w.initial_import()
+        w.db.execute("INSERT INTO libraries VALUES('lib-tv','TV Shows','tvshows',NULL)")
+        w.db.execute("INSERT INTO libraries VALUES('lib-anime','Animez-TV Shows','tvshows',NULL)")
+        w.db.execute("INSERT INTO libraries VALUES('lib-cartoon','Cartoons','tvshows',NULL)")
+        w.db.executemany('INSERT INTO item_libraries VALUES(?,?)', [
+            (f'{1:032x}', 'lib-tv'), (f'{2:032x}', 'lib-anime'), (f'{10:032x}', 'lib-anime'),
+            (f'{3:032x}', 'lib-cartoon'), (f'{11:032x}', 'lib-cartoon')])
+        w.db.commit()
+        w.db.close()
+        self.engine = Engine(Path(self.tmp.name) / 'index.sqlite')
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def kinds_titles(self, q):
+        return [(r['kind'], r['title']) for r in self.engine.instant(q)['results']]
+
+    def test_anime_word_returns_episodes_found_by_description(self):
+        for q in ('anime galaxy forest', 'animes galaxy forest', 'galaxy forest anime'):
+            self.assertIn(('Episode', 'Episode 5'), self.kinds_titles(q), q)
+        self.assertIn('Anime', self.engine.instant('anime galaxy forest')['understood'])
+
+    def test_without_the_word_the_library_stays_closed(self):
+        self.assertNotIn(('Episode', 'Episode 5'), self.kinds_titles('galaxy forest'))
+
+    def test_cartoon_word_returns_cartoon_episodes(self):
+        for q in ('cartoon sponge jellyfishing', 'cartoons sponge jellyfishing'):
+            self.assertIn(('Episode', 'Jelly Day'), self.kinds_titles(q), q)
+
+    def test_category_requests_keep_the_category_listing(self):
+        got = self.kinds_titles('anime comedies')
+        self.assertIn(('Series', 'Galaxy Blades'), got)
+        self.assertNotIn(('Series', 'Firefly'), got)

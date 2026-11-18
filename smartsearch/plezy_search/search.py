@@ -463,7 +463,41 @@ class Engine:
         return [self._row(r, 'similar title', -s) for s, _, r in scored[:limit]]
 
     # -- instant ------------------------------------------------------------------
+    UNLOCK_LABELS = {'anime': 'Anime', 'cartoon': 'Cartoons'}
+
+    def _unlock(self, raw):
+        """("anime conan forest") -> ({'anime'}, 'conan forest'): the words that
+        open the anime/cartoon libraries, and the request without them."""
+        words = norm(raw).split()
+        unlocked, rest = set(), []
+        for w in words:
+            hit = False
+            if w in self.ANIME_WORDS:
+                unlocked.add('anime')
+                hit = True
+            if w in self.CARTOON_WORDS:
+                unlocked.add('cartoon')
+                hit = True
+            if not hit:
+                rest.append(w)
+        return unlocked, ' '.join(rest)
+
     def instant(self, raw, limit=40):
+        """Owner rule: anime/cartoon libraries open only when asked ("anime",
+        "animes", "cartoon(s)"). When that word just opens the library for a
+        request that names something ("anime conan forest", "cartoon spongebob
+        jellyfish"), the rest is searched as usual, episodes included, with the
+        library open. A request that is only a category ("anime comedies", "90s
+        cartoons") keeps the category listing."""
+        unlocked, rest = self._unlock(raw)
+        if unlocked and rest and not Q.parse(rest, self.vocab).has_filters:
+            out = self._instant(rest, limit, unlocked=unlocked)
+            labels = [self.UNLOCK_LABELS[u] for u in sorted(unlocked)]
+            out.update(query=raw, understood=labels + [u for u in out['understood'] if u not in labels])
+            return out
+        return self._instant(raw, limit)
+
+    def _instant(self, raw, limit=40, unlocked=()):
         start = time.perf_counter()
         p = Q.parse(raw, self.vocab)
         results, seen = [], set()
@@ -510,7 +544,7 @@ class Engine:
         add(titles)
         if len(results) < limit and (not p.has_filters or exact_title):
             tokens = _fts_tokens(raw, keep_stopwords=len(norm(raw).split()) <= 4)
-            scope_sql, scope_args = self._library_scope(p) or ('1', [])
+            scope_sql, scope_args = self._library_scope(p, allow=unlocked) or ('1', [])
             if tokens:
                 rows = self.db.execute(
                     f'SELECT {self.COLUMNS} FROM search_text JOIN items i ON i.rowid=search_text.rowid '
