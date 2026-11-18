@@ -461,6 +461,9 @@ from the logs) is already fast enough, so it was left alone.
   rerunning the builder (votes drift slowly; new titles get crew on rebuild).
   Single surnames ("nolan movies") are not matched; names need 2-3 words.
 - Gate GATE_EXIT=0 (8,705 tests); smartsearch tests 33 OK. Not built yet.
+- Owner decision (Nov 18): do not mount or read the 4 GB household imdb.db
+  for vote drift. Searches use only Jellyfin's year and IMDb rating; the
+  vote snapshot in imdb_extras.json is enough for show-page captions.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
