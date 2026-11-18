@@ -400,13 +400,32 @@ from the logs) is already fast enough, so it was left alone.
   page loads) by the blended list used for Home's "Because you watched",
   seeded by that show. Find uses the docked Apple keyboard like Search.
 
+## Build 26 owner feedback (Nov 18): show page perfect, search still broken
+- Owner: "show page is now perfect". Search with the docked native keyboard
+  failed on the device: letters spilled under the sidebar, typing did not
+  work, and the keyboard stayed stuck over other screens.
+- Fix (commit `f708bd896`, not built yet): Search and Find on Apple TV use a
+  Flutter-drawn static header (`lib/widgets/tv_search_header.dart`): big query
+  line, one key row (123/abc, space, a-z, delete, mic), results directly
+  below. The row is one focus target; Left/Right move keys, Select types,
+  Down goes to results, Up returns, Back clears then leaves. The mic key
+  opens Apple's system keyboard for dictation; phone/companion keyboards type
+  directly. Nothing native is docked or presented, so it cannot get stuck.
+  The Apple search keyboard setting and strings are removed. The native
+  plugin (`NativeSearchPlugin.swift`) is still registered but no longer
+  called (inert); remove later with the pbxproj.
+- Rendered at 1920x1080 in a widget test with real fonts (empty and typed
+  states) and checked; scratch render files deleted. Local gate GATE_EXIT=0
+  (8,698 tests). Owner device check pending.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
   authorization; app closed, Apple TV awake in Settings before installation.
 - Keep environment addresses, household device names and install receipts private.
 - After strings change: clean translations, regenerate, commit generated outputs.
-- Next: owner reviews the enhancement batch; build only on "build app".
+- Next: build only on "build app"; then owner checks the new search header
+  (Search + Find, typing, Down/Up, mic dictation).
   Owner visual/settings/playback checks of build 24 remain open.
   Diagnose inconsistent iOS speed results separately; native behavior unchanged.
   Recovery receipts/bundles remain private.
