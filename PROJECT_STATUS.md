@@ -417,6 +417,15 @@ from the logs) is already fast enough, so it was left alone.
 - Rendered at 1920x1080 in a widget test with real fonts (empty and typed
   states) and checked; scratch render files deleted. Local gate GATE_EXIT=0
   (8,698 tests). Owner device check pending.
+- Owner compared with Rivulet (open source, PolyForm Noncommercial; studied,
+  not copied). Rivulet's whole Search page is native UIKit: results are the
+  UISearchController's searchResultsController, so keyboard and results share
+  one focus system. Plezy's results are Flutter, which is why docking Apple's
+  keyboard failed; the Flutter header stays and now copies Rivulet's look
+  (keys spread full width, hairline under them, SPACE caps).
+- Show page audio badge shortened to "English / EAC3 / 5.1 / 640k" (Atmos
+  replaces channels; bitrate parsed from the track title when present).
+  Gate GATE_EXIT=0 (8,700 tests). Not built yet.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
