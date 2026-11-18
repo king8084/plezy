@@ -44,7 +44,16 @@ extension _MediaDetailSeerrRecommendations on _MediaDetailScreenState {
                 identifier: 'detail.seerr.recommendations',
                 title: t.discover.moreLikeThisRequest,
                 type: item.isMovie ? 'movie' : 'show',
-                items: [for (final recommendation in recommendations) recommendation.toMediaItem()],
+                // Captioned like the other "More like this" rows (star, IMDb
+                // score, boxed vote count, year); only this row, not Seerr
+                // cards elsewhere.
+                items: [
+                  for (final recommendation in recommendations)
+                    RecommendationCardData(
+                      recommendation,
+                      RecommendationAvailability.unknown,
+                    ).attach(recommendation.toMediaItem()),
+                ],
                 size: recommendations.length,
               );
       });

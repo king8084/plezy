@@ -62,15 +62,17 @@ class _TvSearchHeaderState extends State<TvSearchHeader> {
   @visibleForTesting
   int get debugIndex => _index;
 
-  /// Starts on "a", the first letter.
-  int _index = 2;
+  /// Starts on "a", the first letter (the mic sits just left of it).
+  late int _index = _firstLetterIndex;
+
+  int get _firstLetterIndex => widget.onDictate != null ? 3 : 2;
 
   List<_Key> get _keys => [
     _Key(_KeyKind.toggleDigits, _digitsMode ? 'ABC' : '123'),
     const _Key(_KeyKind.space, 'SPACE'),
+    if (widget.onDictate != null) const _Key(_KeyKind.dictate),
     for (final char in (_digitsMode ? _digits : _letters).split('')) _Key(_KeyKind.character, char),
     const _Key(_KeyKind.delete),
-    if (widget.onDictate != null) const _Key(_KeyKind.dictate),
   ];
 
   @override

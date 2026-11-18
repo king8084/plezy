@@ -231,7 +231,8 @@ void main() {
 
     Future<void> typeWord(WidgetTester tester, String word) async {
       for (final ch in word.split('')) {
-        final target = 2 + ch.codeUnitAt(0) - 'a'.codeUnitAt(0);
+        // 123, SPACE, mic, then a-z.
+        final target = 3 + ch.codeUnitAt(0) - 'a'.codeUnitAt(0);
         // ignore: avoid_dynamic_calls
         final current = (tester.state(find.byType(TvSearchHeader)) as dynamic).debugIndex as int;
         final key = target > current ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft;
@@ -280,9 +281,8 @@ void main() {
       await tester.pumpAndSettle();
       headerFocus(tester).requestFocus();
       await tester.pumpAndSettle();
-      for (var i = 0; i < 40; i++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      }
+      // The mic sits just left of "a", where the row starts.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pumpAndSettle();
       expect(find.byType(TvSearchHeader), findsNothing);
@@ -297,9 +297,8 @@ void main() {
       await tester.pumpAndSettle();
       headerFocus(tester).requestFocus();
       await tester.pumpAndSettle();
-      for (var i = 0; i < 40; i++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      }
+      // The mic sits just left of "a", where the row starts.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pumpAndSettle();
       expect(find.byType(TvSearchHeader), findsNothing);
