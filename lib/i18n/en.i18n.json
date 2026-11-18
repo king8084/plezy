@@ -603,7 +603,8 @@
     "resultCount": {
       "one": "${n} result",
       "other": "${n} results"
-    }
+    },
+    "askAi": "Ask AI"
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",

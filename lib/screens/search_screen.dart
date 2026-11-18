@@ -84,6 +84,7 @@ class _SearchScreenState extends State<SearchScreen>
   List<MediaKind> _candidateKinds = const [];
   List<SearchHit>? _filteredResults;
   late final FocusNode _allChipFocusNode = FocusNode(debugLabel: 'SearchKindChipAll');
+  late final FocusNode _aiChipFocusNode = FocusNode(debugLabel: 'SearchAiChip');
   late final FocusNode _peopleChipFocusNode = FocusNode(debugLabel: 'SearchPeopleChip');
   final Map<MediaKind, FocusNode> _kindChipFocusNodes = {};
 
@@ -118,6 +119,7 @@ class _SearchScreenState extends State<SearchScreen>
     searchFocusNode.removeListener(_onSearchFocusChanged);
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
+    _aiChipFocusNode.dispose();
     _peopleChipFocusNode.dispose();
     for (final node in _kindChipFocusNodes.values) {
       node.dispose();
@@ -237,8 +239,6 @@ class _SearchScreenState extends State<SearchScreen>
     _cancelSmartSuggestions();
   }
 
-  static bool _wantsSmartSuggestions(String query) => query.trim().split(RegExp(r'\s+')).length >= 3;
-
   void _cancelSmartSuggestions() {
     _smartAbort?.abort();
     _smartAbort = null;
@@ -248,7 +248,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   Future<void> _loadSmartSuggestions(String query) async {
     _cancelSmartSuggestions();
-    if (!_wantsSmartSuggestions(query)) return;
+    if (query.trim().isEmpty) return;
     final multiServer = context.read<MultiServerProvider>();
     final hiddenKeys = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
     final abort = AbortController();
@@ -267,16 +267,9 @@ class _SearchScreenState extends State<SearchScreen>
     }
     // Ignore answers for a query the user has already moved on from.
     if (!mounted || !identical(_smartAbort, abort)) return;
-    final alreadyShown = {
-      for (final hit in searchResults.take(5))
-        if (hit is MediaSearchHit) hit.item.globalKey,
-    };
     setState(() {
       _smartLoading = false;
-      _smartSuggestions = [
-        for (final suggestion in suggestions)
-          if (!alreadyShown.contains(suggestion.item.globalKey)) suggestion,
-      ];
+      _smartSuggestions = suggestions;
     });
   }
 
@@ -330,10 +323,7 @@ class _SearchScreenState extends State<SearchScreen>
       showAppSnackBar(context, t.messages.searchPartialResults);
     }
 
-    // After this frame's results render: the smart section only appends.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && searchController.text.trim() == query) unawaited(_loadSmartSuggestions(query));
-    });
+    // Searches stay instant: the language model answers only through "Ask AI".
 
     if (_focusResultsForQuery == null || _focusResultsForQuery != query) return;
     _focusResultsForQuery = null;
@@ -589,16 +579,29 @@ class _SearchScreenState extends State<SearchScreen>
     const _AllResults(),
     for (final kind in _candidateKinds) _KindResults(kind),
     if (_searchPeople.isNotEmpty) const _PeopleResults(),
+    if (_offersAskAi) const _AiResults(),
   ];
 
+  /// Apple TV with the household index: "Ask AI" closes the chip row.
+  bool get _offersAskAi {
+    if (!PlatformDetector.isAppleTV()) return false;
+    if (lastSearchedQuery.isEmpty) return false;
+    try {
+      return context.read<MultiServerProvider>().aggregationService.smartSearchKnownAvailable;
+    } on ProviderNotFoundException {
+      return false;
+    }
+  }
+
   /// "All" plus a single other option (one kind, or only people) has nothing
-  /// to filter.
-  bool get _showFilterChips => _candidateKinds.length + (_searchPeople.isEmpty ? 0 : 1) > 1;
+  /// to filter, unless "Ask AI" is offered.
+  bool get _showFilterChips => _candidateKinds.length + (_searchPeople.isEmpty ? 0 : 1) > 1 || _offersAskAi;
 
   bool _hasCandidatesFor(_SearchFilter filter) => switch (filter) {
     _AllResults() => true,
     _KindResults(:final kind) => _candidateKinds.contains(kind),
     _PeopleResults() => _searchPeople.isNotEmpty,
+    _AiResults() => false, // a new query goes back to "All"
   };
 
   /// The selected filter's pool re-ranked with the full display budget, or
@@ -621,6 +624,8 @@ class _SearchScreenState extends State<SearchScreen>
           for (final person in rankPeopleSearchResults(_searchPeople, query, limit: defaultMediaSearchLimit))
             PersonSearchHit(person),
         ];
+      case _AiResults():
+        return const [];
     }
   }
 
@@ -630,6 +635,11 @@ class _SearchScreenState extends State<SearchScreen>
       _selectedFilter = filter;
       _filteredResults = _rankFilteredResults(filter, lastSearchedQuery);
     });
+    if (filter is _AiResults) {
+      unawaited(_loadSmartSuggestions(lastSearchedQuery));
+    } else {
+      setState(_cancelSmartSuggestions);
+    }
   }
 
   void _resetFilter() {
@@ -647,19 +657,23 @@ class _SearchScreenState extends State<SearchScreen>
       () => FocusNode(debugLabel: 'SearchKindChip_${kind.id}'),
     ),
     _PeopleResults() => _peopleChipFocusNode,
+    _AiResults() => _aiChipFocusNode,
   };
 
   /// D-pad landing point for the chip row: the chip that is currently active.
   void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
 
   void _focusFirstResult() {
-    if (_visibleResults.isNotEmpty) firstResultFocusNode.requestFocus();
+    if (_visibleResults.isNotEmpty || (_selectedFilter is _AiResults && _smartSuggestions.isNotEmpty)) {
+      firstResultFocusNode.requestFocus();
+    }
   }
 
   String _filterLabel(_SearchFilter filter) => switch (filter) {
     _AllResults() => t.libraries.groupings.all,
     _KindResults(:final kind) => _kindFilterLabel(kind),
     _PeopleResults() => t.search.people,
+    _AiResults() => '✨ ${t.search.askAi}',
   };
 
   String _kindFilterLabel(MediaKind kind) => switch (kind) {
@@ -715,7 +729,8 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// "23 results" under the filter row: what the list below holds.
   Widget _buildResultCount(BuildContext context) {
-    final count = _visibleResults.length;
+    if (_selectedFilter is _AiResults && _smartLoading) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final count = _selectedFilter is _AiResults ? _smartSuggestions.length : _visibleResults.length;
     final scale = TvLayoutConstants.scaleOf(context);
     return SliverToBoxAdapter(
       child: Padding(
@@ -808,8 +823,10 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   List<Widget> _buildSmartSuggestions(BuildContext context) {
-    if (_selectedFilter is! _AllResults) return const [];
-    if (!_smartLoading && _smartSuggestions.isEmpty) return const [];
+    if (_selectedFilter is! _AiResults) return const [];
+    if (!_smartLoading && _smartSuggestions.isEmpty) {
+      return [_smartHeader(context, t.messages.noResultsFound)];
+    }
     final confirmed = [
       for (final suggestion in _smartSuggestions)
         if (suggestion.match == SmartSearchMatch.confirmed) suggestion.item,
@@ -820,8 +837,14 @@ class _SearchScreenState extends State<SearchScreen>
     ];
     return [
       if (_smartLoading) _smartHeader(context, t.search.findingSmartMatches),
-      if (confirmed.isNotEmpty) ...[_smartHeader(context, t.search.smartMatches), _buildSmartList(context, confirmed)],
-      if (possible.isNotEmpty) ...[_smartHeader(context, t.search.possibleMatches), _buildSmartList(context, possible)],
+      if (confirmed.isNotEmpty) ...[
+        _smartHeader(context, t.search.smartMatches),
+        _buildSmartList(context, confirmed, takesFirstFocus: true),
+      ],
+      if (possible.isNotEmpty) ...[
+        _smartHeader(context, t.search.possibleMatches),
+        _buildSmartList(context, possible, takesFirstFocus: confirmed.isEmpty),
+      ],
     ];
   }
 
@@ -832,7 +855,7 @@ class _SearchScreenState extends State<SearchScreen>
     ),
   );
 
-  Widget _buildSmartList(BuildContext context, List<MediaItem> items) {
+  Widget _buildSmartList(BuildContext context, List<MediaItem> items, {bool takesFirstFocus = false}) {
     final multiServer = context.watch<MultiServerProvider>();
     final libraries = context.watch<LibrariesProvider>();
     final showServerName = multiServer.totalServerCount > 1;
@@ -843,6 +866,8 @@ class _SearchScreenState extends State<SearchScreen>
         item: items[index],
         viewModeOverride: ViewMode.list,
         disableScale: true,
+        focusNode: takesFirstFocus && index == 0 ? firstResultFocusNode : null,
+        onNavigateUp: takesFirstFocus && index == 0 ? _focusFilterChips : null,
         onRefresh: updateItem,
         onListRefresh: refresh,
         onNavigateLeft: _navigateToSidebar,
@@ -978,4 +1003,10 @@ final class _KindResults extends _SearchFilter {
 
 final class _PeopleResults extends _SearchFilter {
   const _PeopleResults();
+}
+
+/// "Ask AI": the household index's language-model search for the query,
+/// asked only when this chip is chosen (searches never wait for it).
+final class _AiResults extends _SearchFilter {
+  const _AiResults();
 }

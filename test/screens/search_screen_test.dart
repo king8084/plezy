@@ -379,7 +379,9 @@ void main() {
       serverName: 'Server',
     );
 
-    testWidgets('appear after the instant results without moving focus', (tester) async {
+    Finder askAi() => find.text('✨ ${t.search.askAi}');
+
+    testWidgets('are asked for only through Ask AI, without moving focus', (tester) async {
       final pending = Completer<List<SmartSuggestion>>();
       late _ScriptedSmartAggregation aggregation;
       final (_, key) = await _pumpTvSearchScreen(
@@ -389,13 +391,16 @@ void main() {
       await tester.pumpAndSettle();
 
       (key.currentState! as SearchInputFocusable).submitSearchQuery('friends episode joey breaks the chair');
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
-
+      await tester.pumpAndSettle();
       expect(find.text('Movie 1'), findsOneWidget);
+      expect(aggregation.queries, isEmpty, reason: 'searches stay instant');
+      expect(askAi(), findsOneWidget);
+
+      await tester.tap(askAi());
+      await tester.pump();
+      expect(aggregation.queries, ['friends episode joey breaks the chair']);
       expect(find.text(t.search.findingSmartMatches), findsOneWidget);
       final focusedBefore = FocusManager.instance.primaryFocus;
-      expect(aggregation.queries, ['friends episode joey breaks the chair']);
 
       pending.complete([
         SmartSuggestion(item: episode('ep_13', 'The One Where Rosita Dies'), match: SmartSearchMatch.possible),
@@ -407,17 +412,15 @@ void main() {
       expect(find.text(t.search.smartMatches), findsOneWidget);
       expect(find.text(t.search.possibleMatches), findsOneWidget);
       expect(find.text('The One Where Rosita Dies'), findsOneWidget);
+      expect(find.text('Movie 1'), findsNothing, reason: 'the AI picks are their own list');
       expect(FocusManager.instance.primaryFocus, same(focusedBefore), reason: 'focus never jumps');
-      // Appended below the instant results, never inserted above them.
-      final instantY = tester.getTopLeft(find.text('Movie 1')).dy;
-      expect(tester.getTopLeft(find.text(t.search.smartMatches)).dy, greaterThan(instantY));
       expect(
         tester.getTopLeft(find.text(t.search.possibleMatches)).dy,
         greaterThan(tester.getTopLeft(find.text('A Confirmed Episode')).dy),
       );
     });
 
-    testWidgets('short title searches do not ask for smart matches', (tester) async {
+    testWidgets('searches never ask the language model by themselves', (tester) async {
       late _ScriptedSmartAggregation aggregation;
       final (_, key) = await _pumpTvSearchScreen(
         tester,
@@ -445,8 +448,9 @@ void main() {
       final screen = key.currentState! as SearchInputFocusable;
 
       screen.submitSearchQuery('old request about something');
+      await tester.pumpAndSettle();
+      await tester.tap(askAi());
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 50));
       screen.submitSearchQuery('new request about another thing');
       await tester.pumpAndSettle();
       first.complete([SmartSuggestion(item: episode('stale', 'Stale Answer'), match: SmartSearchMatch.confirmed)]);
@@ -1310,6 +1314,9 @@ class _ScriptedSmartAggregation extends DataAggregationService {
 
   final Future<List<SmartSuggestion>> Function(String query) _answer;
   final List<String> queries = [];
+
+  @override
+  bool get smartSearchKnownAvailable => true;
 
   @override
   Future<List<SmartSuggestion>> smartSuggestions(

@@ -603,7 +603,8 @@
     "resultCount": {
       "one": "",
       "other": ""
-    }
+    },
+    "askAi": ""
   },
   "hotkeys": {
     "setShortcutFor": "Sätt genväg för ${actionName}",

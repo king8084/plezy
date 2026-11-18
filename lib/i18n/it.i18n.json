@@ -603,7 +603,8 @@
     "resultCount": {
       "one": "",
       "other": ""
-    }
+    },
+    "askAi": ""
   },
   "hotkeys": {
     "setShortcutFor": "Imposta una scorciatoia per ${actionName}",

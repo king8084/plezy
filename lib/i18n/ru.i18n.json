@@ -605,7 +605,8 @@
       "few": "",
       "many": "",
       "other": ""
-    }
+    },
+    "askAi": ""
   },
   "hotkeys": {
     "setShortcutFor": "Назначить клавишу для ${actionName}",
