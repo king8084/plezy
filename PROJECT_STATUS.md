@@ -525,6 +525,10 @@ from the logs) is already fast enough, so it was left alone.
   added. Need the owner's description (blank posters, grey cards, or missing
   rows; does it recover).
 - Gate GATE_EXIT=0 (8,711 tests). Not built yet.
+- Build 30 backed up at the owner's request: IPA (also in tvsign as
+  `Plezy-b84551e.ipa`), git bundle, local tag `tvos-build-30`, search service
+  tarballs (fd07ddd53 confirmed-working, f0dfa5924 live) and the
+  imdb_extras.json snapshot, in `.git/plezy-private/release-2026-11-18/build30-backup/`.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
