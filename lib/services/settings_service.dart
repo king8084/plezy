@@ -1059,10 +1059,6 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Home rows the user hid in Settings → Home & Sidebar (see homeRowKey).
   static const homeRowHidden = StringListPref('home_row_hidden');
-
-  /// Apple TV Search uses Apple's native search keyboard (with Siri dictation)
-  /// instead of Plezy's docked keyboard.
-  static const appleSearchKeyboard = BoolPref('apple_search_keyboard', defaultValue: true);
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
@@ -1691,7 +1687,6 @@ class SettingsService extends BaseSharedPreferencesService {
     homePinnedCollectionMetadata,
     homeRowOrder,
     homeRowHidden,
-    appleSearchKeyboard,
     mediaVersionPreferences,
     localLastPlayedAt,
     customDownloadPath,

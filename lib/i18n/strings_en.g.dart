@@ -691,12 +691,6 @@ class Translations$settings$en {
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
 
-	/// en: 'Apple search keyboard'
-	String get appleSearchKeyboard => 'Apple search keyboard';
-
-	/// en: 'Search with Apple's keyboard and hold the remote's mic to dictate. Off uses Plezy's on-screen keyboard'
-	String get appleSearchKeyboardDescription => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard';
-
 	/// en: 'Full TV Cards'
 	String get tvFullCardLayout => 'Full TV Cards';
 
@@ -8604,8 +8598,6 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
-			'settings.appleSearchKeyboard' => 'Apple search keyboard',
-			'settings.appleSearchKeyboardDescription' => 'Search with Apple\'s keyboard and hold the remote\'s mic to dictate. Off uses Plezy\'s on-screen keyboard',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.focusGlow' => 'Focus Glow',
@@ -8891,10 +8883,10 @@ extension on Translations {
 			'settings.pinToSidebar' => 'Pin to sidebar',
 			'settings.unpinFromSidebar' => 'Unpin from sidebar',
 			'settings.sidebarMoveUp' => 'Move up',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sidebarMoveDown' => 'Move down',
 			'settings.homeAndSidebar' => 'Home & Sidebar',
+			_ => null,
+		} ?? switch (path) {
 			'settings.homeAndSidebarDescription' => 'Home rows, sidebar, pinned collections and libraries',
 			'settings.homeRows' => 'Home rows',
 			'settings.homeRowsEmpty' => 'Open Home once to load its rows, then come back here.',
@@ -9405,10 +9397,10 @@ extension on Translations {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
@@ -9919,10 +9911,10 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
+			_ => null,
+		} ?? switch (path) {
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
@@ -10433,10 +10425,10 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',

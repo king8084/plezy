@@ -24,9 +24,8 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/actor_media_screen.dart';
 import 'package:plezy/screens/search_screen.dart';
-import 'package:plezy/services/native_tv_search.dart';
-import 'package:plezy/widgets/native_search_dock.dart';
 import 'package:plezy/widgets/search_input_field.dart';
+import 'package:plezy/widgets/tv_search_header.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/smart_search/smart_search_client.dart';
@@ -225,156 +224,81 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  group('docked search keyboard', () {
-    const panel = Key('tv_virtual_keyboard_panel');
-    setUp(() async {
-      SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay;
-      await (await SettingsService.getInstance()).write(SettingsService.appleSearchKeyboard, false);
-    });
+  group('Apple TV search header', () {
+    setUp(() => SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay);
 
-    Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> openKeyboard(WidgetTester tester) async {
-      final pumped = await _pumpTvSearchScreen(tester);
-      await tester.pumpAndSettle();
-      expect(find.byKey(panel), findsNothing, reason: 'arriving on Search does not hide the screen');
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
-      await tester.sendKeyEvent(LogicalKeyboardKey.select);
-      await tester.pumpAndSettle();
-      expect(find.byKey(panel), findsOneWidget, reason: 'Select opens the docked keyboard');
-      return pumped;
+    FocusNode headerFocus(WidgetTester tester) => tester.widget<TvSearchHeader>(find.byType(TvSearchHeader)).focusNode;
+
+    Future<void> typeWord(WidgetTester tester, String word) async {
+      for (final ch in word.split('')) {
+        final target = 2 + ch.codeUnitAt(0) - 'a'.codeUnitAt(0);
+        // ignore: avoid_dynamic_calls
+        final current = (tester.state(find.byType(TvSearchHeader)) as dynamic).debugIndex as int;
+        final key = target > current ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft;
+        for (var i = 0; i < (target - current).abs(); i++) {
+          await tester.sendKeyEvent(key);
+        }
+        await tester.sendKeyEvent(LogicalKeyboardKey.select);
+        await tester.pump();
+      }
     }
 
-    testWidgets('results update above the keyboard while typing', (tester) async {
-      final (client, _) = await openKeyboard(tester);
-      _searchController(tester).text = 'movie';
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-      expect(client.queries, ['movie']);
-      expect(find.text('Movie 1'), findsOneWidget);
-      expect(find.byKey(panel), findsOneWidget, reason: 'the keyboard stays up while results change');
-    });
-
-    testWidgets('the Search key puts the keyboard away and focuses the first result', (tester) async {
-      final (client, key) = await openKeyboard(tester);
-      _searchController(tester).text = 'movie';
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-      (key.currentState! as dynamic).handleSearchSubmit();
-      await tester.pumpAndSettle();
-      expect(find.byKey(panel), findsNothing);
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-      expect(client.queries, ['movie']);
-    });
-
-    testWidgets('the microphone button switches this session to the system keyboard for dictation', (tester) async {
+    testWidgets('one static header: query line and key row, no second field', (tester) async {
       await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      TvTextInputPresentation presentation() =>
-          tester.widget<FocusableTextField>(find.byType(FocusableTextField)).tvTextInputPresentation;
-      expect(presentation(), TvTextInputPresentation.flutterOverlay);
-
-      await tester.tap(find.byTooltip(t.search.voiceSearch));
-      await tester.pumpAndSettle();
-      expect(presentation(), TvTextInputPresentation.platform);
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
-
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-      expect(
-        presentation(),
-        TvTextInputPresentation.flutterOverlay,
-        reason: 'leaving the field restores the docked keyboard',
-      );
+      expect(find.byType(TvSearchHeader), findsOneWidget);
+      expect(find.byType(SearchInputField), findsNothing);
+      expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+      expect(find.text(t.search.searchYourMedia), findsNothing);
+      final header = tester.getRect(find.byKey(const ValueKey('tv_search_header')));
+      expect(header.top, lessThan(80));
     });
 
-    testWidgets('a search sent from the phone closes the keyboard and focuses results', (tester) async {
-      final (client, key) = await openKeyboard(tester);
-      (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
-      await tester.pumpAndSettle();
-      expect(find.byKey(panel), findsNothing);
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-      expect(client.queries, ['movie']);
-    });
-  });
-
-  group('Apple search keyboard', () {
-    final calls = <MethodCall>[];
-    var openResult = true;
-
-    setUp(() async {
-      SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay;
-      await (await SettingsService.getInstance()).write(SettingsService.appleSearchKeyboard, true);
-      calls.clear();
-      openResult = true;
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        NativeTvSearch.channel,
-        (call) async {
-          calls.add(call);
-          return call.method == 'dock' ? openResult : null;
-        },
-      );
-    });
-    tearDown(() {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        NativeTvSearch.channel,
-        null,
-      );
-    });
-
-    FocusNode searchFocusNodeOf(WidgetTester tester) =>
-        tester.widget<NativeSearchDock>(find.byType(NativeSearchDock)).focusNode;
-
-    Future<void> fromNative(WidgetTester tester, String method, Object? arguments) async {
-      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
-        NativeTvSearch.channel.name,
-        NativeTvSearch.channel.codec.encodeMethodCall(MethodCall(method, arguments)),
-        (_) {},
-      );
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('docks at the top of Search, types live, Down to results and Up back', (tester) async {
+    testWidgets('typing with the remote searches live; Down to results, Up back to the keys', (tester) async {
       final (client, _) = await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-
-      final dock = calls.firstWhere((call) => call.method == 'dock');
-      final arguments = dock.arguments as Map;
-      expect(arguments['y'], lessThan(80), reason: 'docked at the top of the page');
-      expect(arguments['height'], greaterThan(150));
-      expect(find.byType(SearchInputField), findsNothing, reason: 'no second search field under Apple\'s');
-      expect(find.text(t.search.searchYourMedia), findsNothing);
-
-      searchFocusNodeOf(tester).requestFocus();
+      headerFocus(tester).requestFocus();
       await tester.pumpAndSettle();
-      expect(calls.last.method, 'focus');
 
-      await fromNative(tester, 'changed', 'movie');
+      await typeWord(tester, 'movie');
+      expect(find.text('movie'), findsOneWidget);
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
       expect(client.queries, contains('movie'));
-      expect(calls.where((call) => call.method == 'setText'), isEmpty, reason: 'no echo back to the keyboard');
 
-      await fromNative(tester, 'down', null);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-      expect(calls.last.method, 'blur');
 
-      searchFocusNodeOf(tester).requestFocus();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
-      expect(calls.last.method, 'focus', reason: 'Up from the results gives the keyboard the remote again');
+      expect(headerFocus(tester).hasFocus, isTrue);
     });
 
-    testWidgets('falls back to Plezy\'s search field when Apple\'s keyboard cannot dock', (tester) async {
-      openResult = false;
+    testWidgets('the mic key opens the system keyboard for dictation', (tester) async {
       await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      expect(find.byType(SearchInputField), findsOneWidget);
+      headerFocus(tester).requestFocus();
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 40; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(find.byType(TvSearchHeader), findsNothing);
+      expect(
+        tester.widget<FocusableTextField>(find.byType(FocusableTextField)).tvTextInputPresentation,
+        TvTextInputPresentation.platform,
+      );
     });
 
-    testWidgets('leaving Search removes the keyboard', (tester) async {
-      await _pumpTvSearchScreen(tester);
+    testWidgets('a search sent from the phone focuses the results', (tester) async {
+      final (client, key) = await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
-      await tester.pumpWidget(const SizedBox());
+      (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
       await tester.pumpAndSettle();
-      expect(calls.last.method, 'undock');
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+      expect(client.queries, ['movie']);
     });
   });
 

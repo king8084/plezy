@@ -20,7 +20,6 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
-import '../services/native_tv_search.dart';
 import '../services/settings_service.dart';
 import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
@@ -30,7 +29,7 @@ import '../utils/media_server_http_client.dart';
 import '../utils/search_relevance.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
-import '../widgets/native_search_dock.dart';
+import '../widgets/tv_search_header.dart';
 import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_tab_chip.dart';
@@ -315,23 +314,16 @@ class _SearchScreenState extends State<SearchScreen>
   bool get _usesDockedKeyboard =>
       !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
-  /// Apple's native search keyboard docked at the top of the page
-  /// (Settings > Appearance > Apple search keyboard, on by default on Apple
-  /// TV). Falls back to Plezy's docked keyboard if it cannot be shown.
-  bool get _usesNativeKeyboard =>
+  /// Apple TV: the static search header (big query line, one row of keys),
+  /// drawn by Plezy. Dictation swaps in the system keyboard field briefly.
+  bool get _usesSearchHeader =>
       PlatformDetector.isAppleTV() &&
-      !_nativeKeyboardUnavailable &&
-      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay &&
-      SettingsService.instance.read(SettingsService.appleSearchKeyboard);
-  bool _nativeKeyboardUnavailable = false;
+      !_voiceInputActive &&
+      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
-  /// Down from Apple's keyboard: into the filters or the first result; with
-  /// nothing to show yet, the keyboard keeps the remote.
-  void _focusResultsFromNativeKeyboard() {
-    if (searchResults.isEmpty || isSearching) {
-      unawaited(NativeTvSearch.instance.focus());
-      return;
-    }
+  /// Down from the keys: into the filters or the first result.
+  void _focusResultsFromHeader() {
+    if (searchResults.isEmpty || isSearching) return;
     if (_showFilterChips) {
       _focusFilterChips();
     } else {
@@ -339,19 +331,16 @@ class _SearchScreenState extends State<SearchScreen>
     }
   }
 
-  Widget _buildNativeSearchHeader(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).height / 1080;
-    return NativeSearchDock(
+  Widget _buildSearchHeader(BuildContext context) {
+    return TvSearchHeader(
       controller: searchController,
       focusNode: searchFocusNode,
-      placeholder: t.search.hint,
-      height: 300 * scale,
-      onDown: _focusResultsFromNativeKeyboard,
-      onSubmit: (_) => handleSearchSubmit(),
-      onUnavailable: () {
-        if (mounted) setState(() => _nativeKeyboardUnavailable = true);
-      },
+      placeholder: t.common.search,
+      onDown: _focusResultsFromHeader,
       onNavigateLeft: _navigateToSidebar,
+      onSubmit: handleSearchSubmit,
+      onDictate: _startVoiceInput,
+      dictateTooltip: t.search.voiceSearch,
       onBack: () {
         if (searchController.text.isNotEmpty) {
           searchController.clear();
@@ -741,7 +730,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   Widget build(BuildContext context) {
-    final nativeHeader = _usesNativeKeyboard;
+    final nativeHeader = _usesSearchHeader;
     final results = CustomScrollView(
       primary: false,
       slivers: [
@@ -823,7 +812,7 @@ class _SearchScreenState extends State<SearchScreen>
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildNativeSearchHeader(context),
+                  _buildSearchHeader(context),
                   Expanded(child: results),
                 ],
               )

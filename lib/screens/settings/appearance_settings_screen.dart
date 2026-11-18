@@ -90,13 +90,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.tvFullCardLayout,
                 subtitle: t.settings.tvFullCardLayoutDescription,
               ),
-            if (PlatformDetector.isAppleTV())
-              SettingSwitchTile(
-                pref: SettingsService.appleSearchKeyboard,
-                icon: Symbols.keyboard_rounded,
-                title: t.settings.appleSearchKeyboard,
-                subtitle: t.settings.appleSearchKeyboardDescription,
-              ),
             if (PlatformDetector.isTV())
               SettingSwitchTile(
                 pref: SettingsService.tvCornerSpotlightBackdrop,

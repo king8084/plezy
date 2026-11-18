@@ -9,8 +9,6 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
-import '../services/native_tv_search.dart';
-import '../services/settings_service.dart';
 import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -18,7 +16,7 @@ import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/overlay_sheet.dart';
-import '../widgets/native_search_dock.dart';
+import '../widgets/tv_search_header.dart';
 import '../widgets/search_input_field.dart';
 import 'search_screen.dart';
 
@@ -62,32 +60,23 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
   bool get _usesDockedKeyboard =>
       !_voiceInputActive && SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
-  /// Apple's native search keyboard, as on the Search screen.
-  bool get _usesNativeKeyboard =>
+  /// Apple TV: the same static search header as the Search screen.
+  bool get _usesSearchHeader =>
       PlatformDetector.isAppleTV() &&
-      !_nativeKeyboardUnavailable &&
-      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay &&
-      SettingsService.instance.read(SettingsService.appleSearchKeyboard);
-  bool _nativeKeyboardUnavailable = false;
+      !_voiceInputActive &&
+      SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
-  Widget _buildNativeHeader(BuildContext context) {
-    final scale = MediaQuery.sizeOf(context).height / 1080;
-    return NativeSearchDock(
+  Widget _buildSearchHeader(BuildContext context) {
+    return TvSearchHeader(
       controller: _controller,
       focusNode: _fieldFocus,
       placeholder: t.findInShow.fieldHint,
-      height: 280 * scale,
       onDown: () {
-        if (_results.isNotEmpty) {
-          _firstResultFocus.requestFocus();
-        } else {
-          unawaited(NativeTvSearch.instance.focus());
-        }
+        if (_results.isNotEmpty) _firstResultFocus.requestFocus();
       },
-      onSubmit: (_) => _submit(),
-      onUnavailable: () {
-        if (mounted) setState(() => _nativeKeyboardUnavailable = true);
-      },
+      onSubmit: _submit,
+      onDictate: _startVoiceInput,
+      dictateTooltip: t.search.voiceSearch,
       onBack: () => Navigator.of(context).maybePop(),
     );
   }
@@ -237,8 +226,8 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (_usesNativeKeyboard)
-                _buildNativeHeader(context)
+              if (_usesSearchHeader)
+                _buildSearchHeader(context)
               else
                 SearchInputField(
                   controller: _controller,
