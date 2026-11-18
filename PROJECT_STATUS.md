@@ -538,7 +538,11 @@ from the logs) is already fast enough, so it was left alone.
 - Server `92493f825` (deployed): numbers 2-10 match their words/ordinals;
   "first time"/"debut"/"first appearance" puts the earliest best-matching
   episode first. Live: that query -> #1 the right episode. Tests 40 OK.
-  Not addressed: "season N" is not a filter yet ("friends season 3").
+- Season requests (deployed): show + "season N" / "Nth season" / "sNeM" /
+  "NxM" / "season three episode 2" returns the show then that season in
+  order (or the episode); leftover words rank first inside the season. Live
+  checks pass (friends season 3, season 2 of the office, breaking bad 3x05,
+  anime one piece season 17). Service tests 42 OK.
 - App (not built): no automatic smart search; "✨ Ask AI" chip at the end of
   the filter row asks /v1/smart for the current query and lists its picks.
   Gate GATE_EXIT=0 (8,711 tests).
