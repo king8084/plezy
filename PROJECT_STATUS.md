@@ -2,7 +2,15 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `85fa8a279` (Codemagic build 28, Nov 18, in place via
+- Installed app source: `b84551ee1` (Codemagic build 30, Nov 18, in place via
+  tvsign Renew; signing and upload OK). Simkl row votes, dictation
+  auto-return, mic key beside "a", Seerr row boxed vote tag. Build 29 failed
+  at clone (Codemagic could not reach github.com); one justified retry.
+  Local gate GATE_EXIT=0 (8,708 tests), Codemagic gate passed; fork Actions
+  disabled. Backups `*-before-b84551e.ipa`; private receipt in
+  `.git/plezy-private/`. Owner device check pending (dictation auto-return
+  is the first device run of that close path).
+- Previous install: `85fa8a279` (Codemagic build 28, Nov 18, in place via
   tvsign Renew; signing and upload OK). Instant index search results, one
   caption (rating/votes/year) on all More like this rows, IMDb crew/votes in
   the index (service already live). Local gate GATE_EXIT=0 (8,705 tests),
