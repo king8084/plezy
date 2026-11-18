@@ -292,6 +292,30 @@ void main() {
       );
     });
 
+    testWidgets('spoken words bring the search bar back by themselves', (tester) async {
+      final (client, _) = await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      headerFocus(tester).requestFocus();
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 40; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      }
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pumpAndSettle();
+      expect(find.byType(TvSearchHeader), findsNothing);
+
+      // Dictation inserts the whole phrase at once.
+      tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller.text = 'movie';
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(TvSearchHeader), findsNothing, reason: 'waits for the user to finish speaking');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TvSearchHeader), findsOneWidget);
+      expect(headerFocus(tester).hasFocus, isTrue);
+      expect(client.queries, ['movie']);
+    });
+
     testWidgets('a search sent from the phone focuses the results', (tester) async {
       final (client, key) = await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();

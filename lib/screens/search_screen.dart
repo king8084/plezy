@@ -29,6 +29,7 @@ import '../utils/media_server_http_client.dart';
 import '../utils/search_relevance.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../utils/dictation_auto_return.dart';
 import '../widgets/tv_search_header.dart';
 import '../widgets/search_input_field.dart';
 import '../widgets/focusable_media_card.dart';
@@ -104,6 +105,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void dispose() {
+    _dictation.stop();
     _smartAbort?.abort();
     searchFocusNode.removeListener(_onSearchFocusChanged);
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
@@ -373,13 +375,31 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void _onSearchFocusChanged() {
-    if (!searchFocusNode.hasFocus && _voiceInputActive && mounted) setState(() => _voiceInputActive = false);
+    if (!searchFocusNode.hasFocus && _voiceInputActive && mounted) {
+      _dictation.stop();
+      setState(() => _voiceInputActive = false);
+    }
   }
+
+  late final _dictation = DictationAutoReturn(controller: searchController, onSpoken: _endVoiceInput);
 
   void _startVoiceInput() {
     setState(() => _voiceInputActive = true);
+    _dictation.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _tvTextInputController.focusAndOpenTextInput();
+    });
+  }
+
+  /// Spoken words have landed: put Apple's keyboard away and return to the
+  /// search bar, with the results already updating underneath.
+  void _endVoiceInput() {
+    _dictation.stop();
+    if (!mounted || !_voiceInputActive) return;
+    _tvTextInputController.closeTextInput();
+    setState(() => _voiceInputActive = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) searchFocusNode.requestFocus();
     });
   }
 

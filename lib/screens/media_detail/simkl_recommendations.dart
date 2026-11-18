@@ -46,11 +46,14 @@ extension _MediaDetailSimklRecommendations on _MediaDetailScreenState {
                   identifier: 'detail.simkl.recommendations',
                   title: t.discover.moreLikeThisSimkl,
                   type: item.isMovie ? 'movie' : 'show',
-                  items: items,
+                  items: _itemsWithImdbVotes(items),
                   size: items.length,
                 );
         });
       }
+      // Library titles found by the matcher get the same IMDb vote counts as
+      // the other "More like this" rows.
+      if (isCurrent()) unawaited(_loadLibraryVotes());
     } catch (error) {
       appLogger.d('Simkl recommendations shelf unavailable', error: error);
     }

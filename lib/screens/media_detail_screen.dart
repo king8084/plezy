@@ -2473,12 +2473,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Real IMDb vote counts for the library cards in the rows above (Jellyfin
   /// has none), from the household index. Supplemental: absent counts leave
   /// the captions as they are.
+  /// IMDb vote counts already fetched for this page's library cards, by
+  /// item id; reapplied when a row is rebuilt (the Simkl row streams).
+  final Map<String, int> _imdbVotes = {};
+
+  /// Library cards in the "More like this" rows: the related/blended rows and
+  /// the titles the Simkl row found in the library.
+  static bool _wantsImdbVotes(MediaItem item) =>
+      LibraryRatingCaption.isMarked(item) ||
+      RecommendationCardData.fromItem(item)?.availability == RecommendationAvailability.owned;
+
+  MediaItem _withImdbVotes(MediaItem item) {
+    final votes = _imdbVotes[item.id];
+    if (votes == null || !_wantsImdbVotes(item) || item.raw?[LibraryRatingCaption.votesKey] == votes) return item;
+    return item.copyWith(raw: {...?item.raw, LibraryRatingCaption.votesKey: votes});
+  }
+
+  List<MediaItem> _itemsWithImdbVotes(List<MediaItem> items) => [for (final item in items) _withImdbVotes(item)];
+
+  /// Real IMDb vote counts for the library cards in the "More like this"
+  /// rows (Jellyfin has none), from the household index. Supplemental:
+  /// absent counts leave the captions as they are.
   Future<void> _loadLibraryVotes() async {
     final serverId = _metadata.serverId;
     final ids = {
-      for (final hub in _relatedHubs)
+      for (final hub in [..._relatedHubs, ?_simklRecommendationsHub])
         for (final item in hub.items)
-          if (LibraryRatingCaption.isMarked(item) && item.raw?[LibraryRatingCaption.votesKey] == null) item.id,
+          if (_wantsImdbVotes(item) && !_imdbVotes.containsKey(item.id)) item.id,
     };
     if (serverId == null || ids.isEmpty) return;
     final metadata = _metadata;
@@ -2486,18 +2507,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final votes = await context.read<MultiServerProvider>().aggregationService.imdbVotes(serverId, ids.toList());
       if (!mounted || votes.isEmpty || !identical(_metadata, metadata)) return;
       setState(() {
-        _relatedHubs = [
-          for (final hub in _relatedHubs)
-            hub.copyWith(
-              items: [
-                for (final item in hub.items)
-                  if (votes[item.id] case final count? when LibraryRatingCaption.isMarked(item))
-                    LibraryRatingCaption.mark(item, votes: count)
-                  else
-                    item,
-              ],
-            ),
-        ];
+        _imdbVotes.addAll(votes);
+        _relatedHubs = [for (final hub in _relatedHubs) hub.copyWith(items: _itemsWithImdbVotes(hub.items))];
+        final simkl = _simklRecommendationsHub;
+        if (simkl != null) _simklRecommendationsHub = simkl.copyWith(items: _itemsWithImdbVotes(simkl.items));
       });
     } catch (error) {
       appLogger.d('IMDb vote counts unavailable', error: error);
