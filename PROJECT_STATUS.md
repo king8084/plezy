@@ -472,6 +472,17 @@ from the logs) is already fast enough, so it was left alone.
   for vote drift. Searches use only Jellyfin's year and IMDb rating; the
   vote snapshot in imdb_extras.json is enough for show-page captions.
 
+## Build 28 owner feedback (Nov 18): "search is INSTANT"
+- Simkl row lost vote counts for library titles (they moved to the server
+  rating caption without votes). Fixed: the page keeps fetched IMDb votes by
+  item id and applies them to the Simkl row's owned titles as it streams.
+- Mic: apps cannot start tvOS dictation without Apple's keyboard. New
+  `DictationAutoReturn`: a multi-character insertion (dictation) followed by
+  1 s of quiet closes Apple's keyboard and returns to Plezy's search bar
+  (Search and Find). Typing one character at a time never triggers it. The
+  native keyboard close path (`closeTextInput`) is unverified on device.
+- Gate GATE_EXIT=0 (8,708 tests). Not built yet.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
