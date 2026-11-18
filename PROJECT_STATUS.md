@@ -433,6 +433,35 @@ from the logs) is already fast enough, so it was left alone.
   replaces channels; bitrate parsed from the track title when present).
   Gate GATE_EXIT=0 (8,700 tests). Not built yet.
 
+## Build 27 owner feedback (Nov 18): search "much better"; follow-ups
+- Mic: tvOS has no public API for an app to start dictation (Speech is not on
+  tvOS). The mic key opens Apple's keyboard; once it is up, holding the Siri
+  Remote's mic button dictates without selecting Apple's on-screen mic.
+- Speed (app log): the index answered in ~50-130 ms, but the screen waited
+  for the server's own search and people (2.7-5.4 s). Fix `a2e29ebc0`: index
+  titles shown as soon as they arrive (`onEarlyHits`), results kept on screen
+  while the next keystroke searches, debounce 150 ms.
+- More like this captions: one caption on every card (star, IMDb score, vote
+  box, year). Owner rule (Nov 18): library titles use Jellyfin's community
+  rating (the household's IMDb score), never MDBList; MDBList only for titles
+  not in the library.
+- Index check: the index has years and up to 25 actors per title, but the
+  owner's Jellyfin metadata has no directors at all (checked read-only:
+  Inception, Interstellar, The Dark Knight, Oppenheimer, Memento list cast
+  only). Built `smartsearch/plezy_search/imdb_extras.py`: joins IMDb's public
+  datasets (title.crew, name.basics, title.ratings; personal non-commercial
+  use) to the library's IMDb ids (3,892 of 3,909 titles) into
+  `smartsearch/live/imdb_extras.json` (new file, 0.55 MB; built locally,
+  copied finished). Service loads it on refresh: director/writer names join
+  the people vocabulary, results carry `votes`, new `/v1/votes`. Deployed to
+  the code folder (hot reload); live check: "christopher nolan" -> The Dark
+  Knight, Inception, Interstellar...; "quentin tarantino 90s" -> Pulp Fiction,
+  Reservoir Dogs, Jackie Brown. Show page library cards show the vote count.
+  The file is a one-time snapshot; no scheduler installed. Refresh by
+  rerunning the builder (votes drift slowly; new titles get crew on rebuild).
+  Single surnames ("nolan movies") are not matched; names need 2-3 words.
+- Gate GATE_EXIT=0 (8,705 tests); smartsearch tests 33 OK. Not built yet.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
