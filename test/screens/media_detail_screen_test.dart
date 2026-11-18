@@ -69,6 +69,7 @@ import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/focusable_tab_chip.dart';
+import 'package:plezy/widgets/skeleton_media_card.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/media_card.dart';
@@ -127,6 +128,50 @@ void main() {
     final baseFontSize = 56 * TvLayoutConstants.scaleForSize(const Size(800, 480));
     expect(titleText.style?.fontSize, isNotNull);
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
+  });
+
+  testWidgets('TV detail: fast Down presses leave no unbuilt cards in the rows below', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final movie = testMediaItem(
+      id: 'movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Movie',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    MediaItem rec(String hub, int i) => movie.copyWith(id: '$hub-$i', title: '$hub $i', thumbPath: '/poster-$hub-$i');
+    final server = _FakeMediaServerClient(
+      show: movie,
+      childrenByParent: {},
+      relatedHubs: [
+        for (final hub in ['a', 'b', 'c', 'd'])
+          MediaHub(id: 'hub-$hub', title: 'Hub $hub', type: 'movie', items: [for (var i = 0; i < 14; i++) rec(hub, i)]),
+      ],
+    );
+    final multiServer = testMultiServer(clients: [server]).provider;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServer,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 6; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    for (var i = 0; i < 120; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pumpAndSettle();
+    expect(find.byType(SkeletonMediaCard), findsNothing);
   });
 
   for (final outcome in ['success', 'disconnect', 'failure']) {
