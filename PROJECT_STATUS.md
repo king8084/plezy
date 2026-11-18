@@ -494,6 +494,22 @@ from the logs) is already fast enough, so it was left alone.
   Seerr "More like this" row now uses the shared caption with the boxed
   vote tag (only that row). Gate GATE_EXIT=0 (8,708 tests). Not built yet.
 
+## Anime/cartoon episodes in global search (Nov 18, server-only)
+- Owner report confirmed on the live index: "anime conan forest" returned
+  35 movies, 65 shows, 0 episodes; "anime naruto" and "cartoon spongebob
+  jellyfish" no episodes. Cause: the unlock word became a genre filter and
+  filtered requests list only Series/Movie.
+- Fix (deployed to the code folder, hot reload): `instant` strips the
+  unlock words (anime/animes/manga..., cartoon/cartoons/kids...) when the
+  rest has no filters and searches the rest with that library opened.
+  Live: "anime conan forest" -> Conan forest episodes; "cartoon spongebob
+  jellyfish" -> "Jellyfishing"; "anime comedies"/"90s cartoons" unchanged.
+  Service tests 37 OK. Owner rule kept: without the word, the anime and
+  Cartoons libraries stay closed.
+- Open: kids cartoons in the general "TV Shows" library (Bluey, Gravity
+  Falls) still appear for "funny shows"/"mystery shows"; awaiting owner's
+  choice (treat kids animation as cartoons; adult animation stays).
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
