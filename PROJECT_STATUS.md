@@ -2,7 +2,14 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `9044a33d836b1be76b2cce6d362f3d765ceabf68` (Codemagic build 27,
+- Installed app source: `85fa8a279` (Codemagic build 28, Nov 18, in place via
+  tvsign Renew; signing and upload OK). Instant index search results, one
+  caption (rating/votes/year) on all More like this rows, IMDb crew/votes in
+  the index (service already live). Local gate GATE_EXIT=0 (8,705 tests),
+  Codemagic gate passed; fork Actions disabled. Backups
+  `*-before-85fa8a2.ipa`; private receipt in `.git/plezy-private/`. Owner
+  device check pending.
+- Previous install: `9044a33d836b1be76b2cce6d362f3d765ceabf68` (Codemagic build 27,
   Nov 18, in place via tvsign Renew; signing and upload OK). Flutter-drawn
   static search header (Search + Find, Rivulet-style full-width keys) and the
   short audio badge. Local gate GATE_EXIT=0 (8,700 tests), Codemagic gate
