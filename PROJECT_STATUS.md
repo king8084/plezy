@@ -482,6 +482,9 @@ from the logs) is already fast enough, so it was left alone.
   (Search and Find). Typing one character at a time never triggers it. The
   native keyboard close path (`closeTextInput`) is unverified on device.
 - Gate GATE_EXIT=0 (8,708 tests). Not built yet.
+- Mic key moved beside "a" (123, SPACE, mic, a-z, delete; starts on "a").
+  Seerr "More like this" row now uses the shared caption with the boxed
+  vote tag (only that row). Gate GATE_EXIT=0 (8,708 tests). Not built yet.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
