@@ -66,8 +66,8 @@ class _TvSearchHeaderState extends State<TvSearchHeader> {
   int _index = 2;
 
   List<_Key> get _keys => [
-    _Key(_KeyKind.toggleDigits, _digitsMode ? 'abc' : '123'),
-    const _Key(_KeyKind.space, 'space'),
+    _Key(_KeyKind.toggleDigits, _digitsMode ? 'ABC' : '123'),
+    const _Key(_KeyKind.space, 'SPACE'),
     for (final char in (_digitsMode ? _digits : _letters).split('')) _Key(_KeyKind.character, char),
     const _Key(_KeyKind.delete),
     if (widget.onDictate != null) const _Key(_KeyKind.dictate),
@@ -214,20 +214,30 @@ class _TvSearchHeaderState extends State<TvSearchHeader> {
               ],
             ),
             SizedBox(height: 18 * scale),
+            // Apple's layout: the keys spread across the full width (shrunk
+            // only if they cannot fit), a hairline under them.
             SizedBox(
               height: 56 * scale,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  key: const ValueKey('tv_search_keys'),
-                  children: [
-                    for (final (i, key) in keys.indexed)
-                      _KeyCap(keyData: key, highlighted: focused && i == index, scale: scale, muted: muted),
-                  ],
+              child: LayoutBuilder(
+                builder: (context, constraints) => FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: Row(
+                      key: const ValueKey('tv_search_keys'),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        for (final (i, key) in keys.indexed)
+                          _KeyCap(keyData: key, highlighted: focused && i == index, scale: scale, muted: muted),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
+            SizedBox(height: 14 * scale),
+            Container(height: 1, color: colors.onSurface.withValues(alpha: 0.22)),
           ],
         ),
       ),

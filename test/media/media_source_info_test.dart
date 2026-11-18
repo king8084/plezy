@@ -377,4 +377,32 @@ void main() {
       expect(extras.markers.map((m) => m.id), [1]);
     });
   });
+
+  group('MediaAudioTrack.compactBadge', () {
+    test('drops the title echo: language / codec / channels / bitrate', () {
+      final track = MediaAudioTrack(
+        id: 1,
+        index: 1,
+        codec: 'eac3',
+        languageCode: 'eng',
+        title: 'English / EAC3 / 5.1 / 640 kbps / 48kHz',
+        channels: 6,
+        selected: true,
+      );
+      expect(track.compactBadge, 'English / EAC3 / 5.1 / 640k');
+    });
+
+    test('Atmos replaces the channel count; no bitrate when unknown', () {
+      final track = MediaAudioTrack(
+        id: 1,
+        index: 1,
+        codec: 'truehd',
+        languageCode: 'eng',
+        displayTitle: 'English - Dolby TrueHD + Dolby Atmos 7.1',
+        channels: 8,
+        selected: true,
+      );
+      expect(track.compactBadge, 'English / TrueHD / Atmos');
+    });
+  });
 }

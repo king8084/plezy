@@ -1,5 +1,6 @@
 import '../i18n/strings.g.dart';
-import '../utils/track_label_builder.dart' show TrackLabel, TrackLabelBuilder;
+import '../utils/codec_utils.dart';
+import '../utils/track_label_builder.dart' show TrackLabel, TrackLabelBuilder, resolveTrackLanguageDisplay;
 import 'chapter_marker_classifier.dart';
 import 'media_display_criteria.dart';
 import 'media_part_timeline.dart';
@@ -172,6 +173,25 @@ class MediaAudioTrack with _TrackLabelMixin {
       displayTitle: displayTitle,
       index: _fallbackLabelIndex,
     );
+  }
+
+  /// One short TV badge: "English / EAC3 / 5.1 / 640k". Atmos replaces the
+  /// channel count, and the bitrate comes from the track's own title when it
+  /// names one. Never repeats the language or codec the title also spells out.
+  String get compactBadge {
+    final names = '${title ?? ''} ${displayTitle ?? ''}';
+    final parts = <String>[
+      resolveTrackLanguageDisplay(language: language, languageCode: languageCode) ?? label.primary,
+      if (codec != null && codec!.isNotEmpty)
+        switch (CodecUtils.formatAudioCodec(codec!)) {
+          'E-AC3' => 'EAC3',
+          final name => name,
+        },
+      if (RegExp('atmos', caseSensitive: false).hasMatch(names)) 'Atmos' else ?CodecUtils.formatAudioChannels(channels),
+    ];
+    final bitrate = RegExp(r'(\d+(?:\.\d+)?)\s*kbps', caseSensitive: false).firstMatch(names)?.group(1);
+    if (bitrate != null) parts.add('${bitrate}k');
+    return parts.toSet().join(' / ');
   }
 }
 

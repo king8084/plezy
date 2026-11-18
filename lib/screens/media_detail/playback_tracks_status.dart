@@ -266,7 +266,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
           scale: tvScale,
           labels: [
             ...videoLabels,
-            if (audioLabel != null) [audioLabel.primary, ?audioLabel.secondary].join(' · '),
+            ?preview?.audio?.compactBadge,
             // File size/bitrate uses the same selected version as Play.
             ?fileSummary,
             if (preview != null)
