@@ -359,3 +359,41 @@ class NumbersAndFirstTimeTest(unittest.TestCase):
             plain = [r['title'] for r in engine.instant('pirate saga gear 4')['results']]
             self.assertIn('Fourth Gear! The Bounce Man!', plain)
             self.assertNotIn('Gear Five!', plain[:2])
+
+
+class SeasonRequestTest(unittest.TestCase):
+    """"friends season 3" lists that show's season 3, in order, and nothing else."""
+
+    def test_season_forms(self):
+        from plezy_search.search import season_request
+        self.assertEqual(season_request('friends season 3'), (3, None, 'friends'))
+        self.assertEqual(season_request('season 2 of the office'), (2, None, 'the office'))
+        self.assertEqual(season_request('the office s2e5'), (2, 5, 'the office'))
+        self.assertEqual(season_request('friends 3x05'), (3, 5, 'friends'))
+        self.assertEqual(season_request('third season of friends'), (3, None, 'friends'))
+        self.assertEqual(season_request('friends season three episode 2'), (3, 2, 'friends'))
+        self.assertIsNone(season_request('friends the one with the chair'))
+
+    def test_season_listing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Friends', genres=('Comedy',), rating=8.9),
+                     series(2, '3 Body Problem', rating=7.5),
+                     series(3, 'The Office', genres=('Comedy',), rating=9.0),
+                     episode(14, f'{3:032x}', 'The Office', 2, 1, 'The Dundies', 'Michael hosts an awards night.'),
+                     episode(10, f'{1:032x}', 'Friends', 3, 2, 'The One with the Breast Milk', 'Ross and the milk.'),
+                     episode(11, f'{1:032x}', 'Friends', 3, 1, 'The One with the Princess Leia Fantasy', 'Leia.'),
+                     episode(12, f'{1:032x}', 'Friends', 2, 1, 'The One with Ross New Girlfriend', 'Season two.'),
+                     episode(13, f'{2:032x}', '3 Body Problem', 1, 3, 'Destroyer of Worlds', 'Season three?')]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            got = engine.instant('friends season 3')
+            self.assertEqual([r['title'] for r in got['results']],
+                             ['Friends', 'The One with the Princess Leia Fantasy', 'The One with the Breast Milk'])
+            self.assertEqual(got['understood'], ['Season 3'])
+            one = engine.instant('friends s3e2')['results']
+            self.assertEqual([r['title'] for r in one], ['Friends', 'The One with the Breast Milk'])
+            self.assertEqual(engine.instant('season 2 of the office')['results'][0]['title'], 'The Office')
+            milk = engine.instant('friends season 3 milk')['results']
+            self.assertEqual(milk[1]['title'], 'The One with the Breast Milk')

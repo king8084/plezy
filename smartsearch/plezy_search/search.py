@@ -64,6 +64,46 @@ def _match_expr(tokens, prefix_last=True, op=' '):
     return (' AND ' if op == ' ' else op).join(parts)
 
 
+_NUMBER_VALUES = {w: n for n, words in enumerate(
+    [(), ('one', 'first'), ('two', 'second'), ('three', 'third'), ('four', 'fourth'), ('five', 'fifth'),
+     ('six', 'sixth'), ('seven', 'seventh'), ('eight', 'eighth'), ('nine', 'ninth'), ('ten', 'tenth'),
+     ('eleven', 'eleventh'), ('twelve', 'twelfth')]) for w in words}
+_NUM = r'(\d{1,3}|' + '|'.join(sorted(_NUMBER_VALUES, key=len, reverse=True)) + r')(?:st|nd|rd|th)?'
+_SEASON_PATTERNS = [
+    re.compile(r'\bs(\d{1,2}) ?e(\d{1,3})\b'),                               # s3e5, s3 e5
+    re.compile(r'\b(\d{1,2})x(\d{1,3})\b'),                                   # 3x05
+    re.compile(r'\bseason ' + _NUM + r'(?: (?:episode|ep|e) ' + _NUM + r')?\b'),  # season 3 [episode 5]
+    re.compile(r'\b' + _NUM + r' season\b(?: (?:episode|ep|e) ' + _NUM + r')?'),  # third season
+    re.compile(r'\bs(\d{1,2})\b'),                                             # s3
+]
+
+
+def _number(value):
+    if value is None:
+        return None
+    value = re.sub(r'(st|nd|rd|th)$', '', value) if value[:1].isdigit() else value
+    return int(value) if value.isdigit() else _NUMBER_VALUES.get(value)
+
+
+def season_request(raw):
+    """"friends season 3" -> (3, None, 'friends'); "the office s2e5" -> (2, 5, 'the office')."""
+    text = norm(raw)
+    for pattern in _SEASON_PATTERNS:
+        m = pattern.search(text)
+        if not m:
+            continue
+        season = _number(m.group(1))
+        episode = _number(m.group(2)) if m.lastindex and m.lastindex >= 2 else None
+        if not season:
+            continue
+        rest = (text[:m.start()] + ' ' + text[m.end():]).split()
+        # "season 2 of the office": the joining word goes with the season.
+        while rest and rest[0] in ('of', 'from', 'in'):
+            rest = rest[1:]
+        return season, episode, ' '.join(rest)
+    return None
+
+
 FIRST_TIME = re.compile(r'\b(for the first time|first time|first use|first appearance|debuts?|debut of|origin of)\b')
 _FIRST_TIME_WORDS = {'first', 'time', 'times', 'debut', 'debuts', 'appearance', 'origin', 'use', 'uses', 'used',
                      'using', 'for'}
@@ -614,11 +654,63 @@ class Engine:
             return out
         return self._instant(raw, limit, groups=groups)
 
+    def _season_episodes(self, raw, limit):
+        """A show plus a season ("friends season 3", "season 2 of the office",
+        "the office s2e5"): the show, then that season's episodes in order (or
+        the one episode). Leftover words rank inside the season first. None when
+        no show in the library is named."""
+        found = season_request(raw)
+        if not found:
+            return None
+        season, episode, rest = found
+        # Keep "the"/"of": many show titles carry them ("The Office").
+        words = [w for w in rest.split() if w not in ('episode', 'episodes', 'ep')]
+        series = self.vocab.get('series', {})
+        for size in range(min(6, len(words)), 0, -1):
+            for i in range(len(words) - size + 1):
+                chunk = ' '.join(words[i:i + size])
+                if chunk not in series or not [w for w in chunk.split() if w not in STOPWORDS]:
+                    continue
+                ids = series[chunk]
+                others = [w for w in words[:i] + words[i + size:] if w not in STOPWORDS and w not in Q.FILLER]
+                marks = ','.join('?' * len(ids))
+                where = f"i.kind='Episode' AND i.active=1 AND i.series_id IN ({marks}) AND i.season=?"
+                args = list(ids) + [season]
+                if episode:
+                    where += ' AND i.episode=?'
+                    args.append(episode)
+                rows = []
+                if others:
+                    rows += self.db.execute(
+                        f'SELECT {self.COLUMNS} FROM search_text JOIN items i ON i.rowid=search_text.rowid '
+                        f'WHERE search_text MATCH ? AND {where} ORDER BY bm25(search_text, 4.0, 0, 2.0, 0, 1.0) LIMIT ?',
+                        [_match_expr(others, prefix_last=False, op=' OR ')] + args + [limit]).fetchall()
+                rows += self.db.execute(f'SELECT {self.COLUMNS} FROM items i WHERE {where} '
+                                        f'ORDER BY i.series_id, i.episode LIMIT ?', args + [limit]).fetchall()
+                if not rows:
+                    continue
+                shows = self.db.execute(f'SELECT {self.COLUMNS} FROM items i WHERE i.item_id IN ({marks}) '
+                                        f'AND i.active=1', list(ids)).fetchall()
+                out, seen = [], set()
+                for r in [*(self._row(s, 'title') for s in shows), *(self._row(r, 'season') for r in rows)]:
+                    if r['id'] not in seen:
+                        seen.add(r['id'])
+                        out.append(r)
+                return out, f'Season {season}' + (f' · Episode {episode}' if episode else '')
+        return None
+
     def _instant(self, raw, limit=40, groups=None):
         start = time.perf_counter()
         p = Q.parse(raw, self.vocab)
         p.library_groups = self._requested_groups(raw) if groups is None else groups
         results, seen = [], set()
+        season_hit = self._season_episodes(raw, limit)
+        if season_hit:
+            rows, label = season_hit
+            return {'query': raw, 'understood': [label], 'filters': True, 'unwatched': p.unwatched,
+                    'results': self._with_libraries(self._dedupe(self._keep_requested(rows, p.library_groups))[:limit]),
+                    'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')],
+                    'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
         def add(rows):
             for r in rows:
