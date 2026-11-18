@@ -599,7 +599,13 @@
     "findingSmartMatches": "",
     "smartMatches": "",
     "possibleMatches": "",
-    "voiceSearch": ""
+    "voiceSearch": "",
+    "resultCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    }
   },
   "hotkeys": {
     "setShortcutFor": "Ustaw skrót dla ${actionName}",

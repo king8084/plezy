@@ -599,7 +599,10 @@
     "findingSmartMatches": "",
     "smartMatches": "",
     "possibleMatches": "",
-    "voiceSearch": ""
+    "voiceSearch": "",
+    "resultCount": {
+      "other": ""
+    }
   },
   "hotkeys": {
     "setShortcutFor": "${actionName}에 대한 단축키 설정",

@@ -42,7 +42,7 @@ class TvSearchHeader extends StatefulWidget {
   final String? dictateTooltip;
 
   @override
-  State<TvSearchHeader> createState() => _TvSearchHeaderState();
+  State<TvSearchHeader> createState() => TvSearchHeaderState();
 }
 
 enum _KeyKind { character, space, delete, toggleDigits, dictate }
@@ -53,7 +53,7 @@ class _Key {
   final String value;
 }
 
-class _TvSearchHeaderState extends State<TvSearchHeader> {
+class TvSearchHeaderState extends State<TvSearchHeader> {
   static const _letters = 'abcdefghijklmnopqrstuvwxyz';
   static const _digits = "1234567890-'&.:!?";
 
@@ -61,6 +61,16 @@ class _TvSearchHeaderState extends State<TvSearchHeader> {
 
   @visibleForTesting
   int get debugIndex => _index;
+
+  /// Puts the highlight back on "a" with the letters showing (Back from the
+  /// results, or returning to an emptied Search).
+  void resetToFirstLetter() {
+    if (!mounted) return;
+    setState(() {
+      _digitsMode = false;
+      _index = _firstLetterIndex;
+    });
+  }
 
   /// Starts on "a", the first letter (the mic sits just left of it).
   late int _index = _firstLetterIndex;

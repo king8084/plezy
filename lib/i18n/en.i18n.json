@@ -599,7 +599,11 @@
     "findingSmartMatches": "Finding smart matches…",
     "smartMatches": "Smart matches",
     "possibleMatches": "Possible matches",
-    "voiceSearch": "Voice search (dictation)"
+    "voiceSearch": "Voice search (dictation)",
+    "resultCount": {
+      "one": "${n} result",
+      "other": "${n} results"
+    }
   },
   "hotkeys": {
     "setShortcutFor": "Set Shortcut for ${actionName}",

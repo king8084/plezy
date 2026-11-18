@@ -599,7 +599,10 @@
     "findingSmartMatches": "",
     "smartMatches": "",
     "possibleMatches": "",
-    "voiceSearch": ""
+    "voiceSearch": "",
+    "resultCount": {
+      "other": ""
+    }
   },
   "hotkeys": {
     "setShortcutFor": "为 ${actionName} 设置快捷键",

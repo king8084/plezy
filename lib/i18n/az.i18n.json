@@ -599,7 +599,11 @@
     "findingSmartMatches": "",
     "smartMatches": "",
     "possibleMatches": "",
-    "voiceSearch": ""
+    "voiceSearch": "",
+    "resultCount": {
+      "one": "",
+      "other": ""
+    }
   },
   "hotkeys": {
     "setShortcutFor": "${actionName} üçün qısayol təyin et",

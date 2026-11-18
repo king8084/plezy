@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../exceptions/media_server_exceptions.dart';
+import '../focus/dpad_navigator.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
+import '../utils/layout_constants.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -16,6 +19,7 @@ import '../media/search_hit.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
+import '../mixins/tab_visibility_aware.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -59,8 +63,11 @@ class _SearchScreenState extends State<SearchScreen>
         FullRefreshable,
         SearchInputFocusable,
         FocusableTab,
+        TabVisibilityAware,
         MountedSetStateMixin,
         DebouncedMediaSearch<SearchScreen, SearchHit> {
+  final _headerKey = GlobalKey<TvSearchHeaderState>();
+  final _resultsScroll = ScrollController();
   String? _focusResultsForQuery;
   final _tvTextInputController = TvTextInputController();
   AbortController? _activeSearchAbort;
@@ -105,6 +112,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void dispose() {
+    _resultsScroll.dispose();
     _dictation.stop();
     _smartAbort?.abort();
     searchFocusNode.removeListener(_onSearchFocusChanged);
@@ -354,8 +362,30 @@ class _SearchScreenState extends State<SearchScreen>
     }
   }
 
+  /// Back from anywhere in the results: to the keys, on "a", page at the top.
+  void _backToKeyboard() {
+    if (_resultsScroll.hasClients) _resultsScroll.jumpTo(0);
+    _headerKey.currentState?.resetToFirstLetter();
+    searchFocusNode.requestFocus();
+  }
+
+  /// Leaving the Search tab forgets the search: coming back starts empty.
+  @override
+  void onTabHidden() {
+    if (_voiceInputActive) _endVoiceInput();
+    _cancelSmartSuggestions();
+    if (searchController.text.isNotEmpty) searchController.clear();
+    _resetFilter();
+    if (_resultsScroll.hasClients) _resultsScroll.jumpTo(0);
+    _headerKey.currentState?.resetToFirstLetter();
+  }
+
+  @override
+  void onTabShown() {}
+
   Widget _buildSearchHeader(BuildContext context) {
     return TvSearchHeader(
+      key: _headerKey,
       controller: searchController,
       focusNode: searchFocusNode,
       placeholder: t.common.search,
@@ -683,6 +713,59 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  /// "23 results" under the filter row: what the list below holds.
+  Widget _buildResultCount(BuildContext context) {
+    final count = _visibleResults.length;
+    final scale = TvLayoutConstants.scaleOf(context);
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24 * scale, 4 * scale, 24 * scale, 0),
+        child: Text(
+          t.search.resultCount(n: count),
+          key: const ValueKey('search_result_count'),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontSize: 18 * scale,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Apple TV results: an always-visible scrollbar, and Back from any result
+  /// or filter returns to the keys on "a".
+  Widget _tvResults(BuildContext context, Widget results) {
+    final scale = TvLayoutConstants.scaleOf(context);
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyUpEvent || !event.logicalKey.isBackKey || searchFocusNode.hasFocus) {
+          return KeyEventResult.ignored;
+        }
+        if (event is KeyDownEvent) _backToKeyboard();
+        return KeyEventResult.handled;
+      },
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: RawScrollbar(
+          controller: _resultsScroll,
+          thumbVisibility: searchResults.isNotEmpty,
+          thickness: 8 * scale,
+          radius: Radius.circular(4 * scale),
+          thumbColor: Colors.white.withValues(alpha: 0.7),
+          trackVisibility: searchResults.isNotEmpty,
+          trackColor: Colors.white.withValues(alpha: 0.12),
+          trackBorderColor: Colors.transparent,
+          crossAxisMargin: 6 * scale,
+          mainAxisMargin: 8 * scale,
+          child: results,
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultsList(BuildContext context) {
     final multiServer = context.watch<MultiServerProvider>();
     final libraries = context.watch<LibrariesProvider>();
@@ -773,6 +856,7 @@ class _SearchScreenState extends State<SearchScreen>
   Widget build(BuildContext context) {
     final nativeHeader = _usesSearchHeader;
     final results = CustomScrollView(
+      controller: _resultsScroll,
       primary: false,
       slivers: [
         if (!nativeHeader) DesktopSliverAppBar(title: Text(t.common.search), floating: true),
@@ -845,6 +929,7 @@ class _SearchScreenState extends State<SearchScreen>
           )
         else ...[
           if (_showFilterChips) _buildFilterChips(),
+          if (nativeHeader) _buildResultCount(context),
           _buildResultsList(context),
           ..._buildSmartSuggestions(context),
         ],
@@ -857,7 +942,7 @@ class _SearchScreenState extends State<SearchScreen>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildSearchHeader(context),
-                  Expanded(child: results),
+                  Expanded(child: _tvResults(context, results)),
                 ],
               )
             : results,

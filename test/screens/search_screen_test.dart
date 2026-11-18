@@ -315,6 +315,50 @@ void main() {
       expect(client.queries, ['movie']);
     });
 
+    testWidgets('results show a count and a scrollbar; Back from a result returns to "a"', (tester) async {
+      await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      headerFocus(tester).requestFocus();
+      await tester.pumpAndSettle();
+      await typeWord(tester, 'movie');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      final count = tester.widget<Text>(find.byKey(const ValueKey('search_result_count'))).data!;
+      expect(count, matches(RegExp(r'^\d+ results?$')));
+      expect(find.byType(RawScrollbar), findsWidgets);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(headerFocus(tester).hasFocus, isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(headerFocus(tester).hasFocus, isTrue);
+      // ignore: avoid_dynamic_calls
+      expect((tester.state(find.byType(TvSearchHeader)) as dynamic).debugIndex, 3, reason: 'on "a"');
+      expect(find.text('movie'), findsOneWidget, reason: 'Back from results keeps the query');
+    });
+
+    testWidgets('leaving the Search tab forgets the search', (tester) async {
+      await _pumpTvSearchScreen(tester);
+      await tester.pumpAndSettle();
+      headerFocus(tester).requestFocus();
+      await tester.pumpAndSettle();
+      await typeWord(tester, 'movie');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('search_result_count')), findsOneWidget);
+
+      // ignore: avoid_dynamic_calls
+      (tester.state(find.byType(SearchScreen)) as dynamic).onTabHidden();
+      await tester.pumpAndSettle();
+
+      expect(find.text('movie'), findsNothing);
+      expect(find.byKey(const ValueKey('search_result_count')), findsNothing);
+      // ignore: avoid_dynamic_calls
+      expect((tester.state(find.byType(TvSearchHeader)) as dynamic).debugIndex, 3);
+    });
+
     testWidgets('a search sent from the phone focuses the results', (tester) async {
       final (client, key) = await _pumpTvSearchScreen(tester);
       await tester.pumpAndSettle();
