@@ -784,7 +784,8 @@ class _SearchScreenState extends State<SearchScreen>
   void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
 
   void _focusFirstResult() {
-    if (_visibleResults.isNotEmpty || (_selectedFilter is _AiResults && _aiResults.isNotEmpty)) {
+    if (_visibleResults.isNotEmpty ||
+        (_selectedFilter is _AiResults && !_smartLoading && !_aiAsking && _aiResults.isNotEmpty)) {
       firstResultFocusNode.requestFocus();
     }
   }
@@ -948,9 +949,11 @@ class _SearchScreenState extends State<SearchScreen>
     if (_selectedFilter is! _AiResults) return const [];
     final items = _aiResults;
     final asking = _smartLoading || _aiAsking;
+    // Shown once, complete: nothing appears until the model's picks are in,
+    // so the list never reshuffles under the viewer.
+    if (asking) return [_smartHeader(context, t.search.findingSmartMatches)];
     return [
-      if (asking) _smartHeader(context, t.search.findingSmartMatches),
-      if (!asking && items.isEmpty) _smartHeader(context, t.messages.noResultsFound),
+      if (items.isEmpty) _smartHeader(context, t.messages.noResultsFound),
       if (items.isNotEmpty) _buildSmartList(context, items, takesFirstFocus: true),
     ];
   }

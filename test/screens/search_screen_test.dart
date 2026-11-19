@@ -400,6 +400,7 @@ void main() {
       await tester.pump();
       expect(aggregation.queries, ['friends episode joey breaks the chair']);
       expect(find.text(t.search.findingSmartMatches), findsOneWidget);
+      expect(find.text('Movie 1'), findsNothing, reason: 'nothing shows until the full list is ready');
       final focusedBefore = FocusManager.instance.primaryFocus;
 
       pending.complete([
@@ -435,6 +436,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(aggregation.askedAi, ['best shows about friends']);
+      expect(find.text(t.search.findingSmartMatches), findsNothing);
       final first = tester.getTopLeft(find.text('First Pick')).dy;
       final second = tester.getTopLeft(find.text('Second Pick')).dy;
       final library = tester.getTopLeft(find.text('Library Only Match')).dy;
