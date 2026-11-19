@@ -621,6 +621,9 @@ from the logs) is already fast enough, so it was left alone.
   from inside the container succeeded (65,885 titles, 15 s); status file
   `live/imdb_candidates_status.json`. Owner preference: downloads organized
   inside the smartsearch folder.
+- Schedule (owner agreed, Nov 19): ratings daily, title.basics every 3.5
+  days, If-Modified-Since on both, rebuild only on change. Stay out of
+  cleanarr entirely (its imdb.db has no genres; not read, not changed).
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
