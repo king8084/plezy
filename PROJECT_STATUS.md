@@ -2,7 +2,13 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `d473e6bc7` (Codemagic build 32, Nov 19, in place via
+- Installed app source: `fa2889b08` (Codemagic build 33, Nov 19, in place via
+  tvsign Renew; signing and upload OK). Ask AI single ranked list with
+  Seerr-confirmed requestable titles. Local gate GATE_EXIT=0 (8,713 tests),
+  Codemagic gate passed; fork Actions disabled. Backups
+  `*-before-fa2889b.ipa`; local tag `tvos-build-33`; private receipt. Owner
+  device check pending.
+- Previous install: `d473e6bc7` (Codemagic build 32, Nov 19, in place via
   tvsign Renew; signing and upload OK). Adds the show page "More like this"
   preview. Local gate GATE_EXIT=0 (8,712 tests), Codemagic gate passed; fork
   Actions disabled. Backups `*-before-d473e6b.ipa`; local tag
