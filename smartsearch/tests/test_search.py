@@ -481,7 +481,7 @@ class FreshShortlistTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             (tmp / 'imdb').mkdir()
-            old = _time.time() - 5 * 24 * 3600
+            old = _time.time() - 8 * 24 * 3600
             for name in ('title.basics.tsv.gz', 'title.ratings.tsv.gz'):
                 (tmp / 'imdb' / name).write_bytes(b'')
                 import os
