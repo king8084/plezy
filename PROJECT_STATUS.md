@@ -601,6 +601,22 @@ from the logs) is already fast enough, so it was left alone.
 - Open idea (owner not yet decided): add production countries to the index
   so "UK/British/Korean" filter instant search too.
 
+## Ollama models and the fresh shortlist (Nov 19)
+- Ollama runs in Docker on the owner's PC (RX 9070-class GPU, 16 GB VRAM);
+  owner updated it 0.24.0 -> 0.40.16 (embeddings verified identical, cosine
+  1.0000 vs stored vectors). Benchmarked qwen3:14b and gemma3:12b against
+  qwen3.5:9b: 9B kept (lists: more owned titles and more relevant; 14B 90%
+  real, gemma lists drift to kids films; gemma best on plots 6/6). Test
+  models removed. Model years sometimes ride in titles; stripped.
+- Fresh shortlist (deployed `2b5df3e1b`): list requests get current IMDb
+  titles matching type/years/genres. Real 77% -> 97%. The owner's imdb.db
+  (cleanarr) has titles/years/ratings but no genres, so the container
+  downloads IMDb title.basics + title.ratings daily into
+  `smartsearch/live/imdb/` (kept, replaced daily). First automatic refresh
+  from inside the container succeeded (65,885 titles, 15 s); status file
+  `live/imdb_candidates_status.json`. Owner preference: downloads organized
+  inside the smartsearch folder.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
