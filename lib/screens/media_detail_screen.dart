@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
+import '../media/catalog_item_ref.dart';
+import '../media/media_item_merge.dart';
 import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -415,6 +417,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // only the foreground info panel, never the whole screen with its rail
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
+
+  /// TV: the "More like this" title the top section previews while a card in
+  /// those rows stays focused (null shows this page's own title).
+  final ValueNotifier<MediaItem?> _tvDetailPreview = ValueNotifier(null);
+  Timer? _tvDetailPreviewTimer;
+  final Map<String, MediaItem> _tvDetailPreviewDetails = {};
   final _tvDetailActionRowHasFocus = ValueNotifier(false);
   final _tvDetailActiveHubId = ValueNotifier<String?>(null);
   late final _tvDetailChromeFocus = Listenable.merge([
@@ -1181,6 +1189,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
+    _tvDetailPreviewTimer?.cancel();
+    _tvDetailPreview.dispose();
     _focusedEpisodeMetadataRevision.dispose();
     _playbackProbeTimer?.cancel();
     _playbackStatusRevision.dispose();
@@ -4012,10 +4022,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           top: spotlightTop,
           bottom: foregroundBottom,
           child: buildHiddenContent
-              ? ListenableBuilder(
-                  listenable: _tvDetailForegroundListenable,
-                  builder: (context, _) =>
-                      _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+              ? _hideWhileTvPreviewing(
+                  ListenableBuilder(
+                    listenable: _tvDetailForegroundListenable,
+                    builder: (context, _) =>
+                        _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+                  ),
                 )
               : const SizedBox.shrink(),
         ),
@@ -4063,7 +4075,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             right: spotlightLeft,
             top: seasonTabsTop,
             height: seasonTabsHeight,
-            child: Align(alignment: Alignment.centerLeft, child: _buildSeasonTabs()),
+            child: _hideWhileTvPreviewing(Align(alignment: Alignment.centerLeft, child: _buildSeasonTabs())),
           ),
         if (buildHiddenContent && detailHubs.isNotEmpty)
           Positioned(
@@ -4111,14 +4123,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: Scaffold(
           body: Stack(
             children: [
-              TvSpotlightBackground(
-                item: metadata,
-                client: _getArtworkMediaClient(context),
-                showInfo: false,
-                localArtworkPathResolver: widget.isOffline
-                    ? (path) => _offlineArtworkCandidatePath(context, path)
-                    : null,
-                allowNetwork: !widget.isOffline,
+              ValueListenableBuilder<MediaItem?>(
+                valueListenable: _tvDetailPreview,
+                builder: (context, preview, _) => TvSpotlightBackground(
+                  item: preview ?? metadata,
+                  client: preview == null
+                      ? _getArtworkMediaClient(context)
+                      : context.tryGetMediaClientForServer(serverIdOrNull(preview.serverId)),
+                  // The previewed title's logo, ratings and synopsis sit where
+                  // this page's own title block does.
+                  showInfo: preview != null,
+                  infoAtBottom: true,
+                  hideSpoilers: hideSpoilers,
+                  contentLeft: spotlightLeft,
+                  contentTop: spotlightTop,
+                  contentBottom: foregroundBottom,
+                  localArtworkPathResolver: widget.isOffline
+                      ? (path) => _offlineArtworkCandidatePath(context, path)
+                      : null,
+                  allowNetwork: !widget.isOffline,
+                ),
               ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
@@ -4129,6 +4153,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     return content;
   }
+
+  /// This page's own title block and season tabs fade out while a "More like
+  /// this" title is previewed (its Play buttons would act on this page).
+  Widget _hideWhileTvPreviewing(Widget child) => ValueListenableBuilder<MediaItem?>(
+    valueListenable: _tvDetailPreview,
+    child: child,
+    builder: (context, preview, child) => AnimatedOpacity(
+      key: const ValueKey('tv_detail_own_title_block'),
+      opacity: preview == null ? 1 : 0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      child: child,
+    ),
+  );
 
   Widget _buildTvDetailForeground(
     BuildContext context,
@@ -4871,11 +4909,62 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _focusTvDetailActionRow() {
     _tvDetailActionRowHasFocus.value = true;
+    _clearTvDetailPreview();
     _clearTvDetailFocusedEpisode();
     _playButtonFocusNode.requestFocus();
   }
 
+  /// "More like this" rows (library, Simkl, Seerr) preview their titles.
+  bool _isTvDetailPreviewHub(MediaHub hub) =>
+      hub.id == 'detail_simkl_recommendations' ||
+      hub.id == 'detail_seerr_recommendations' ||
+      _relatedHubs.any((related) => related.id == hub.id);
+
+  /// The rail reports its remembered card even while the buttons hold focus;
+  /// only a card the user is actually on is previewed.
+  bool get _tvDetailRailHasFocus {
+    final rail = _tvDetailRailKey.currentState;
+    final focused = FocusManager.instance.primaryFocus?.context;
+    if (rail == null || focused == null || _tvDetailActionRowHasFocus.value) return false;
+    return identical(focused.findAncestorStateOfType<TvBrowseRailState>(), rail);
+  }
+
+  void _clearTvDetailPreview() {
+    _tvDetailPreviewTimer?.cancel();
+    _tvDetailPreviewTimer = null;
+    _tvDetailPreview.value = null;
+  }
+
+  /// After a short pause on a card (fast scrolling never flickers), the top
+  /// section shows that title; its full details load once and are kept.
+  void _scheduleTvDetailPreview(MediaItem item) {
+    _tvDetailPreviewTimer?.cancel();
+    _tvDetailPreviewTimer = Timer(const Duration(milliseconds: 300), () async {
+      if (!mounted || !_tvDetailRailHasFocus) return;
+      final cached = _tvDetailPreviewDetails[item.globalKey];
+      _tvDetailPreview.value = cached ?? item;
+      if (cached != null || item.catalogItem != null) return;
+      final serverId = item.serverId;
+      final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
+      if (client == null) return;
+      try {
+        final full = await client.fetchItem(item.id);
+        if (full == null || !mounted) return;
+        final merged = mergeFetchedMediaItem(fetched: full, fallbackServerId: ServerId(serverId!), existing: item);
+        _tvDetailPreviewDetails[item.globalKey] = merged;
+        if (_tvDetailPreview.value?.globalKey == item.globalKey) _tvDetailPreview.value = merged;
+      } catch (error) {
+        appLogger.d('Preview details unavailable for ${item.globalKey}', error: error);
+      }
+    });
+  }
+
   void _handleTvDetailFocusedRailItemChanged(MediaHub hub, MediaItem item) {
+    if (_isTvDetailPreviewHub(hub) && (item.isMovie || item.isShow)) {
+      _scheduleTvDetailPreview(item);
+    } else {
+      _clearTvDetailPreview();
+    }
     if (_tvDetailActionRowHasFocus.value) {
       _clearTvDetailFocusedEpisode();
       return;
@@ -4902,6 +4991,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   void _handleTvDetailHubChanged(MediaHub hub, int index) {
     _tvDetailActiveHubId.value = hub.id;
+    if (!_isTvDetailPreviewHub(hub)) _clearTvDetailPreview();
     if (!_isTvDetailEpisodeHub(hub)) {
       _clearTvDetailFocusedEpisode();
       return;

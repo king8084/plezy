@@ -130,6 +130,66 @@ void main() {
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
+  testWidgets('TV detail: a More like this card previews its title in the top section', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final movie = testMediaItem(
+      id: 'movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'The Expanse Movie',
+      summary: 'This page summary.',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final orville = movie.copyWith(id: 'orville', title: 'The Orville', summary: 'A starship comedy.', year: 2017);
+    final server = _FakeMediaServerClient(
+      show: movie,
+      childrenByParent: {},
+      relatedHubs: [
+        MediaHub(
+          id: 'local-similar',
+          title: 'Similar',
+          type: 'movie',
+          items: [
+            orville,
+            movie.copyWith(id: 'dark'),
+          ],
+        ),
+      ],
+    );
+    final multiServer = testMultiServer(clients: [server]).provider;
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServer,
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    double ownOpacity() =>
+        tester.widget<AnimatedOpacity>(find.byKey(const ValueKey('tv_detail_own_title_block')).first).opacity;
+    expect(ownOpacity(), 1);
+    expect(find.text('A starship comedy.'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('A starship comedy.'), findsNothing, reason: 'waits for focus to settle');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(find.text('A starship comedy.'), findsOneWidget);
+    expect(ownOpacity(), 0);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(find.text('A starship comedy.'), findsNothing);
+    expect(ownOpacity(), 1);
+  });
+
   testWidgets('TV detail: fast Down presses leave no unbuilt cards in the rows below', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1920, 1080);

@@ -40,6 +40,10 @@ class TvSpotlightBackground extends StatelessWidget {
   final double? contentLeft;
   final bool compact;
   final bool showInfo;
+
+  /// Sit the info block on the region's bottom edge (the show page's
+  /// "More like this" preview, directly above its rows) instead of its top.
+  final bool infoAtBottom;
   final double textScale;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
@@ -59,6 +63,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.contentLeft,
     this.compact = false,
     this.showInfo = true,
+    this.infoAtBottom = false,
     this.textScale = 1,
     this.localArtworkPathResolver,
     this.allowNetwork = true,
@@ -143,7 +148,7 @@ class TvSpotlightBackground extends StatelessWidget {
                         if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
                         return ClipRect(
                           child: Align(
-                            alignment: .topLeft,
+                            alignment: infoAtBottom ? .bottomLeft : .topLeft,
                             child: _buildInfo(
                               context,
                               media,
