@@ -498,3 +498,27 @@ class FreshShortlistTest(unittest.TestCase):
             self.assertTrue(all(asked), 'asks only for a newer copy')
             self.assertEqual(C.refresh(tmp, opener=NotModified()), 'fresh', 'checked files wait for their schedule')
 
+
+
+class InstantLikeTest(unittest.TestCase):
+    """"shows like firefly": Firefly's neighbours in meaning, kept to the request."""
+
+    def test_like_a_library_title(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Firefly', rating=9.0, overview='A crew of smugglers flies a spaceship.'),
+                     series(2, 'Space Crew', rating=8.0, overview='A crew of smugglers flies a spaceship too.'),
+                     series(3, 'Kitchen Show', genres=('Reality',), rating=9.5, overview='Chefs cook dinner.'),
+                     movie(4, 'Spaceship Film', rating=9.9, overview='A crew of smugglers flies a spaceship.')]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            while w.embed_step():
+                pass
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            got = engine.instant('shows like firefly')
+            titles = [r['title'] for r in got['results']]
+            self.assertEqual(titles[0], 'Space Crew', 'nearest in meaning, not highest rated')
+            self.assertNotIn('Firefly', titles)
+            self.assertNotIn('Spaceship Film', titles, 'shows only')
+            self.assertIn('Like Firefly', got['understood'])
+            self.assertIsNotNone(engine.instant('like nothing in this library')['results'] is not None)

@@ -699,11 +699,81 @@ class Engine:
                 return out, f'Season {season}' + (f' · Episode {episode}' if episode else '')
         return None
 
+    _LIKE = re.compile(r'^(.*?)\b(?:like|similar to)\s+(.+)$')
+
+    def _like_results(self, raw, groups, limit):
+        """"sci fi shows like the expanse": the named library title's nearest
+        neighbours in meaning (as on its show page's More like this), kept to the
+        rest of the request's conditions (genre, type, years, library words).
+        None when no library title is named."""
+        if self.vectors is None:
+            return None
+        m = self._LIKE.match(norm(raw))
+        if not m:
+            return None
+        before, target = m.group(1).strip(), m.group(2).strip()
+        rest = Q.parse(before, self.vocab)
+        candidates = self.vocab.get('titles', {}).get(target, [])
+        if not candidates:
+            return None
+        wanted_kind = next(iter(rest.kinds)) if len(rest.kinds) == 1 else None
+        source = next((c for c in candidates if wanted_kind in (None, c[1])), candidates[0])
+        matrix, ids, index = self.vectors
+        if source[0] not in index:
+            return None
+        rest.library_groups = groups
+        if not rest.kinds:
+            rest.kinds = {source[1]}
+        where, args = self._filter_sql(rest)
+        allowed = {r[0] for r in self.db.execute(f'SELECT i.item_id FROM items i WHERE {where}', args)}
+        scores = matrix @ matrix[index[source[0]]]
+        near = []
+        for n in np.argsort(-scores):
+            candidate = ids[n]
+            if candidate != source[0] and candidate in allowed:
+                near.append((candidate, float(scores[n])))
+                if len(near) >= 300:
+                    break
+        if not near:
+            return None
+        # Meaning alone follows shared words ("like breaking bad" -> English
+        # Teacher, King of the Hill); shared genres and a little IMDb rating
+        # re-rank the nearest 300 (tuned Nov 19 on the full library).
+        marks = ','.join('?' * (len(near) + 1))
+        genres, ratings = {}, {}
+        for item_id, value in self.db.execute(
+                f"SELECT item_id, value FROM item_terms WHERE field='genre' AND item_id IN ({marks})",
+                [c for c, _ in near] + [source[0]]):
+            genres.setdefault(item_id, set()).add(value)
+        for item_id, rating in self.db.execute(
+                f"SELECT item_id, rating FROM items WHERE item_id IN ({marks[2:]})", [c for c, _ in near]):
+            ratings[item_id] = rating or 7.0
+        own = genres.get(source[0], set())
+
+        def fit(entry):
+            candidate, cosine = entry
+            theirs = genres.get(candidate, set())
+            overlap = len(own & theirs) / len(own | theirs) if own | theirs else 0.0
+            return cosine + 0.15 * overlap + 0.01 * (ratings.get(candidate, 7.0) - 7.0)
+        picked = [c for c, _ in sorted(near, key=fit, reverse=True)[:limit * 2]]
+        rows = {r[0]: r for r in self.db.execute(
+            f"SELECT {self.COLUMNS} FROM items i WHERE i.item_id IN ({','.join('?' * len(picked))})", picked)}
+        title = self.db.execute('SELECT title FROM items WHERE item_id=?', (source[0],)).fetchone()
+        return [self._row(rows[i], 'similar') for i in picked if i in rows], rest.understood + [
+            f'Like {title[0] if title else target}']
+
     def _instant(self, raw, limit=40, groups=None):
         start = time.perf_counter()
         p = Q.parse(raw, self.vocab)
         p.library_groups = self._requested_groups(raw) if groups is None else groups
         results, seen = [], set()
+        like_hit = self._like_results(raw, p.library_groups, limit)
+        if like_hit:
+            rows, understood = like_hit
+            return {'query': raw, 'understood': understood, 'filters': True, 'unwatched': p.unwatched,
+                    'results': self._with_libraries(self._dedupe(rows)[:limit]),
+                    'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')],
+                    'took_ms': round((time.perf_counter() - start) * 1000, 2)}
         season_hit = self._season_episodes(raw, limit)
         if season_hit:
             rows, label = season_hit
