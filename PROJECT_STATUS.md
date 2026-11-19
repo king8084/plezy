@@ -624,6 +624,8 @@ from the logs) is already fast enough, so it was left alone.
 - Schedule (owner, Nov 19): both IMDb files weekly (was ratings daily +
   basics 3.5 d), If-Modified-Since on both, rebuild only on change. Stay out of
   cleanarr entirely (its imdb.db has no genres; not read, not changed).
+- Owner (Nov 19): leave the Ask AI model's idle unload as is (15 min); a
+  10-17 s first Ask AI after idle is fine. Don't keep models in the GPU.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
