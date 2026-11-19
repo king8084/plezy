@@ -626,6 +626,12 @@ from the logs) is already fast enough, so it was left alone.
   cleanarr entirely (its imdb.db has no genres; not read, not changed).
 - Owner (Nov 19): leave the Ask AI model's idle unload as is (15 min); a
   10-17 s first Ask AI after idle is fine. Don't keep models in the GPU.
+- "sci fi shows like the expanse" gave only 9 in Ask AI: the model listed
+  movies (dropped for "shows"). Fixed (deployed): type-specific prompt +
+  "Title|Year" parsing (9 -> 23); "like X" skips the popularity shortlist
+  (answers were drifting to famous titles); "(US)/(TV Series)" labels
+  stripped. Instant search's "like X" is still genre + rating order
+  (owner offered a meaning-based upgrade; not decided).
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
