@@ -630,8 +630,11 @@ from the logs) is already fast enough, so it was left alone.
   movies (dropped for "shows"). Fixed (deployed): type-specific prompt +
   "Title|Year" parsing (9 -> 23); "like X" skips the popularity shortlist
   (answers were drifting to famous titles); "(US)/(TV Series)" labels
-  stripped. Instant search's "like X" is still genre + rating order
-  (owner offered a meaning-based upgrade; not decided).
+  stripped.
+- Instant "like <library title>" (deployed, owner approved): vector
+  neighbours of the title within the request's filters, re-ranked by genre
+  overlap (0.15) and rating (0.01), 40-90 ms, no AI. Partial titles
+  ("naruto" for "Rebuild of Naruto") fall back to the usual search.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
