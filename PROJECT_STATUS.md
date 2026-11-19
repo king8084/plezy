@@ -570,6 +570,20 @@ from the logs) is already fast enough, so it was left alone.
 - Rollback: local tag `tvos-build-31` (5c9ac435f) and `Plezy-5c9ac43.ipa` in
   tvsign; or revert this single commit and rebuild.
 
+## Ask AI: one ranked list with requestable titles (Nov 19)
+- Benchmark (qwen3.5:9b; IMDb title.basics as truth): JSON schema 20 titles
+  8.5 s vs one-per-line 4.3 s (first title 0.5 s), 96% real; 30 titles makes
+  the model repeat (205 dupes). IMDb genre filtering is too strict (max 3
+  genres per title: Dark, Stranger Things dropped from sci-fi), not used;
+  year/type/"like X" filters are reliable. Plot questions: library wording
+  in lines up to 12 -> 2.3 s, right title first 5/6 (was 4/6).
+- Server `d38cd7200` (deployed): /v1/ask (list 20 / plot 12, cached, free
+  filters, library ids + libraries). /v1/smart up to 60.
+- App (not built): Ask AI shows library matches at once (recall off, 60),
+  then the model's picks in order; non-owned picks need a Seerr match (name,
+  kind, year +-1) and resolve like the show page's Seerr row ("Need
+  request"/"Requested", MDBList captions). Gate GATE_EXIT=0 (8,713 tests).
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
