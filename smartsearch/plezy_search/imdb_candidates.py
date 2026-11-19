@@ -102,9 +102,9 @@ def shortlist(titles, kinds=None, year_min=None, year_max=None, genres=(), limit
             for _, kind, title, year, rating, votes in best + recent]
 
 
-# The big title file (230 MB) is fetched twice a week, ratings (9 MB) daily:
-# votes stay current, new titles arrive within 3-4 days (owner, Nov 19).
-SCHEDULE_HOURS = {'title.basics.tsv.gz': 3.5 * 24, 'title.ratings.tsv.gz': 20}
+# Both files weekly (owner, Nov 19: "once a week is enough"): the shortlist
+# keeps titles with 1,000+ votes, which new releases reach over days to weeks.
+SCHEDULE_HOURS = {'title.basics.tsv.gz': 7 * 24, 'title.ratings.tsv.gz': 7 * 24}
 
 
 def _download(opener, name, folder):
