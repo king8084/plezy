@@ -17,7 +17,7 @@ import numpy as np
 
 from pathlib import Path
 
-from . import imdb_extras
+from . import imdb_candidates, imdb_extras
 from . import query as Q
 from . import store
 from .common import DIMENSIONS, SearchError, norm, sha, utc
@@ -779,6 +779,18 @@ class Engine:
     _ASK_LIST_WORDS = re.compile(r'\b(best|top|greatest|like|similar|recommend|recommendations?|movies?|films?|'
                                  r'shows?|series|tv|anime|animes|cartoons?|documentar(?:y|ies))\b')
 
+    def _candidates(self):
+        """The daily IMDb shortlist pool, reloaded when its file changes."""
+        path = Path(self.db_path).parent / imdb_candidates.FILE_NAME
+        try:
+            stamp = path.stat().st_mtime
+        except OSError:
+            return []
+        if getattr(self, '_candidates_stamp', None) != stamp:
+            self._candidates_pool = imdb_candidates.load(path)
+            self._candidates_stamp = stamp
+        return self._candidates_pool
+
     def ask(self, raw, limit=40):
         """"Ask AI": the language model's picks for [raw], best first, each with
         its library item when the library has it ("id"), else None (the app
@@ -789,7 +801,9 @@ class Engine:
         p = Q.parse(raw, self.vocab)
         text = norm(raw)
         plot = not (p.has_filters or p.kinds or self._ASK_LIST_WORDS.search(text))
-        picks = self.verifier.ask(raw, plot=plot) if self.verifier else []
+        fresh = [] if plot else imdb_candidates.shortlist(self._candidates(), p.kinds, p.year_min, p.year_max,
+                                                            p.genres + p.soft_genres)
+        picks = self.verifier.ask(raw, plot=plot, shortlist=fresh) if self.verifier else []
         like = re.search(r'\b(?:like|similar to)\s+(.+)$', text)
         excluded = norm(like.group(1)) if like else None
         want = {'Series': 'show', 'Movie': 'movie'}.get(next(iter(p.kinds))) if len(p.kinds) == 1 else None

@@ -407,7 +407,7 @@ class AskTest(unittest.TestCase):
             def __init__(self):
                 self.plot = None
 
-            def ask(self, query, plot=False):
+            def ask(self, query, plot=False, shortlist=()):
                 self.plot = plot
                 return [{'type': 'show', 'title': 'Firefly', 'year': 2002},
                         {'type': 'show', 'title': 'Severance', 'year': 2022},
@@ -440,3 +440,33 @@ class AskLineTest(unittest.TestCase):
         line = 'show|Battlestar Galactica (2004)|2004'
         m = Verifier._ASK_LINE.match(line)
         self.assertEqual(re.sub(r'\s*\((?:19|20)\d{2}\)\s*$', '', m.group(2)).strip(), 'Battlestar Galactica')
+
+
+class FreshShortlistTest(unittest.TestCase):
+    """Ask AI's shortlist: current IMDb titles matching the request's own conditions."""
+
+    def test_build_shortlist_and_refresh_skip(self):
+        import gzip
+        from plezy_search import imdb_candidates as C
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+
+            def tsv(name, rows):
+                with gzip.open(tmp / name, 'wt', encoding='utf-8') as f:
+                    f.write('\n'.join('\t'.join(r) for r in rows) + '\n')
+            tsv('basics.gz', [('tconst', 'titleType', 'primaryTitle', 'originalTitle', 'isAdult', 'startYear',
+                               'endYear', 'runtimeMinutes', 'genres'),
+                              ('tt1', 'tvSeries', 'New Space Show', 'x', '0', '2025', '\\N', '50', 'Drama,Sci-Fi'),
+                              ('tt2', 'tvSeries', 'Old Space Show', 'x', '0', '1999', '\\N', '50', 'Sci-Fi'),
+                              ('tt3', 'movie', 'Space Movie', 'x', '0', '2025', '\\N', '90', 'Sci-Fi'),
+                              ('tt4', 'tvSeries', 'Cooking Show', 'x', '0', '2025', '\\N', '30', 'Reality-TV'),
+                              ('tt5', 'tvSeries', 'Tiny Show', 'x', '0', '2025', '\\N', '30', 'Sci-Fi')])
+            tsv('ratings.gz', [('tconst', 'averageRating', 'numVotes'), ('tt1', '8.1', '5000'), ('tt2', '9.0', '90000'),
+                               ('tt3', '7.0', '20000'), ('tt4', '8.0', '9000'), ('tt5', '9.9', '12')])
+            count, _ = C.build(tmp / 'basics.gz', tmp / 'ratings.gz', tmp / C.FILE_NAME)
+            self.assertEqual(count, 4, 'titles under 1,000 votes are left out')
+            pool = C.load(tmp / C.FILE_NAME)
+            got = C.shortlist(pool, {'Series'}, 2006, None, ['scifi'], this_year=2026)
+            self.assertEqual([c['title'] for c in got], ['New Space Show'])
+            self.assertEqual(C.shortlist(pool, {'Series'}, None, None, []), [], 'too vague')
+            self.assertEqual(C.refresh(tmp), 'fresh', 'a file under 20 hours old is not rebuilt')

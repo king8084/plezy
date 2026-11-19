@@ -18,6 +18,7 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from . import imdb_candidates
 from .clients import Ollama
 from .common import SearchError, api, endpoint
 from .query import parse as _parse
@@ -208,6 +209,19 @@ def main(argv=None):
             except Exception as error:
                 print(json.dumps({'refresh_error': type(error).__name__}), flush=True)
     threading.Thread(target=refresher, daemon=True).start()
+
+    def imdb_daily():
+        # Ask AI's fresh shortlist (IMDb's daily public data, this folder only).
+        time.sleep(120)
+        while True:
+            try:
+                result = imdb_candidates.refresh(args.data_dir)
+                if result != 'fresh':
+                    print(json.dumps({'imdb_candidates': result}), flush=True)
+            except Exception as error:
+                print(json.dumps({'imdb_candidates_error': type(error).__name__}), flush=True)
+            time.sleep(6 * 3600)
+    threading.Thread(target=imdb_daily, daemon=True).start()
     server = Server(('0.0.0.0', int(config.get('port', 8787))), engine, config['api_key'], args.data_dir,
                     jellyfin_url=access.get('jellyfin_url'))
     print(json.dumps({'listening': config.get('port', 8787)}), flush=True)
