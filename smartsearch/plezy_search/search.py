@@ -801,12 +801,15 @@ class Engine:
         p = Q.parse(raw, self.vocab)
         text = norm(raw)
         plot = not (p.has_filters or p.kinds or self._ASK_LIST_WORDS.search(text))
-        fresh = [] if plot else imdb_candidates.shortlist(self._candidates(), p.kinds, p.year_min, p.year_max,
-                                                            p.genres + p.soft_genres)
-        picks = self.verifier.ask(raw, plot=plot, shortlist=fresh) if self.verifier else []
         like = re.search(r'\b(?:like|similar to)\s+(.+)$', text)
-        excluded = norm(like.group(1)) if like else None
+        # "like X" leans on the model's sense of similarity; the shortlist (sorted
+        # by popularity) pulled those answers toward famous titles (Nov 19:
+        # "movies like interstellar" got Avengers, Back to the Future).
+        fresh = [] if plot or like else imdb_candidates.shortlist(self._candidates(), p.kinds, p.year_min,
+                                                                    p.year_max, p.genres + p.soft_genres)
         want = {'Series': 'show', 'Movie': 'movie'}.get(next(iter(p.kinds))) if len(p.kinds) == 1 else None
+        picks = self.verifier.ask(raw, plot=plot, shortlist=fresh, kind=want) if self.verifier else []
+        excluded = norm(like.group(1)) if like else None
         titles = self.vocab.get('titles', {})
         out, seen = [], set()
         for pick in picks:

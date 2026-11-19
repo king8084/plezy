@@ -407,7 +407,7 @@ class AskTest(unittest.TestCase):
             def __init__(self):
                 self.plot = None
 
-            def ask(self, query, plot=False, shortlist=()):
+            def ask(self, query, plot=False, shortlist=(), kind=None):
                 self.plot = plot
                 return [{'type': 'show', 'title': 'Firefly', 'year': 2002},
                         {'type': 'show', 'title': 'Severance', 'year': 2022},
