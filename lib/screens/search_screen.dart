@@ -25,6 +25,11 @@ import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/settings_service.dart';
+import '../models/catalog/catalog_item.dart';
+import '../providers/catalog_sources_provider.dart';
+import '../services/catalog/catalog_library_matcher.dart';
+import '../services/catalog/detail_recommendations.dart';
+import '../services/catalog/seerr_catalog_source.dart';
 import '../services/smart_search/smart_search_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -102,6 +107,12 @@ class _SearchScreenState extends State<SearchScreen>
   List<SmartSuggestion> _smartSuggestions = const [];
   bool _smartLoading = false;
   AbortController? _smartAbort;
+
+  /// "Ask AI": the model's picks in its order (owned titles, and the others
+  /// confirmed through Seerr with "Need request"); null until they arrive.
+  List<MediaItem>? _aiPicks;
+  bool _aiAsking = false;
+  AbortController? _aiAbort;
 
   @override
   void initState() {
@@ -244,6 +255,107 @@ class _SearchScreenState extends State<SearchScreen>
     _smartAbort = null;
     _smartLoading = false;
     _smartSuggestions = const [];
+    _aiAbort?.abort();
+    _aiAbort = null;
+    _aiAsking = false;
+    _aiPicks = null;
+  }
+
+  /// One "Ask AI" list: the model's picks first, in its order, then the
+  /// library's own meaning matches it did not name.
+  List<MediaItem> get _aiResults {
+    final picks = _aiPicks ?? const <MediaItem>[];
+    final seen = {for (final item in picks) item.globalKey};
+    return [
+      ...picks,
+      for (final suggestion in _smartSuggestions)
+        if (seen.add(suggestion.item.globalKey)) suggestion.item,
+    ];
+  }
+
+  static String _titleKey(String title) => title
+      .toLowerCase()
+      .replaceAll('&', ' and ')
+      .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+      .trim()
+      .replaceFirst(RegExp(r'^(the|a|an) '), '');
+
+  /// The Seerr title the model meant: same name, same kind, year within one.
+  /// None found means the model may have invented it, so it is left out.
+  static Future<CatalogItem?> _seerrMatch(SeerrCatalogSource seerr, AskAiPick pick) async {
+    final kind = pick.isMovie ? MediaKind.movie : MediaKind.show;
+    final key = _titleKey(pick.title);
+    for (final item in await seerr.search(pick.title, limit: 10)) {
+      if (item.kind != kind || _titleKey(item.title) != key) continue;
+      final year = item.year;
+      if (pick.year != null && year != null && (year - pick.year!).abs() > 1) continue;
+      return item;
+    }
+    return null;
+  }
+
+  Future<void> _loadAiPicks(String query) async {
+    final multiServer = context.read<MultiServerProvider>();
+    final hiddenKeys = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
+    final seerr = context.read<CatalogSourcesProvider?>()?.seerrSource;
+    final matcher = context.read<CatalogLibraryMatcher?>();
+    final abort = AbortController();
+    _aiAbort = abort;
+    bool current() => mounted && identical(_aiAbort, abort);
+    setState(() {
+      _aiAsking = true;
+      _aiPicks = null;
+    });
+    var items = <MediaItem>[];
+    try {
+      final picks = await multiServer.aggregationService.askAi(query, hiddenLibraryKeys: hiddenKeys, abort: abort);
+      if (!current()) return;
+      final outside = <int, CatalogItem>{};
+      if (seerr != null) {
+        final wanted = [
+          for (final (index, entry) in picks.indexed)
+            if (entry.owned == null) (index, entry.pick),
+        ];
+        for (var start = 0; start < wanted.length; start += 4) {
+          await Future.wait([
+            for (final (index, pick) in wanted.skip(start).take(4))
+              _seerrMatch(seerr, pick)
+                  .timeout(const Duration(seconds: 4), onTimeout: () => null)
+                  .then((found) => found == null ? null : outside[index] = found, onError: (_) => null),
+          ]);
+          if (!current()) return;
+        }
+      }
+      // Owned or already requested, exactly as the show page's Seerr row decides.
+      final resolved = <int, MediaItem>{};
+      if (outside.isNotEmpty) {
+        final keys = outside.keys.toList()..sort();
+        final catalogItems = [for (final key in keys) outside[key]!];
+        final cards = matcher == null
+            ? [
+                for (final item in catalogItems)
+                  RecommendationCardData(item, RecommendationAvailability.missing).attach(item.toMediaItem()),
+              ]
+            : await resolveDetailRecommendations(
+                catalogItems,
+                match: matcher.match,
+                seerr: seerr,
+                isCurrent: current,
+              ).fold<List<MediaItem>>(const [], (_, latest) => latest);
+        if (!current()) return;
+        for (final (n, key) in keys.indexed) {
+          if (n < cards.length) resolved[key] = cards[n];
+        }
+      }
+      items = [for (final (index, entry) in picks.indexed) ?(entry.owned ?? resolved[index])];
+    } catch (e) {
+      appLogger.d('Ask AI unavailable', error: e);
+    }
+    if (!current()) return;
+    setState(() {
+      _aiAsking = false;
+      _aiPicks = items;
+    });
   }
 
   Future<void> _loadSmartSuggestions(String query) async {
@@ -256,10 +368,14 @@ class _SearchScreenState extends State<SearchScreen>
     setState(() => _smartLoading = true);
     List<SmartSuggestion> suggestions;
     try {
+      // The model's own picks come from Ask AI's separate request; these are
+      // the library's meaning matches, back in ~0.2 s.
       suggestions = await multiServer.aggregationService.smartSuggestions(
         query,
         hiddenLibraryKeys: hiddenKeys,
         abort: abort,
+        recall: false,
+        limit: 60,
       );
     } catch (e) {
       appLogger.d('Smart suggestions skipped', error: e);
@@ -636,7 +752,11 @@ class _SearchScreenState extends State<SearchScreen>
       _filteredResults = _rankFilteredResults(filter, lastSearchedQuery);
     });
     if (filter is _AiResults) {
-      unawaited(_loadSmartSuggestions(lastSearchedQuery));
+      unawaited(
+        _loadSmartSuggestions(lastSearchedQuery).then((_) {
+          if (mounted && _selectedFilter is _AiResults) unawaited(_loadAiPicks(lastSearchedQuery));
+        }),
+      );
     } else {
       setState(_cancelSmartSuggestions);
     }
@@ -664,7 +784,7 @@ class _SearchScreenState extends State<SearchScreen>
   void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
 
   void _focusFirstResult() {
-    if (_visibleResults.isNotEmpty || (_selectedFilter is _AiResults && _smartSuggestions.isNotEmpty)) {
+    if (_visibleResults.isNotEmpty || (_selectedFilter is _AiResults && _aiResults.isNotEmpty)) {
       firstResultFocusNode.requestFocus();
     }
   }
@@ -729,8 +849,10 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// "23 results" under the filter row: what the list below holds.
   Widget _buildResultCount(BuildContext context) {
-    if (_selectedFilter is _AiResults && _smartLoading) return const SliverToBoxAdapter(child: SizedBox.shrink());
-    final count = _selectedFilter is _AiResults ? _smartSuggestions.length : _visibleResults.length;
+    if (_selectedFilter is _AiResults && (_smartLoading || _aiAsking)) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    final count = _selectedFilter is _AiResults ? _aiResults.length : _visibleResults.length;
     final scale = TvLayoutConstants.scaleOf(context);
     return SliverToBoxAdapter(
       child: Padding(
@@ -824,27 +946,12 @@ class _SearchScreenState extends State<SearchScreen>
 
   List<Widget> _buildSmartSuggestions(BuildContext context) {
     if (_selectedFilter is! _AiResults) return const [];
-    if (!_smartLoading && _smartSuggestions.isEmpty) {
-      return [_smartHeader(context, t.messages.noResultsFound)];
-    }
-    final confirmed = [
-      for (final suggestion in _smartSuggestions)
-        if (suggestion.match == SmartSearchMatch.confirmed) suggestion.item,
-    ];
-    final possible = [
-      for (final suggestion in _smartSuggestions)
-        if (suggestion.match != SmartSearchMatch.confirmed) suggestion.item,
-    ];
+    final items = _aiResults;
+    final asking = _smartLoading || _aiAsking;
     return [
-      if (_smartLoading) _smartHeader(context, t.search.findingSmartMatches),
-      if (confirmed.isNotEmpty) ...[
-        _smartHeader(context, t.search.smartMatches),
-        _buildSmartList(context, confirmed, takesFirstFocus: true),
-      ],
-      if (possible.isNotEmpty) ...[
-        _smartHeader(context, t.search.possibleMatches),
-        _buildSmartList(context, possible, takesFirstFocus: confirmed.isEmpty),
-      ],
+      if (asking) _smartHeader(context, t.search.findingSmartMatches),
+      if (!asking && items.isEmpty) _smartHeader(context, t.messages.noResultsFound),
+      if (items.isNotEmpty) _buildSmartList(context, items, takesFirstFocus: true),
     ];
   }
 

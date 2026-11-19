@@ -409,15 +409,38 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(t.search.findingSmartMatches), findsNothing);
-      expect(find.text(t.search.smartMatches), findsOneWidget);
-      expect(find.text(t.search.possibleMatches), findsOneWidget);
       expect(find.text('The One Where Rosita Dies'), findsOneWidget);
+      expect(find.text('A Confirmed Episode'), findsOneWidget);
       expect(find.text('Movie 1'), findsNothing, reason: 'the AI picks are their own list');
       expect(FocusManager.instance.primaryFocus, same(focusedBefore), reason: 'focus never jumps');
-      expect(
-        tester.getTopLeft(find.text(t.search.possibleMatches)).dy,
-        greaterThan(tester.getTopLeft(find.text('A Confirmed Episode')).dy),
+    });
+
+    testWidgets("one list: the model's picks in its order, then the library's other matches", (tester) async {
+      late _ScriptedSmartAggregation aggregation;
+      final (_, key) = await _pumpTvSearchScreen(
+        tester,
+        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(
+          manager,
+          (_) async => [
+            SmartSuggestion(item: episode('ep_lib', 'Library Only Match'), match: SmartSearchMatch.possible),
+            SmartSuggestion(item: episode('ep_b', 'Second Pick'), match: SmartSearchMatch.possible),
+          ],
+          picks: [episode('ep_a', 'First Pick'), episode('ep_b', 'Second Pick')],
+        ),
       );
+      await tester.pumpAndSettle();
+      (key.currentState! as SearchInputFocusable).submitSearchQuery('best shows about friends');
+      await tester.pumpAndSettle();
+      await tester.tap(askAi());
+      await tester.pumpAndSettle();
+
+      expect(aggregation.askedAi, ['best shows about friends']);
+      final first = tester.getTopLeft(find.text('First Pick')).dy;
+      final second = tester.getTopLeft(find.text('Second Pick')).dy;
+      final library = tester.getTopLeft(find.text('Library Only Match')).dy;
+      expect(first, lessThan(second));
+      expect(second, lessThan(library));
+      expect(find.text('Second Pick'), findsOneWidget, reason: 'no duplicates');
     });
 
     testWidgets('searches never ask the language model by themselves', (tester) async {
@@ -1310,10 +1333,25 @@ class _FakeMediaServerClient implements MediaServerClient {
 }
 
 class _ScriptedSmartAggregation extends DataAggregationService {
-  _ScriptedSmartAggregation(super.manager, this._answer);
+  _ScriptedSmartAggregation(super.manager, this._answer, {this.picks = const []});
 
   final Future<List<SmartSuggestion>> Function(String query) _answer;
   final List<String> queries = [];
+  final List<MediaItem> picks;
+  final List<String> askedAi = [];
+
+  @override
+  Future<List<({AskAiPick pick, MediaItem? owned})>> askAi(
+    String query, {
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) async {
+    askedAi.add(query);
+    return [
+      for (final (index, item) in picks.indexed)
+        (pick: AskAiPick(rank: index + 1, isMovie: false, title: item.title ?? '', id: item.id), owned: item),
+    ];
+  }
 
   @override
   bool get smartSearchKnownAvailable => true;
@@ -1323,6 +1361,8 @@ class _ScriptedSmartAggregation extends DataAggregationService {
     String query, {
     Set<String>? hiddenLibraryKeys,
     AbortController? abort,
+    bool recall = true,
+    int limit = 20,
   }) {
     queries.add(query);
     return _answer(query);

@@ -841,6 +841,16 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   bool _impliesShowTitle(MediaItem item) => widget.showTitleImplied && item.isEpisode;
 }
 
+/// "Need request" / "Requested" for a recommendation the library lacks.
+String? _requestBadge(Object item) {
+  if (item is! MediaItem) return null;
+  return switch (RecommendationCardData.fromItem(item)?.availability) {
+    RecommendationAvailability.missing => t.discover.needRequest,
+    RecommendationAvailability.requested => t.explore.badge.requested,
+    _ => null,
+  };
+}
+
 class _MediaCardList extends StatelessWidget {
   /// Either a [MediaItem] or a [MediaPlaylist].
   final Object item;
@@ -1081,6 +1091,24 @@ class _MediaCardList extends StatelessWidget {
                             : _metadataLabel(context, metadataLine),
                       ),
                       const SizedBox(height: 2),
+                    ],
+                    // Ask AI lists titles the library lacks beside owned ones.
+                    if (_requestBadge(item) case final badge?) ...[
+                      DecoratedBox(
+                        key: const ValueKey('recommendation_request_badge'),
+                        decoration: BoxDecoration(
+                          color: const Color(0xE6232934),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Text(
+                            badge,
+                            style: const TextStyle(color: Color(0xFFE6B95B), fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
                     ],
                     if (item is MediaItem &&
                         (item as MediaItem).isEpisode &&

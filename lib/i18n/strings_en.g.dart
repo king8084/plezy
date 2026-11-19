@@ -1700,12 +1700,6 @@ class Translations$search$en {
 	/// en: 'Finding smart matches…'
 	String get findingSmartMatches => 'Finding smart matches…';
 
-	/// en: 'Smart matches'
-	String get smartMatches => 'Smart matches';
-
-	/// en: 'Possible matches'
-	String get possibleMatches => 'Possible matches';
-
 	/// en: 'Voice search (dictation)'
 	String get voiceSearch => 'Voice search (dictation)';
 
@@ -8951,8 +8945,6 @@ extension on Translations {
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
 			'search.people' => 'People',
 			'search.findingSmartMatches' => 'Finding smart matches…',
-			'search.smartMatches' => 'Smart matches',
-			'search.possibleMatches' => 'Possible matches',
 			'search.voiceSearch' => 'Voice search (dictation)',
 			'search.resultCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
 			'search.askAi' => 'Ask AI',
@@ -9408,10 +9400,10 @@ extension on Translations {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
@@ -9922,10 +9914,10 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
+			_ => null,
+		} ?? switch (path) {
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
@@ -10436,10 +10428,10 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',

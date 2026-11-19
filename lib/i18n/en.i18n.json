@@ -597,8 +597,6 @@
     "enterTitleActorOrKeyword": "Enter a title, actor, or keyword",
     "people": "People",
     "findingSmartMatches": "Finding smart matches…",
-    "smartMatches": "Smart matches",
-    "possibleMatches": "Possible matches",
     "voiceSearch": "Voice search (dictation)",
     "resultCount": {
       "one": "${n} result",

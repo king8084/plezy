@@ -28,6 +28,9 @@ class SmartSearchClient {
   static const Duration probeTimeout = Duration(milliseconds: 900);
   static const Duration instantTimeout = Duration(milliseconds: 1500);
   static const Duration smartTimeout = Duration(seconds: 25);
+
+  /// The model names up to 20 titles in ~4 s warm; a cold model loads first.
+  static const Duration askTimeout = Duration(seconds: 30);
   static const Duration _availableFor = Duration(minutes: 10);
   static const Duration _unavailableFor = Duration(minutes: 1);
 
@@ -118,6 +121,15 @@ class SmartSearchClient {
     'recall': recall ? '1' : '0',
     'series': ?seriesId,
   }, smartTimeout);
+
+  /// "Ask AI": the language model's picks for [query], best first, each with
+  /// its library id when owned (the rest are for Seerr).
+  Future<List<AskAiPick>> ask(JellyfinConnection connection, String query, {int limit = 40}) async {
+    final json = await _getJson(connection, '/v1/ask', {'q': query, 'limit': '$limit'}, askTimeout);
+    final titles = json is Map ? json['titles'] : null;
+    if (titles is! List) return const [];
+    return [for (final title in titles) ?AskAiPick.fromJson(title)];
+  }
 
   /// The highest IMDb-rated movies and shows in the index (Home's "Top rated
   /// you haven't watched"; the caller removes what the viewer has watched).
@@ -221,6 +233,42 @@ enum SmartSearchMatch {
 
   /// Not checked (instant results, or checks unavailable).
   unchecked,
+}
+
+/// One "Ask AI" pick: a movie or show the model named, best first.
+class AskAiPick {
+  const AskAiPick({
+    required this.rank,
+    required this.isMovie,
+    required this.title,
+    this.year,
+    this.id,
+    this.libraries = const [],
+  });
+
+  final int rank;
+  final bool isMovie;
+  final String title;
+  final int? year;
+
+  /// The library item when the library has it; null for titles to request.
+  final String? id;
+  final List<String> libraries;
+
+  static AskAiPick? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final title = json['title'];
+    final type = json['type'];
+    if (title is! String || title.isEmpty || (type != 'movie' && type != 'show')) return null;
+    return AskAiPick(
+      rank: json['rank'] is num ? (json['rank'] as num).toInt() : 0,
+      isMovie: type == 'movie',
+      title: title,
+      year: json['year'] is num ? (json['year'] as num).toInt() : null,
+      id: json['id'] is String && (json['id'] as String).isNotEmpty ? json['id'] as String : null,
+      libraries: SmartSearchHit._strings(json['libraries']),
+    );
+  }
 }
 
 class SmartSearchHit {

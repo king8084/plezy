@@ -989,6 +989,8 @@ class DataAggregationService {
     String query, {
     Set<String>? hiddenLibraryKeys,
     AbortController? abort,
+    bool recall = true,
+    int limit = 20,
   }) async {
     final smart = _smartSearch;
     if (smart == null || query.trim().isEmpty) return const [];
@@ -998,7 +1000,7 @@ class DataAggregationService {
       try {
         if (!await smart.isAvailable(connection)) continue;
         abort?.throwIfAborted();
-        final response = await smart.smart(connection, query);
+        final response = await smart.smart(connection, query, recall: recall, limit: limit);
         abort?.throwIfAborted();
         final wanted = response.visibleIds(_hiddenLibraryIdsOn(serverId, hiddenLibraryKeys));
         final loaded = await client.fetchItemsInOrder([for (final w in wanted) w.id], abort: abort);
@@ -1036,6 +1038,44 @@ class DataAggregationService {
     } catch (_) {
       return false;
     }
+  }
+
+  /// "Ask AI": the language model's picks for [query], best first. Owned picks
+  /// carry their library item (hidden libraries respected: such picks are
+  /// dropped); the others carry only what the model said, for the caller to
+  /// confirm and offer through Seerr. Empty when no index answers.
+  Future<List<({AskAiPick pick, MediaItem? owned})>> askAi(
+    String query, {
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) async {
+    final smart = _smartSearch;
+    if (smart == null || query.trim().isEmpty) return const [];
+    for (final MapEntry(key: serverId, value: client) in _serverManager.visibleOnlineClients.entries) {
+      if (client is! JellyfinClient) continue;
+      try {
+        if (!await smart.isAvailable(client.connection)) continue;
+        abort?.throwIfAborted();
+        final picks = await smart.ask(client.connection, query.trim());
+        abort?.throwIfAborted();
+        final hidden = _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys);
+        final visible = [
+          for (final pick in picks)
+            if (pick.id == null || pick.libraries.isEmpty || pick.libraries.any((l) => !hidden.contains(l))) pick,
+        ];
+        final ownedIds = [for (final pick in visible) ?pick.id];
+        final loaded = ownedIds.isEmpty ? const <MediaItem>[] : await client.fetchItemsInOrder(ownedIds, abort: abort);
+        abort?.throwIfAborted();
+        final byId = {for (final item in loaded) item.id: item};
+        return [
+          for (final pick in visible)
+            if (pick.id == null || byId.containsKey(pick.id)) (pick: pick, owned: byId[pick.id]),
+        ];
+      } on SmartSearchUnavailable {
+        continue;
+      }
+    }
+    return const [];
   }
 
   /// IMDb vote counts for library [items] on one server, keyed by item id
