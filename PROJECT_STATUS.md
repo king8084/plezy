@@ -554,6 +554,16 @@ from the logs) is already fast enough, so it was left alone.
   the filter row asks /v1/smart for the current query and lists its picks.
   Gate GATE_EXIT=0 (8,711 tests).
 
+## Show page "More like this" preview (Nov 19, not built)
+- Owner asked that focusing a More like this card swap the top section to
+  that title. Implemented reusing Home's spotlight info
+  (`TvSpotlightBackground` with `showInfo`, new `infoAtBottom`), 300 ms
+  settle, the page's own block + season tabs fade out, only when the rail
+  really holds focus. Rendered before/after locally (artifact shown to the
+  owner). Gate GATE_EXIT=0 (8,712 tests).
+- Rollback: local tag `tvos-build-31` (5c9ac435f) and `Plezy-5c9ac43.ipa` in
+  tvsign; or revert this single commit and rebuild.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
