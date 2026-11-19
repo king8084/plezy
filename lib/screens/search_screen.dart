@@ -104,10 +104,6 @@ class _SearchScreenState extends State<SearchScreen>
   /// back to the docked keyboard.
   bool _voiceInputActive = false;
 
-  List<SmartSuggestion> _smartSuggestions = const [];
-  bool _smartLoading = false;
-  AbortController? _smartAbort;
-
   /// "Ask AI": the model's picks in its order (owned titles, and the others
   /// confirmed through Seerr with "Need request"); null until they arrive.
   List<MediaItem>? _aiPicks;
@@ -126,7 +122,6 @@ class _SearchScreenState extends State<SearchScreen>
   void dispose() {
     _resultsScroll.dispose();
     _dictation.stop();
-    _smartAbort?.abort();
     searchFocusNode.removeListener(_onSearchFocusChanged);
     _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
     _allChipFocusNode.dispose();
@@ -251,27 +246,15 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void _cancelSmartSuggestions() {
-    _smartAbort?.abort();
-    _smartAbort = null;
-    _smartLoading = false;
-    _smartSuggestions = const [];
     _aiAbort?.abort();
     _aiAbort = null;
     _aiAsking = false;
     _aiPicks = null;
   }
 
-  /// One "Ask AI" list: the model's picks first, in its order, then the
-  /// library's own meaning matches it did not name.
-  List<MediaItem> get _aiResults {
-    final picks = _aiPicks ?? const <MediaItem>[];
-    final seen = {for (final item in picks) item.globalKey};
-    return [
-      ...picks,
-      for (final suggestion in _smartSuggestions)
-        if (seen.add(suggestion.item.globalKey)) suggestion.item,
-    ];
-  }
+  /// "Ask AI" shows only the model's answers, in its order: owned titles and
+  /// the ones Seerr confirmed for requesting.
+  List<MediaItem> get _aiResults => _aiPicks ?? const <MediaItem>[];
 
   static String _titleKey(String title) => title
       .toLowerCase()
@@ -355,37 +338,6 @@ class _SearchScreenState extends State<SearchScreen>
     setState(() {
       _aiAsking = false;
       _aiPicks = items;
-    });
-  }
-
-  Future<void> _loadSmartSuggestions(String query) async {
-    _cancelSmartSuggestions();
-    if (query.trim().isEmpty) return;
-    final multiServer = context.read<MultiServerProvider>();
-    final hiddenKeys = context.read<HiddenLibrariesProvider>().hiddenLibraryKeys;
-    final abort = AbortController();
-    _smartAbort = abort;
-    setState(() => _smartLoading = true);
-    List<SmartSuggestion> suggestions;
-    try {
-      // The model's own picks come from Ask AI's separate request; these are
-      // the library's meaning matches, back in ~0.2 s.
-      suggestions = await multiServer.aggregationService.smartSuggestions(
-        query,
-        hiddenLibraryKeys: hiddenKeys,
-        abort: abort,
-        recall: false,
-        limit: 60,
-      );
-    } catch (e) {
-      appLogger.d('Smart suggestions skipped', error: e);
-      suggestions = const [];
-    }
-    // Ignore answers for a query the user has already moved on from.
-    if (!mounted || !identical(_smartAbort, abort)) return;
-    setState(() {
-      _smartLoading = false;
-      _smartSuggestions = suggestions;
     });
   }
 
@@ -752,11 +704,8 @@ class _SearchScreenState extends State<SearchScreen>
       _filteredResults = _rankFilteredResults(filter, lastSearchedQuery);
     });
     if (filter is _AiResults) {
-      unawaited(
-        _loadSmartSuggestions(lastSearchedQuery).then((_) {
-          if (mounted && _selectedFilter is _AiResults) unawaited(_loadAiPicks(lastSearchedQuery));
-        }),
-      );
+      setState(_cancelSmartSuggestions);
+      unawaited(_loadAiPicks(lastSearchedQuery));
     } else {
       setState(_cancelSmartSuggestions);
     }
@@ -784,8 +733,7 @@ class _SearchScreenState extends State<SearchScreen>
   void _focusFilterChips() => _chipFocusNode(_selectedFilter).requestFocus();
 
   void _focusFirstResult() {
-    if (_visibleResults.isNotEmpty ||
-        (_selectedFilter is _AiResults && !_smartLoading && !_aiAsking && _aiResults.isNotEmpty)) {
+    if (_visibleResults.isNotEmpty || (_selectedFilter is _AiResults && !_aiAsking && _aiResults.isNotEmpty)) {
       firstResultFocusNode.requestFocus();
     }
   }
@@ -850,7 +798,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// "23 results" under the filter row: what the list below holds.
   Widget _buildResultCount(BuildContext context) {
-    if (_selectedFilter is _AiResults && (_smartLoading || _aiAsking)) {
+    if (_selectedFilter is _AiResults && _aiAsking) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
     final count = _selectedFilter is _AiResults ? _aiResults.length : _visibleResults.length;
@@ -948,7 +896,7 @@ class _SearchScreenState extends State<SearchScreen>
   List<Widget> _buildSmartSuggestions(BuildContext context) {
     if (_selectedFilter is! _AiResults) return const [];
     final items = _aiResults;
-    final asking = _smartLoading || _aiAsking;
+    final asking = _aiAsking;
     // Shown once, complete: nothing appears until the model's picks are in,
     // so the list never reshuffles under the viewer.
     if (asking) return [_smartHeader(context, t.search.findingSmartMatches)];
@@ -1053,7 +1001,7 @@ class _SearchScreenState extends State<SearchScreen>
           SliverFillRemaining(
             child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
           )
-        else if (searchResults.isEmpty && !_smartLoading && _smartSuggestions.isEmpty)
+        else if (searchResults.isEmpty && !_aiAsking && (_aiPicks?.isEmpty ?? true))
           SliverFillRemaining(
             child: StateMessageWidget(
               message: t.messages.noResultsFound,

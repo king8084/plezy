@@ -381,50 +381,47 @@ void main() {
 
     Finder askAi() => find.text('✨ ${t.search.askAi}');
 
-    testWidgets('are asked for only through Ask AI, without moving focus', (tester) async {
-      final pending = Completer<List<SmartSuggestion>>();
+    testWidgets('are asked for only through Ask AI and appear once, complete', (tester) async {
+      final gate = Completer<void>();
       late _ScriptedSmartAggregation aggregation;
       final (_, key) = await _pumpTvSearchScreen(
         tester,
-        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(manager, (_) => pending.future),
+        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(
+          manager,
+          (_) async => const [],
+          picks: [episode('ep_1', 'The One Where Rosita Dies'), episode('ep_2', 'A Second Pick')],
+          gate: gate.future,
+        ),
       );
       await tester.pumpAndSettle();
 
       (key.currentState! as SearchInputFocusable).submitSearchQuery('friends episode joey breaks the chair');
       await tester.pumpAndSettle();
       expect(find.text('Movie 1'), findsOneWidget);
-      expect(aggregation.queries, isEmpty, reason: 'searches stay instant');
-      expect(askAi(), findsOneWidget);
+      expect(aggregation.askedAi, isEmpty, reason: 'searches stay instant');
 
       await tester.tap(askAi());
       await tester.pump();
-      expect(aggregation.queries, ['friends episode joey breaks the chair']);
+      expect(aggregation.askedAi, ['friends episode joey breaks the chair']);
       expect(find.text(t.search.findingSmartMatches), findsOneWidget);
-      expect(find.text('Movie 1'), findsNothing, reason: 'nothing shows until the full list is ready');
+      expect(find.text('Movie 1'), findsNothing, reason: 'nothing shows until the answer is ready');
       final focusedBefore = FocusManager.instance.primaryFocus;
 
-      pending.complete([
-        SmartSuggestion(item: episode('ep_13', 'The One Where Rosita Dies'), match: SmartSearchMatch.possible),
-        SmartSuggestion(item: episode('ep_1', 'A Confirmed Episode'), match: SmartSearchMatch.confirmed),
-      ]);
+      gate.complete();
       await tester.pumpAndSettle();
-
       expect(find.text(t.search.findingSmartMatches), findsNothing);
       expect(find.text('The One Where Rosita Dies'), findsOneWidget);
-      expect(find.text('A Confirmed Episode'), findsOneWidget);
-      expect(find.text('Movie 1'), findsNothing, reason: 'the AI picks are their own list');
+      expect(find.text('A Second Pick'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus, same(focusedBefore), reason: 'focus never jumps');
     });
 
-    testWidgets("one list: the model's picks in its order, then the library's other matches", (tester) async {
-      late _ScriptedSmartAggregation aggregation;
+    testWidgets("only the model's answers, in its order", (tester) async {
       final (_, key) = await _pumpTvSearchScreen(
         tester,
-        aggregation: (manager) => aggregation = _ScriptedSmartAggregation(
+        aggregation: (manager) => _ScriptedSmartAggregation(
           manager,
           (_) async => [
             SmartSuggestion(item: episode('ep_lib', 'Library Only Match'), match: SmartSearchMatch.possible),
-            SmartSuggestion(item: episode('ep_b', 'Second Pick'), match: SmartSearchMatch.possible),
           ],
           picks: [episode('ep_a', 'First Pick'), episode('ep_b', 'Second Pick')],
         ),
@@ -435,14 +432,8 @@ void main() {
       await tester.tap(askAi());
       await tester.pumpAndSettle();
 
-      expect(aggregation.askedAi, ['best shows about friends']);
-      expect(find.text(t.search.findingSmartMatches), findsNothing);
-      final first = tester.getTopLeft(find.text('First Pick')).dy;
-      final second = tester.getTopLeft(find.text('Second Pick')).dy;
-      final library = tester.getTopLeft(find.text('Library Only Match')).dy;
-      expect(first, lessThan(second));
-      expect(second, lessThan(library));
-      expect(find.text('Second Pick'), findsOneWidget, reason: 'no duplicates');
+      expect(tester.getTopLeft(find.text('First Pick')).dy, lessThan(tester.getTopLeft(find.text('Second Pick')).dy));
+      expect(find.text('Library Only Match'), findsNothing, reason: 'Ask AI shows only the AI answers');
     });
 
     testWidgets('searches never ask the language model by themselves', (tester) async {
@@ -452,21 +443,22 @@ void main() {
         aggregation: (manager) => aggregation = _ScriptedSmartAggregation(manager, (_) async => const []),
       );
       await tester.pumpAndSettle();
-
       (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
       await tester.pumpAndSettle();
-
+      expect(aggregation.askedAi, isEmpty);
       expect(aggregation.queries, isEmpty);
       expect(find.text(t.search.findingSmartMatches), findsNothing);
     });
 
     testWidgets('an answer for an older query is ignored', (tester) async {
-      final first = Completer<List<SmartSuggestion>>();
+      final gate = Completer<void>();
       final (_, key) = await _pumpTvSearchScreen(
         tester,
         aggregation: (manager) => _ScriptedSmartAggregation(
           manager,
-          (query) => query.startsWith('old') ? first.future : Future.value(const []),
+          (_) async => const [],
+          picks: [episode('stale', 'Stale Answer')],
+          gate: gate.future,
         ),
       );
       await tester.pumpAndSettle();
@@ -478,7 +470,7 @@ void main() {
       await tester.pump();
       screen.submitSearchQuery('new request about another thing');
       await tester.pumpAndSettle();
-      first.complete([SmartSuggestion(item: episode('stale', 'Stale Answer'), match: SmartSearchMatch.confirmed)]);
+      gate.complete();
       await tester.pumpAndSettle();
 
       expect(find.text('Stale Answer'), findsNothing);
@@ -1335,12 +1327,15 @@ class _FakeMediaServerClient implements MediaServerClient {
 }
 
 class _ScriptedSmartAggregation extends DataAggregationService {
-  _ScriptedSmartAggregation(super.manager, this._answer, {this.picks = const []});
+  _ScriptedSmartAggregation(super.manager, this._answer, {this.picks = const [], this.gate});
 
   final Future<List<SmartSuggestion>> Function(String query) _answer;
   final List<String> queries = [];
   final List<MediaItem> picks;
   final List<String> askedAi = [];
+
+  /// Holds the model's answer until completed (to see the waiting state).
+  final Future<void>? gate;
 
   @override
   Future<List<({AskAiPick pick, MediaItem? owned})>> askAi(
@@ -1349,6 +1344,7 @@ class _ScriptedSmartAggregation extends DataAggregationService {
     AbortController? abort,
   }) async {
     askedAi.add(query);
+    await gate;
     return [
       for (final (index, item) in picks.indexed)
         (pick: AskAiPick(rank: index + 1, isMovie: false, title: item.title ?? '', id: item.id), owned: item),
