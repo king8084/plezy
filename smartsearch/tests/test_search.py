@@ -469,4 +469,32 @@ class FreshShortlistTest(unittest.TestCase):
             got = C.shortlist(pool, {'Series'}, 2006, None, ['scifi'], this_year=2026)
             self.assertEqual([c['title'] for c in got], ['New Space Show'])
             self.assertEqual(C.shortlist(pool, {'Series'}, None, None, []), [], 'too vague')
-            self.assertEqual(C.refresh(tmp), 'fresh', 'a file under 20 hours old is not rebuilt')
+            (tmp / 'imdb').mkdir()
+            for name in ('title.basics.tsv.gz', 'title.ratings.tsv.gz'):
+                (tmp / 'imdb' / name).write_bytes(b'')
+            self.assertEqual(C.refresh(tmp), 'fresh', 'files inside their schedule are not fetched again')
+
+    def test_unchanged_files_are_not_downloaded_again(self):
+        import time as _time
+        import urllib.error
+        from plezy_search import imdb_candidates as C
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / 'imdb').mkdir()
+            old = _time.time() - 5 * 24 * 3600
+            for name in ('title.basics.tsv.gz', 'title.ratings.tsv.gz'):
+                (tmp / 'imdb' / name).write_bytes(b'')
+                import os
+                os.utime(tmp / 'imdb' / name, (old, old))
+            (tmp / C.FILE_NAME).write_text('{"version": 1, "titles": []}')
+            asked = []
+
+            class NotModified:
+                def open(self, request, timeout=None):
+                    asked.append(request.get_header('If-modified-since'))
+                    raise urllib.error.HTTPError(request.full_url, 304, 'Not Modified', {}, None)
+            self.assertEqual(C.refresh(tmp, opener=NotModified()), 'checked')
+            self.assertEqual(len(asked), 2)
+            self.assertTrue(all(asked), 'asks only for a newer copy')
+            self.assertEqual(C.refresh(tmp, opener=NotModified()), 'fresh', 'checked files wait for their schedule')
+
