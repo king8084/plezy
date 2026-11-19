@@ -431,3 +431,12 @@ class AskTest(unittest.TestCase):
             self.assertTrue(engine.verifier.plot)
             like = engine.ask('shows like firefly')
             self.assertNotIn('Firefly', [t['title'] for t in like['titles']])
+
+
+class AskLineTest(unittest.TestCase):
+    def test_year_inside_the_title_is_dropped(self):
+        import re
+        from plezy_search.verify import Verifier
+        line = 'show|Battlestar Galactica (2004)|2004'
+        m = Verifier._ASK_LINE.match(line)
+        self.assertEqual(re.sub(r'\s*\((?:19|20)\d{2}\)\s*$', '', m.group(2)).strip(), 'Battlestar Galactica')

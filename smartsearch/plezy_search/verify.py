@@ -250,7 +250,9 @@ class Verifier:
                         m = self._ASK_LINE.match(line)
                         if not m:
                             continue
-                        pick = {'type': m.group(1).lower(), 'title': m.group(2).strip(),
+                        # "Battlestar Galactica (2004)|2004": the year sometimes rides in the title.
+                        title = re.sub(r'\s*\((?:19|20)\d{2}\)\s*$', '', m.group(2)).strip()
+                        pick = {'type': m.group(1).lower(), 'title': title,
                                 'year': int(m.group(3)) if m.group(3) else None}
                         name = (pick['type'], pick['title'].casefold())
                         if name in seen:
