@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../focus/dpad_navigator.dart';
 import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
@@ -67,8 +69,27 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
       !_voiceInputActive &&
       SearchScreen.keyboardPresentation == TvTextInputPresentation.flutterOverlay;
 
+  final _headerKey = GlobalKey<TvSearchHeaderState>();
+
+  /// Back anywhere below the keys (an episode result) returns to the keys on
+  /// "a"; Back on the keys leaves Find. Without this, Back from a result
+  /// reached nothing and the page could not be left.
+  KeyEventResult _onBackOutsideHeader(FocusNode node, KeyEvent event) {
+    if (!event.logicalKey.isBackKey || _fieldFocus.hasFocus) return KeyEventResult.ignored;
+    if (event is KeyDownEvent) {
+      if (_usesSearchHeader) {
+        _headerKey.currentState?.resetToFirstLetter();
+        _fieldFocus.requestFocus();
+      } else {
+        unawaited(Navigator.of(context).maybePop());
+      }
+    }
+    return KeyEventResult.handled;
+  }
+
   Widget _buildSearchHeader(BuildContext context) {
     return TvSearchHeader(
+      key: _headerKey,
       controller: _controller,
       focusNode: _fieldFocus,
       placeholder: t.findInShow.fieldHint,
@@ -232,45 +253,50 @@ class _FindInShowScreenState extends State<FindInShowScreen> {
 
     return OverlaySheetHost(
       canPop: true,
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                child: Text(
-                  t.findInShow.title(title: widget.show.displayTitle),
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: _onBackOutsideHeader,
+        child: Scaffold(
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: Text(
+                    t.findInShow.title(title: widget.show.displayTitle),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
-              if (_usesSearchHeader)
-                _buildSearchHeader(context)
-              else
-                SearchInputField(
-                  controller: _controller,
-                  focusNode: _fieldFocus,
-                  hintText: t.findInShow.fieldHint,
-                  debugLabel: 'find_in_show',
-                  tvTextInputController: _tvTextInput,
-                  tvTextInputPresentation: _voiceInputActive
-                      ? TvTextInputPresentation.platform
-                      : SearchScreen.keyboardPresentation,
-                  onVoiceInput:
-                      PlatformDetector.isAppleTV() &&
-                          SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
-                      ? _startVoiceInput
-                      : null,
-                  voiceInputTooltip: t.search.voiceSearch,
-                  onNavigateDown: _results.isEmpty ? null : _firstResultFocus.requestFocus,
-                  onEditingComplete: _submit,
-                  onBack: () => Navigator.of(context).maybePop(),
-                ),
-              if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
-              Expanded(child: body),
-            ],
+                if (_usesSearchHeader)
+                  _buildSearchHeader(context)
+                else
+                  SearchInputField(
+                    controller: _controller,
+                    focusNode: _fieldFocus,
+                    hintText: t.findInShow.fieldHint,
+                    debugLabel: 'find_in_show',
+                    tvTextInputController: _tvTextInput,
+                    tvTextInputPresentation: _voiceInputActive
+                        ? TvTextInputPresentation.platform
+                        : SearchScreen.keyboardPresentation,
+                    onVoiceInput:
+                        PlatformDetector.isAppleTV() &&
+                            SearchScreen.keyboardPresentation != TvTextInputPresentation.platform
+                        ? _startVoiceInput
+                        : null,
+                    voiceInputTooltip: t.search.voiceSearch,
+                    onNavigateDown: _results.isEmpty ? null : _firstResultFocus.requestFocus,
+                    onEditingComplete: _submit,
+                    onBack: () => Navigator.of(context).maybePop(),
+                  ),
+                if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
+                Expanded(child: body),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,3 +1,8 @@
+import 'package:plezy/focus/focusable_text_field.dart';
+import 'package:plezy/screens/search_screen.dart';
+import 'package:plezy/widgets/tv_search_header.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -140,5 +145,68 @@ void main() {
 
     expect(find.text('No matching episodes'), findsOneWidget);
     expect(find.byType(EpisodeCard), findsNothing);
+  });
+
+  testWidgets('Apple TV: Back from a result returns to the keys, Back again leaves Find', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    SearchScreen.keyboardPresentation = TvTextInputPresentation.flutterOverlay;
+    final service = _FakeFindService(
+      (query) => [SmartSuggestion(item: _episode('e1', 'Benched', 1, 20), match: SmartSearchMatch.possible)],
+    );
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    PlexApiCache.initialize(db);
+    JellyfinApiCache.initialize(db);
+    final downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    );
+    downloadManager.recoveryFuture = Future<void>.value();
+    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+    await downloadProvider.ensureInitialized();
+    addTearDown(() async {
+      downloadProvider.dispose();
+      downloadManager.dispose();
+      await db.close();
+    });
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<DownloadProvider>.value(
+          value: downloadProvider,
+          child: MaterialApp(
+            navigatorKey: navigator,
+            theme: monoTheme(MonoPalette.dark),
+            home: const Scaffold(body: Text('Show page')),
+          ),
+        ),
+      ),
+    );
+    unawaited(
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder: (_) => FindInShowScreen(show: show, service: service),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final header = tester.widget<TvSearchHeader>(find.byType(TvSearchHeader));
+    expect(header.focusNode.hasFocus, isTrue);
+    header.controller.text = 'benched';
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(header.focusNode.hasFocus, isFalse, reason: 'on the first result');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(header.focusNode.hasFocus, isTrue, reason: 'Back from a result returns to the keys');
+    expect(find.text('Show page'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Show page'), findsOneWidget, reason: 'Back on the keys leaves Find');
+    expect(find.byType(FindInShowScreen), findsNothing);
   });
 }
