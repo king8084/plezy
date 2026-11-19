@@ -589,6 +589,9 @@ from the logs) is already fast enough, so it was left alone.
   then the model's picks in order; non-owned picks need a Seerr match (name,
   kind, year +-1) and resolve like the show page's Seerr row ("Need
   request"/"Requested", MDBList captions). Gate GATE_EXIT=0 (8,713 tests).
+- Owner (build 33): good, but the list changed a few seconds after showing.
+  Now the Ask AI list appears once, complete ("Finding smart matches…"
+  until ready, typically 2-6 s). Not built yet.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
