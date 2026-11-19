@@ -592,6 +592,14 @@ from the logs) is already fast enough, so it was left alone.
 - Owner (build 33): good, but the list changed a few seconds after showing.
   Now the Ask AI list appears once, complete ("Finding smart matches…"
   until ready, typically 2-6 s). Not built yet.
+- Owner (Nov 19): Find in Show Back did nothing (stuck). Fixed `8283e9ed7`:
+  Back from a result -> keys on "a", Back on the keys -> leave Find
+  (regression test fails on the old code). Ask AI now shows only the AI's
+  answers; server asks 25 with repeat penalty 1.1 and stops the stream at
+  25 distinct titles or 3 repeats (avg 4.7 s, ~20 real titles). Deployed;
+  app not built yet. Gate GATE_EXIT=0 (8,714 tests).
+- Open idea (owner not yet decided): add production countries to the index
+  so "UK/British/Korean" filter instant search too.
 
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
