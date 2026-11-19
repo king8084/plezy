@@ -81,10 +81,13 @@ class Handler(BaseHTTPRequestHandler):
                 # Fast re-rank with the local checker by default; confirm=1 adds the
                 # slower second vote (the app asks /v1/verify for that separately).
                 # recall=1 adds the generator's knowledge of famous titles (~1 s warm).
-                return self._send(200, engine.smart(q, min(limit, 30), verify=args.get('rerank', '1') == '1',
+                return self._send(200, engine.smart(q, min(limit, 60), verify=args.get('rerank', '1') == '1',
                                                     confirm=args.get('confirm', '0') == '1',
                                                     recall=args.get('recall', '1') == '1',
                                                     series=args.get('series') or None))
+            if url.path == '/v1/ask':
+                # "Ask AI": the model's picks, best first, library ids where owned.
+                return self._send(200, engine.ask(q, min(limit, 60)) if q else {'query': '', 'titles': []})
             if url.path == '/v1/verify':
                 ids = [x for x in (args.get('ids') or '').split(',') if x][:8]
                 if not engine.verifier:

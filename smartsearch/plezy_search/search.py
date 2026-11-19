@@ -775,6 +775,46 @@ class Engine:
                     raw, self._keep_requested(results, p.library_groups)))[:limit]),
                 'indexed_libraries': [r[0] for r in self.db.execute('SELECT library_id FROM libraries')], 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
 
+    # -- Ask AI -----------------------------------------------------------------------
+    _ASK_LIST_WORDS = re.compile(r'\b(best|top|greatest|like|similar|recommend|recommendations?|movies?|films?|'
+                                 r'shows?|series|tv|anime|animes|cartoons?|documentar(?:y|ies))\b')
+
+    def ask(self, raw, limit=40):
+        """"Ask AI": the language model's picks for [raw], best first, each with
+        its library item when the library has it ("id"), else None (the app
+        offers those through Seerr). Lists ("best sci fi shows") get 20 picks,
+        plot descriptions up to 12. Dropped for free: duplicates, titles outside
+        the request's own type/years, and the title a "like X" request names."""
+        start = time.perf_counter()
+        p = Q.parse(raw, self.vocab)
+        text = norm(raw)
+        plot = not (p.has_filters or p.kinds or self._ASK_LIST_WORDS.search(text))
+        picks = self.verifier.ask(raw, plot=plot) if self.verifier else []
+        like = re.search(r'\b(?:like|similar to)\s+(.+)$', text)
+        excluded = norm(like.group(1)) if like else None
+        want = {'Series': 'show', 'Movie': 'movie'}.get(next(iter(p.kinds))) if len(p.kinds) == 1 else None
+        titles = self.vocab.get('titles', {})
+        out, seen = [], set()
+        for pick in picks:
+            kind, name, year = pick['type'], norm(pick['title']), pick['year']
+            if not name or (kind, name) in seen or name == excluded or (want and kind != want):
+                continue
+            if year and ((p.year_min and year < p.year_min) or (p.year_max and year > p.year_max)):
+                continue
+            seen.add((kind, name))
+            library_kind = 'Movie' if kind == 'movie' else 'Series'
+            owned = [r for r in titles.get(name, []) if r[1] == library_kind
+                     and (year is None or r[2] is None or abs(r[2] - year) <= 1)]
+            out.append({'rank': len(out) + 1, 'type': kind, 'title': pick['title'], 'year': year,
+                        'id': owned[0][0] if owned else None})
+            if len(out) >= limit:
+                break
+        owned = [t for t in out if t['id']]
+        if owned:   # the app hides titles that live only in hidden libraries
+            self._with_libraries(owned)
+        return {'query': raw, 'mode': 'plot' if plot else 'list', 'ai': bool(self.verifier),
+                'titles': out, 'took_ms': round((time.perf_counter() - start) * 1000, 2)}
+
     # -- Home rows ------------------------------------------------------------------
     def top_rated(self, kinds=('Movie', 'Series'), min_rating=7.5, limit=80):
         """Highest IMDb-rated movies/shows (the app removes ones the viewer watched)."""

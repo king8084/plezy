@@ -397,3 +397,37 @@ class SeasonRequestTest(unittest.TestCase):
             self.assertEqual(engine.instant('season 2 of the office')['results'][0]['title'], 'The Office')
             milk = engine.instant('friends season 3 milk')['results']
             self.assertEqual(milk[1]['title'], 'The One with the Breast Milk')
+
+
+class AskTest(unittest.TestCase):
+    """"Ask AI": the model's order, owned titles marked, free filters applied."""
+
+    def test_order_library_marks_and_filters(self):
+        class Stub:
+            def __init__(self):
+                self.plot = None
+
+            def ask(self, query, plot=False):
+                self.plot = plot
+                return [{'type': 'show', 'title': 'Firefly', 'year': 2002},
+                        {'type': 'show', 'title': 'Severance', 'year': 2022},
+                        {'type': 'show', 'title': 'Firefly', 'year': 2002},          # duplicate
+                        {'type': 'movie', 'title': 'Serenity', 'year': 2005},        # not a show
+                        {'type': 'show', 'title': 'Old Space Show', 'year': 1970},   # outside the years
+                        {'type': 'show', 'title': 'Dark', 'year': None}]
+        with tempfile.TemporaryDirectory() as tmp:
+            items = [series(1, 'Firefly', rating=9.0, ProductionYear=2002), series(2, 'Dark', rating=8.7)]
+            w = make_indexer(tmp, items)
+            w.initial_import()
+            w.db.close()
+            engine = Engine(Path(tmp) / 'index.sqlite')
+            engine.verifier = Stub()
+            got = engine.ask('best sci fi shows since 2000')
+            self.assertEqual(got['mode'], 'list')
+            self.assertEqual([(t['title'], t['id'] is not None) for t in got['titles']],
+                             [('Firefly', True), ('Severance', False), ('Dark', True)])
+            self.assertEqual([t['rank'] for t in got['titles']], [1, 2, 3])
+            engine.ask('a crew of smugglers on a small spaceship')
+            self.assertTrue(engine.verifier.plot)
+            like = engine.ask('shows like firefly')
+            self.assertNotIn('Firefly', [t['title'] for t in like['titles']])
