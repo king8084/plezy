@@ -6,7 +6,8 @@
   tvsign Renew; signing and upload OK). Adds the show page "More like this"
   preview. Local gate GATE_EXIT=0 (8,712 tests), Codemagic gate passed; fork
   Actions disabled. Backups `*-before-d473e6b.ipa`; local tag
-  `tvos-build-32`; private receipt. Owner device check pending.
+  `tvos-build-32`; private receipt. Owner confirmed on device (Nov 19):
+  the More like this preview "worked super clean".
 - Previous install: `5c9ac435f` (Codemagic build 31, Nov 18, in place via
   tvsign Renew; signing and upload OK; ~35 min Codemagic queue). Search
   housekeeping (clear on leave, Back to "a", scrollbar, result count),
