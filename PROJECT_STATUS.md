@@ -651,6 +651,16 @@ from the logs) is already fast enough, so it was left alone.
   sub-ass-override=strip for subrip/webvtt/text tracks on track change;
   ASS/SSA keep the user setting. Gate GATE_EXIT=0 (8,715 tests).
 
+## Black Clover S2E4/E5 marked watched (Nov 20, investigating)
+- Owner skipped credits on S2E3; S2E4 and S2E5 showed watched. App log: no
+  open of E4/E5 before the owner started E4 at 15:38; Plezy's completion
+  path only reports the current item; same-file siblings ruled out (177
+  separate files, absolute numbers 171-177 in names). Suspect an external
+  watched sync (cleanarr has watcherr/rating_sync); reading its logs needs
+  owner OK (owner asked to stay out of cleanarr). Added diagnostics for
+  mark-watched and tracker writes; "Now playing" fixed to the real item.
+  Not built yet.
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
