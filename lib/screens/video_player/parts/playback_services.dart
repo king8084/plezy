@@ -194,6 +194,22 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Plain-text subtitle tracks ignore their own inline sizes (see
     // subAssOverrideForTrack); styled tracks keep the viewer's ASS policy.
+    String? lastTrackLine;
+    _playerStreamSubscriptions.add(
+      currentPlayer.streams.track.listen((selection) {
+        // Diagnostics: the tracks in use, once per change.
+        final audio = selection.audio;
+        final sub = selection.subtitle;
+        final line =
+            'Playback tracks: audio ${audio == null ? 'none' : '${audio.language ?? '?'} ${audio.codec ?? '?'} '
+                      '${audio.channelsCount ?? '?'}ch'} | subtitles ${sub == null || sub.id == 'no' ? 'off' : '${sub.language ?? '?'} ${sub.codec ?? '?'} '
+                      '${sub.isExternal ? 'external' : 'embedded'}${sub.isForced ? ' forced' : ''} "${sub.title ?? ''}"'}';
+        if (line != lastTrackLine) {
+          lastTrackLine = line;
+          appLogger.i(line);
+        }
+      }),
+    );
     if (!(Platform.isAndroid && useExoPlayer)) {
       _playerStreamSubscriptions.add(
         currentPlayer.streams.track.listen((selection) {

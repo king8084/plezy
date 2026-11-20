@@ -60,7 +60,7 @@ extension _MediaDetailSeerrRecommendations on _MediaDetailScreenState {
     } catch (error) {
       // Seerr going offline must leave the local library, episodes and cast
       // fully usable. A later account rebind or return from Request retries.
-      appLogger.d('Seerr recommendations shelf unavailable', error: error);
+      appLogger.w('Seerr recommendations shelf unavailable', error: error);
     }
   }
 }

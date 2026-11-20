@@ -55,7 +55,7 @@ extension _MediaDetailSimklRecommendations on _MediaDetailScreenState {
       // the other "More like this" rows.
       if (isCurrent()) unawaited(_loadLibraryVotes());
     } catch (error) {
-      appLogger.d('Simkl recommendations shelf unavailable', error: error);
+      appLogger.w('Simkl recommendations shelf unavailable', error: error);
     }
   }
 }

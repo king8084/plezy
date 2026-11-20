@@ -290,8 +290,10 @@ class _SearchScreenState extends State<SearchScreen>
       _aiPicks = null;
     });
     var items = <MediaItem>[];
+    final watch = Stopwatch()..start();
     try {
       final picks = await multiServer.aggregationService.askAi(query, hiddenLibraryKeys: hiddenKeys, abort: abort);
+      final askedMs = watch.elapsedMilliseconds;
       if (!current()) return;
       final outside = <int, CatalogItem>{};
       if (seerr != null) {
@@ -331,8 +333,14 @@ class _SearchScreenState extends State<SearchScreen>
         }
       }
       items = [for (final (index, entry) in picks.indexed) ?(entry.owned ?? resolved[index])];
+      final owned = picks.where((entry) => entry.owned != null).length;
+      appLogger.i(
+        'Ask AI "$query": ${picks.length} picks in ${askedMs}ms, $owned owned, ${resolved.length} via Seerr, '
+        '${picks.length - owned - resolved.length} dropped (not confirmed)${seerr == null ? ' [Seerr off]' : ''}; '
+        'shown ${items.length} after ${watch.elapsedMilliseconds}ms',
+      );
     } catch (e) {
-      appLogger.d('Ask AI unavailable', error: e);
+      appLogger.w('Ask AI unavailable', error: e);
     }
     if (!current()) return;
     setState(() {

@@ -912,6 +912,20 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         }),
       );
     }
+    // One line per open for diagnostics (owner, Nov 20): what is playing and
+    // how, plus the subtitle style in force. No URLs, ids or tokens.
+    final item = widget.metadata;
+    final what = item.isEpisode
+        ? '${item.grandparentTitle ?? '?'} S${item.parentIndex ?? '?'}E${item.index ?? '?'} "${item.title ?? ''}"'
+        : '${item.title ?? '?'}${item.year != null ? ' (${item.year})' : ''}';
+    appLogger.i(
+      'Now playing: $what | ${isLocalMedia ? 'local' : (isTranscoding ? 'transcode' : 'direct')} | '
+      '${selectedVersion?.videoResolution ?? '?'}p ${selectedVersion?.videoCodec ?? '?'} '
+      '${selectedVersion?.container ?? '?'} ${selectedVersion?.bitrate ?? '?'}kbps | subtitle style: '
+      'size ${settingsService.read(SettingsService.subtitleFontSize)}, '
+      'ass-override ${settingsService.read(SettingsService.subAssOverride).name}, '
+      'render ${settingsService.read(SettingsService.subtitleRenderResolution).name}',
+    );
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(outcome: outcome, subtitles: externalSubtitlesAtOpen);
     // Both call sites check [shouldContinue] on the statement before, with no
     // await in between, so this closure does not re-check: a staleness signal

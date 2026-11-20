@@ -2455,6 +2455,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         hiddenLibraryKeys: hidden,
         externalRecommendations: recommender,
       );
+      appLogger.i('More like this for "${metadata.title}": ${items?.length ?? 'no index'} blended titles');
       if (!mounted || generation != _blendedSimilarGeneration || items == null || items.isEmpty) return;
       if (!identical(_metadata, metadata) && _metadata.id != metadata.id) return;
       final blended = MediaHub(
@@ -2476,7 +2477,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         }
       });
     } catch (error) {
-      appLogger.d('Blended "More like this" unavailable', error: error);
+      appLogger.w('Blended "More like this" unavailable', error: error);
     }
   }
 
