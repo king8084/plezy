@@ -19,6 +19,10 @@ mixin _JellyfinWatchStateMethods on _JellyfinClientInternals {
   Future<void> markWatched(MediaItem item) async {
     final response = await _http.post(paths.playedItem(item.id), queryParameters: {'userId': connection.userId});
     throwIfHttpError(response);
+    // Diagnostics: every explicit mark, with what it was (owner, Nov 20).
+    appLogger.i(
+      'Marked watched in Jellyfin: ${item.parentIndex != null ? '${item.grandparentTitle ?? '?'} S${item.parentIndex ?? '?'}E${item.index ?? '?'}' : (item.title ?? item.id)}',
+    );
 
     final data = response.data;
     final positionMs = data is Map<String, dynamic> ? jellyfinTicksToMs(data['PlaybackPositionTicks']) : null;

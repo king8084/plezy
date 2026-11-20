@@ -941,6 +941,12 @@ class TrackerCoordinator {
     try {
       await target.tracker.scrobble(ctx, state, progressPercent);
       target.confirmReported(state);
+      if (state == TrackerScrobbleState.stop) {
+        appLogger.i(
+          '${target.tracker.name}: scrobble stop S${ctx.season ?? '-'}E${ctx.episodeNumber ?? '-'} '
+          'at ${progressPercent.toStringAsFixed(0)}%${ctx.animeProgress != null ? ' (anime progress ${ctx.animeProgress})' : ''}',
+        );
+      }
     } catch (e) {
       // A tracker write must never disrupt playback.
       appLogger.d('${target.tracker.name}: scrobble ${state.name} failed', error: e);

@@ -75,6 +75,10 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     final rewatching = !completed && snapshot != null && (snapshot.rewatching || snapshot.completed);
     final rewatchCount = completed && (snapshot?.rewatching ?? false) ? snapshot!.rewatchCount + 1 : null;
 
+    appLogger.i(
+      '$name: progress $watched${completed ? ' (completed)' : ''} for local S${ctx.season ?? '?'}E${ctx.episodeNumber ?? '?'} '
+      '(mapped progress ${ctx.animeProgress ?? 'none'}, list total ${snapshot?.episodeCount ?? '?'})',
+    );
     await saveAnimeProgress(
       activeClient,
       animeId: id,

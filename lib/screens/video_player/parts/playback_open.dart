@@ -914,7 +914,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
     // One line per open for diagnostics (owner, Nov 20): what is playing and
     // how, plus the subtitle style in force. No URLs, ids or tokens.
-    final item = widget.metadata;
+    final item = _currentMetadata; // the episode actually opening, also after auto-play
     final what = item.isEpisode
         ? '${item.grandparentTitle ?? '?'} S${item.parentIndex ?? '?'}E${item.index ?? '?'} "${item.title ?? ''}"'
         : '${item.title ?? '?'}${item.year != null ? ' (${item.year})' : ''}';
