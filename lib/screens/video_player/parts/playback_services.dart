@@ -192,6 +192,24 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     _playerStreamSubscriptions.add(currentPlayer.streams.error.listen(_onPlayerError));
 
+    // Plain-text subtitle tracks ignore their own inline sizes (see
+    // subAssOverrideForTrack); styled tracks keep the viewer's ASS policy.
+    if (!(Platform.isAndroid && useExoPlayer)) {
+      _playerStreamSubscriptions.add(
+        currentPlayer.streams.track.listen((selection) {
+          final value = subAssOverrideForTrack(
+            selection.subtitle?.codec,
+            SettingsService.instance.read(SettingsService.subAssOverride),
+          );
+          unawaited(
+            currentPlayer.setProperty('sub-ass-override', value).catchError((Object e) {
+              appLogger.d('VideoPlayerScreen: sub-ass-override $value not applied', error: e);
+            }),
+          );
+        }),
+      );
+    }
+
     // warn is included so we can catch ffmpeg's "HTTP error 4xx/5xx" line in
     // _onPlayerLog — the error-level log that follows omits the status code.
     _playerStreamSubscriptions.add(
