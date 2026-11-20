@@ -2,7 +2,13 @@
 
 ## Release checkpoints
 - Working branch: `codex/first-tvos-test-build`.
-- Installed app source: `d82261a2b` (Codemagic build 34, Nov 19, in place via
+- Installed app source: `353ff8a84` (Codemagic build 35, Nov 20, in place via
+  tvsign Renew; signing and install OK). SRT inline-size fix and new
+  diagnostics lines (Now playing, Playback tracks, Ask AI, More like this).
+  Gate GATE_EXIT=0 (8,715 tests). Backups `*-before-353ff8a.ipa`; tag
+  `tvos-build-35`. Release helpers live in `.git/plezy-private/tools/`
+  (tvsign API needs header `X-Tvsign: 1`). Owner device check pending.
+- Previous install: `d82261a2b` (Codemagic build 34, Nov 19, in place via
   tvsign Renew; signing and install OK). Find in Show Back fix, Ask AI shows
   only AI answers and appears once complete. Gate GATE_EXIT=0 (8,714 tests);
   fork Actions disabled. Backups `*-before-d82261a.ipa`; local tag
