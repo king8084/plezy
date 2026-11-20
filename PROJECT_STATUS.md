@@ -636,6 +636,15 @@ from the logs) is already fast enough, so it was left alone.
   overlap (0.15) and rating (0.01), 40-90 ms, no AI. Partial titles
   ("naruto" for "Rebuild of Naruto") fall back to the usual search.
 
+## Giant subtitles (Nov 20, not built)
+- Owner saw huge subtitles in Malcolm in the Middle. App log has no
+  subtitle detail; Jellyfin (read-only) shows 151 eps, 1080p HEVC, two
+  embedded SubRip tracks each; the English track wraps every line in
+  `<font size="71">` (Arabic does not). mpv 0.42 locally: override
+  no/yes/force giant, strip normal. Fix: `subAssOverrideForTrack` sets
+  sub-ass-override=strip for subrip/webvtt/text tracks on track change;
+  ASS/SSA keep the user setting. Gate GATE_EXIT=0 (8,715 tests).
+
 ## Standing rules / next step
 - Follow AGENTS.md. Never delete/uninstall the app or delete anything on Unraid.
 - Build/install only after explicit Apple TV build request and scoped Unraid
